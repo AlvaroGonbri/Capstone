@@ -2,7 +2,6 @@ from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
-
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
