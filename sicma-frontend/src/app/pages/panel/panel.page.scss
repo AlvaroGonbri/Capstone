@@ -1,0 +1,23 @@
+ion-card-content p.dato-grande {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+ion-card-content p.etiqueta-menor {
+  font-size: 0.78rem;
+}
+
+.dato-grande .de {
+  font-size: 1.1rem;
+  font-weight: 500;
+  opacity: 0.55;
+}
+
+ion-card-content p {
+  margin: 0 0 4px;
+}
+
+ion-badge {
+  text-transform: capitalize;
+}

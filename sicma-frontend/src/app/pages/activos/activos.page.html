@@ -1,0 +1,54 @@
+<app-encabezado titulo="Activos"></app-encabezado>
+
+<ion-content>
+  <div class="contenido-limitado">
+    <ion-searchbar
+      placeholder="Codigo, nombre, rack o serie"
+      [debounce]="200"
+      (ionInput)="cambiarBusqueda($any($event.target).value)"
+    ></ion-searchbar>
+
+    <ion-segment
+      [value]="filtro()"
+      scrollable
+      (ionChange)="cambiarFiltro($any($event.detail).value)"
+    >
+      <ion-segment-button value="todos"><ion-label>Todos</ion-label></ion-segment-button>
+      <ion-segment-button value="operativo"><ion-label>Operativos</ion-label></ion-segment-button>
+      <ion-segment-button value="en mantencion"><ion-label>Mantencion</ion-label></ion-segment-button>
+      <ion-segment-button value="en falla"><ion-label>En falla</ion-label></ion-segment-button>
+      <ion-segment-button value="de baja"><ion-label>De baja</ion-label></ion-segment-button>
+    </ion-segment>
+
+    @if (cargando()) {
+      <ion-list>
+        @for (i of [1, 2, 3, 4, 5]; track i) {
+          <ion-item>
+            <ion-label>
+              <ion-skeleton-text animated style="width: 40%"></ion-skeleton-text>
+              <ion-skeleton-text animated style="width: 70%"></ion-skeleton-text>
+            </ion-label>
+          </ion-item>
+        }
+      </ion-list>
+    } @else if (filtrados().length === 0) {
+      <p class="vacio">Ningun activo coincide con la busqueda.</p>
+    } @else {
+      <ion-note class="conteo">{{ filtrados().length }} activos</ion-note>
+      <ion-list lines="full">
+        @for (activo of filtrados(); track activo.id) {
+          <ion-item [routerLink]="['/activos', activo.id]" button detail="true">
+            <ion-label>
+              <h3>{{ activo.nombre }}</h3>
+              <p>{{ activo.codigo }} · {{ activo.marca }} {{ activo.modelo }}</p>
+              <p>Sitio {{ activo.sitio }} · rack {{ activo.rack }} · U{{ activo.unidadRack }}</p>
+            </ion-label>
+            <ion-badge slot="end" [color]="colorEstado(activo.estado)">
+              {{ activo.estado }}
+            </ion-badge>
+          </ion-item>
+        }
+      </ion-list>
+    }
+  </div>
+</ion-content>

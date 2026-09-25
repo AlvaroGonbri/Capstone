@@ -1,0 +1,60 @@
+<ion-content class="ion-padding">
+  <div class="ingreso">
+    <header class="ingreso__marca">
+      <h1>SICMA</h1>
+      <p>Sistema Integrado de Control y Monitoreo de Activos</p>
+    </header>
+
+    <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+      <ion-list lines="full">
+        <ion-item>
+          <ion-input
+            id="correo"
+            label="Correo institucional"
+            labelPlacement="stacked"
+            type="email"
+            autocomplete="username"
+            formControlName="correo"
+            placeholder="usuario@sicma.cl"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            id="clave"
+            label="Clave"
+            labelPlacement="stacked"
+            type="password"
+            autocomplete="current-password"
+            formControlName="clave"
+          >
+            <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+          </ion-input>
+        </ion-item>
+      </ion-list>
+
+      @if (error()) {
+        <ion-text color="danger">
+          <p class="ingreso__error" role="alert">{{ error() }}</p>
+        </ion-text>
+      }
+
+      <ion-button
+        type="submit"
+        expand="block"
+        class="ion-margin-top"
+        [disabled]="cargando()"
+      >
+        @if (cargando()) {
+          <ion-spinner name="dots" aria-label="Verificando"></ion-spinner>
+        } @else {
+          Entrar
+        }
+      </ion-button>
+    </form>
+
+    <ion-note class="ingreso__ayuda">
+      Datos de prueba mientras no existe el API: admin&#64;sicma.cl, tecnico&#64;sicma.cl o
+      jefatura&#64;sicma.cl, clave sicma2026.
+    </ion-note>
+  </div>
+</ion-content>

@@ -1,0 +1,43 @@
+<ion-app>
+  <ion-split-pane contentId="contenido-principal" when="lg" [disabled]="!auth.autenticado()">
+    <ion-menu contentId="contenido-principal" type="overlay" [disabled]="!auth.autenticado()">
+      <ion-header>
+        <ion-toolbar color="primary">
+          <ion-title>SICMA</ion-title>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content>
+        <div class="menu-usuario">
+          <p class="menu-usuario__nombre">{{ auth.usuario()?.nombre }}</p>
+          <ion-note>{{ auth.usuario()?.rol }}</ion-note>
+        </div>
+
+        <ion-list lines="none">
+          @for (item of menu; track item.ruta) {
+            <ion-menu-toggle autoHide="false">
+              <ion-item
+                [routerLink]="item.ruta"
+                routerLinkActive="item-activo"
+                detail="false"
+                button
+              >
+                <ion-icon slot="start" [name]="item.icono" aria-hidden="true"></ion-icon>
+                <ion-label>{{ item.titulo }}</ion-label>
+              </ion-item>
+            </ion-menu-toggle>
+          }
+        </ion-list>
+
+        <ion-list lines="none" class="menu-pie">
+          <ion-item button detail="false" (click)="salir()">
+            <ion-icon slot="start" name="log-out-outline" aria-hidden="true"></ion-icon>
+            <ion-label>Cerrar sesion</ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-content>
+    </ion-menu>
+
+    <ion-router-outlet id="contenido-principal"></ion-router-outlet>
+  </ion-split-pane>
+</ion-app>

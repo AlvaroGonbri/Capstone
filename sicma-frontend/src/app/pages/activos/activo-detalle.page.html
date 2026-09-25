@@ -1,0 +1,81 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/activos" text="Activos"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Ficha de activo</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="contenido-limitado ion-padding-vertical">
+    @if (!cargando() && !activo()) {
+      <p class="vacio">No se encontro el activo solicitado.</p>
+    } @else if (activo(); as a) {
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>{{ a.nombre }}</ion-card-title>
+          <ion-note>{{ a.codigo }}</ion-note>
+        </ion-card-header>
+        <ion-card-content class="ion-no-padding">
+          <ion-list lines="full">
+            <ion-item>
+              <ion-label>Estado</ion-label>
+              <ion-badge slot="end">{{ a.estado }}</ion-badge>
+            </ion-item>
+            <ion-item>
+              <ion-label>Tipo</ion-label>
+              <ion-note slot="end">{{ a.tipo }}</ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>Marca y modelo</ion-label>
+              <ion-note slot="end">{{ a.marca }} {{ a.modelo }}</ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>Numero de serie</ion-label>
+              <ion-note slot="end">{{ a.numeroSerie }}</ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>Ubicacion</ion-label>
+              <ion-note slot="end">
+                Sitio {{ a.sitio }} · rack {{ a.rack }} · U{{ a.unidadRack }}
+              </ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>Responsable</ion-label>
+              <ion-note slot="end">{{ a.responsable }}</ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>Adquisicion</ion-label>
+              <ion-note slot="end">{{ a.fechaAdquisicion | date: 'dd/MM/yyyy' }}</ion-note>
+            </ion-item>
+          </ion-list>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Intervenciones de este activo</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="ion-no-padding">
+          @if (historial().length === 0) {
+            <p class="vacio">Sin intervenciones registradas.</p>
+          } @else {
+            <ion-list lines="full">
+              @for (i of historial(); track i.id) {
+                <ion-item>
+                  <ion-label>
+                    <h3>{{ i.folio }} · {{ i.tipo }}</h3>
+                    <p>{{ i.descripcion }}</p>
+                    <p>{{ i.tecnico }} · {{ i.iniciadaEn | date: 'dd/MM/yyyy' }}</p>
+                  </ion-label>
+                  <ion-note slot="end">{{ i.estado }}</ion-note>
+                </ion-item>
+              }
+            </ion-list>
+          }
+        </ion-card-content>
+      </ion-card>
+    }
+  </div>
+</ion-content>

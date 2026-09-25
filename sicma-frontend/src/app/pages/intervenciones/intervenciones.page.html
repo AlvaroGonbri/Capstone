@@ -1,0 +1,56 @@
+<app-encabezado titulo="Intervenciones"></app-encabezado>
+
+<ion-content>
+  <div class="contenido-limitado">
+    <ion-segment
+      [value]="filtro()"
+      scrollable
+      (ionChange)="cambiarFiltro($any($event.detail).value)"
+    >
+      <ion-segment-button value="todas"><ion-label>Todas</ion-label></ion-segment-button>
+      <ion-segment-button value="planificada"><ion-label>Planificadas</ion-label></ion-segment-button>
+      <ion-segment-button value="en curso"><ion-label>En curso</ion-label></ion-segment-button>
+      <ion-segment-button value="cerrada"><ion-label>Cerradas</ion-label></ion-segment-button>
+    </ion-segment>
+
+    @if (cargando()) {
+      <ion-list>
+        @for (i of [1, 2, 3, 4]; track i) {
+          <ion-item>
+            <ion-label>
+              <ion-skeleton-text animated style="width: 40%"></ion-skeleton-text>
+              <ion-skeleton-text animated style="width: 80%"></ion-skeleton-text>
+            </ion-label>
+          </ion-item>
+        }
+      </ion-list>
+    } @else if (filtradas().length === 0) {
+      <p class="vacio">Sin intervenciones para este filtro.</p>
+    } @else {
+      <ion-list lines="full">
+        <ion-item-group>
+          <ion-item-divider>
+            <ion-label>{{ filtradas().length }} registros</ion-label>
+          </ion-item-divider>
+
+          @for (i of filtradas(); track i.id) {
+            <ion-item [routerLink]="['/activos', i.activoId]" button detail="true">
+              <ion-label>
+                <h3>{{ i.folio }} · {{ i.tipo }}</h3>
+                <p class="descripcion">{{ i.descripcion }}</p>
+                <p>
+                  {{ i.activoCodigo }} · {{ i.tecnico }} ·
+                  {{ i.iniciadaEn | date: 'dd/MM/yyyy' }}
+                  @if (i.cerradaEn) {
+                    · cerrada {{ i.cerradaEn | date: 'dd/MM/yyyy' }}
+                  }
+                </p>
+              </ion-label>
+              <ion-badge slot="end" [color]="colorEstado(i.estado)">{{ i.estado }}</ion-badge>
+            </ion-item>
+          }
+        </ion-item-group>
+      </ion-list>
+    }
+  </div>
+</ion-content>

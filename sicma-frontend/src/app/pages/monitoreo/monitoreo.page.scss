@@ -1,0 +1,78 @@
+.barra-estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 16px 4px;
+  font-weight: 600;
+}
+
+.umbrales {
+  display: block;
+  padding: 0 16px 12px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.tarjeta-sensor {
+  border-left: 4px solid var(--sicma-normal);
+
+  &[data-nivel='advertencia'] {
+    border-left-color: var(--sicma-advertencia);
+  }
+  &[data-nivel='critico'] {
+    border-left-color: var(--sicma-critico);
+  }
+}
+
+.lecturas {
+  display: flex;
+  gap: 28px;
+
+  p {
+    margin: 0;
+  }
+
+  p.dato-grande {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  p.etiqueta-menor {
+    font-size: 0.78rem;
+  }
+}
+
+.unidad {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-left: 2px;
+  opacity: 0.6;
+}
+
+.linea {
+  display: block;
+  width: 100%;
+  height: 40px;
+  margin: 12px 0 4px;
+  color: var(--ion-color-primary);
+  opacity: 0.85;
+}
+
+.pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  ion-badge {
+    text-transform: capitalize;
+  }
+
+  ion-note {
+    font-size: 0.74rem;
+    text-align: right;
+  }
+}

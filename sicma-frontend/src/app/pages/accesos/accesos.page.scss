@@ -1,0 +1,23 @@
+ion-item.denegado {
+  --background: rgba(179, 51, 47, 0.06);
+}
+
+.motivo {
+  font-style: italic;
+}
+
+.derecha {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+
+  ion-badge {
+    text-transform: capitalize;
+  }
+
+  ion-note {
+    font-size: 0.74rem;
+    font-variant-numeric: tabular-nums;
+  }
+}

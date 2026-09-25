@@ -1,0 +1,30 @@
+.menu-usuario {
+  padding: 20px 20px 8px;
+
+  &__nombre {
+    margin: 0 0 2px;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  ion-note {
+    font-size: 0.8rem;
+    text-transform: capitalize;
+  }
+}
+
+ion-item.item-activo {
+  --background: rgba(var(--ion-color-primary-rgb), 0.12);
+  --color: var(--ion-color-primary);
+  font-weight: 600;
+
+  ion-icon {
+    color: var(--ion-color-primary);
+  }
+}
+
+.menu-pie {
+  margin-top: 12px;
+  border-top: 1px solid var(--ion-color-step-150, #e0e0e0);
+  padding-top: 8px;
+}

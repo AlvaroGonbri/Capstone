@@ -1,0 +1,84 @@
+<app-encabezado titulo="Monitoreo ambiental"></app-encabezado>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="cargar($any($event))">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="contenido-limitado ion-padding-vertical">
+    <div class="barra-estado">
+      <span>
+        {{ enAlerta() }} de {{ sensores().length }} sensores fuera de rango
+      </span>
+      <ion-note>actualizado {{ actualizadoEn() | date: 'HH:mm:ss' }}</ion-note>
+    </div>
+
+    @if (umbrales(); as u) {
+      <ion-note class="umbrales">
+        Umbrales: advertencia sobre {{ u.temperaturaAdvertencia }} °C, critico sobre
+        {{ u.temperaturaCritica }} °C, humedad entre {{ u.humedadMinima }} % y
+        {{ u.humedadMaxima }} %.
+      </ion-note>
+    }
+
+    @if (cargando()) {
+      <div class="rejilla-tarjetas">
+        @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+          <ion-card>
+            <ion-card-content>
+              <ion-skeleton-text animated style="width: 60%; height: 24px"></ion-skeleton-text>
+              <ion-skeleton-text animated style="width: 90%"></ion-skeleton-text>
+            </ion-card-content>
+          </ion-card>
+        }
+      </div>
+    } @else {
+      <div class="rejilla-tarjetas">
+        @for (sensor of sensores(); track sensor.sensorId) {
+          <ion-card class="tarjeta-sensor" [attr.data-nivel]="sensor.nivel">
+            <ion-card-header>
+              <ion-card-subtitle>{{ sensor.sensorId }}</ion-card-subtitle>
+              <ion-card-title>{{ sensor.ubicacion }}</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <div class="lecturas">
+                <div>
+                  <p class="etiqueta-menor">Temperatura</p>
+                  <p class="dato-grande">{{ sensor.temperatura }}<span class="unidad">°C</span></p>
+                </div>
+                <div>
+                  <p class="etiqueta-menor">Humedad</p>
+                  <p class="dato-grande">{{ sensor.humedad }}<span class="unidad">%</span></p>
+                </div>
+              </div>
+
+              <svg
+                class="linea"
+                viewBox="0 0 120 36"
+                role="img"
+                [attr.aria-label]="'Tendencia de temperatura de ' + sensor.ubicacion"
+              >
+                <polyline
+                  [attr.points]="puntos(sensor.historial)"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round"
+                  stroke-linecap="round"
+                />
+              </svg>
+
+              <div class="pie">
+                <ion-badge [color]="sensor.nivel | colorNivel">{{ sensor.nivel }}</ion-badge>
+                <ion-note>
+                  Sitio {{ sensor.sitio }} · rack {{ sensor.rack }} ·
+                  {{ sensor.actualizadoEn | date: 'HH:mm' }}
+                </ion-note>
+              </div>
+            </ion-card-content>
+          </ion-card>
+        }
+      </div>
+    }
+  </div>
+</ion-content>

@@ -1,0 +1,54 @@
+<app-encabezado titulo="Accesos"></app-encabezado>
+
+<ion-content>
+  <div class="contenido-limitado">
+    <ion-segment [value]="filtro()" (ionChange)="cambiarFiltro($any($event.detail).value)">
+      <ion-segment-button value="todos"><ion-label>Todos</ion-label></ion-segment-button>
+      <ion-segment-button value="autorizado"><ion-label>Autorizados</ion-label></ion-segment-button>
+      <ion-segment-button value="denegado">
+        <ion-label>Denegados ({{ denegados() }})</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    @if (cargando()) {
+      <ion-list>
+        @for (i of [1, 2, 3, 4, 5]; track i) {
+          <ion-item>
+            <ion-label>
+              <ion-skeleton-text animated style="width: 45%"></ion-skeleton-text>
+              <ion-skeleton-text animated style="width: 70%"></ion-skeleton-text>
+            </ion-label>
+          </ion-item>
+        }
+      </ion-list>
+    } @else if (filtrados().length === 0) {
+      <p class="vacio">Sin eventos para este filtro.</p>
+    } @else {
+      <ion-list lines="full">
+        @for (acceso of filtrados(); track acceso.id) {
+          <ion-item [class.denegado]="acceso.resultado === 'denegado'">
+            <ion-icon
+              slot="start"
+              [name]="icono(acceso.metodo)"
+              [color]="acceso.resultado === 'denegado' ? 'danger' : 'medium'"
+              aria-hidden="true"
+            ></ion-icon>
+            <ion-label>
+              <h3>{{ acceso.persona }}</h3>
+              <p>{{ acceso.movimiento }} · {{ acceso.puerta }} · sitio {{ acceso.sitio }}</p>
+              @if (acceso.motivo) {
+                <p class="motivo">{{ acceso.motivo }}</p>
+              }
+            </ion-label>
+            <div slot="end" class="derecha">
+              <ion-badge [color]="acceso.resultado === 'denegado' ? 'danger' : 'success'">
+                {{ acceso.resultado }}
+              </ion-badge>
+              <ion-note>{{ acceso.registradoEn | date: 'dd/MM HH:mm' }}</ion-note>
+            </div>
+          </ion-item>
+        }
+      </ion-list>
+    }
+  </div>
+</ion-content>

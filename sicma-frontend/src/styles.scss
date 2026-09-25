@@ -1,0 +1,71 @@
+/* Estilos base de Ionic */
+@import '@ionic/angular/css/core.css';
+@import '@ionic/angular/css/normalize.css';
+@import '@ionic/angular/css/structure.css';
+@import '@ionic/angular/css/typography.css';
+@import '@ionic/angular/css/display.css';
+@import '@ionic/angular/css/padding.css';
+@import '@ionic/angular/css/float-elements.css';
+@import '@ionic/angular/css/text-alignment.css';
+@import '@ionic/angular/css/text-transformation.css';
+@import '@ionic/angular/css/flex-utils.css';
+
+/* Modo oscuro segun la preferencia del sistema */
+@import '@ionic/angular/css/palettes/dark.system.css';
+
+/* ------------------------------------------------- Identidad de SICMA */
+:root {
+  --ion-color-primary: #0e7c86;
+  --ion-color-primary-rgb: 14, 124, 134;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #0c6d76;
+  --ion-color-primary-tint: #268992;
+
+  --sicma-normal: #2e7d4f;
+  --sicma-advertencia: #b8730f;
+  --sicma-critico: #b3332f;
+}
+
+/* ------------------------------------------------- Utilidades comunes */
+.contenido-limitado {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-inline: 12px;
+}
+
+.rejilla-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.dato-grande {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.etiqueta-menor {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.estado-normal {
+  color: var(--sicma-normal);
+}
+.estado-advertencia {
+  color: var(--sicma-advertencia);
+}
+.estado-critico {
+  color: var(--sicma-critico);
+}
+
+.vacio {
+  text-align: center;
+  padding: 40px 16px;
+  opacity: 0.65;
+}
