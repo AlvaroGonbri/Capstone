@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   IonButton,
   IonContent,
@@ -18,6 +18,7 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-login',
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     IonButton,
     IonContent,
     IonInput,
@@ -41,8 +42,8 @@ export class LoginPage {
   protected readonly error = signal<string | null>(null);
 
   protected readonly formulario = this.fb.nonNullable.group({
-    correo: ['admin@sicma.cl', [Validators.required, Validators.email]],
-    clave: ['sicma2026', [Validators.required, Validators.minLength(6)]],
+    identificador: ['', [Validators.required]],
+    clave: ['', [Validators.required, Validators.minLength(6)]],
   });
 
   protected enviar(): void {
@@ -54,8 +55,8 @@ export class LoginPage {
     this.cargando.set(true);
     this.error.set(null);
 
-    const { correo, clave } = this.formulario.getRawValue();
-    this.auth.iniciarSesion(correo, clave).subscribe({
+    const { identificador, clave } = this.formulario.getRawValue();
+    this.auth.iniciarSesion(identificador, clave).subscribe({
       next: () => {
         this.cargando.set(false);
         const destino = this.ruta.snapshot.queryParamMap.get('volverA') ?? '/panel';

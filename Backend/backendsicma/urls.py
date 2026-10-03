@@ -16,9 +16,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from mediciones.views import (
+    SensorDetailView,
+    SensorListView,
+    UbicacionListView,
+    UmbralListView,
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('login.urls')),
     path('api/mediciones/', include('mediciones.urls')),
+    path('api/sensores/', SensorListView.as_view(), name='sensor_list'),
+    path('api/sensores/<int:pk>/', SensorDetailView.as_view(), name='sensor_detail'),
+    path('api/ubicaciones/', UbicacionListView.as_view(), name='ubicacion_list'),
+    path('api/umbrales/', UmbralListView.as_view(), name='umbral_list'),
 ]

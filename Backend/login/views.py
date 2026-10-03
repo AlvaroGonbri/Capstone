@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 from .serializers import (
     PasswordResetConfirmSerializer,
@@ -21,6 +22,7 @@ User = get_user_model()
 class PasswordResetRequestView(APIView):
     authentication_classes = []
     permission_classes = []
+    throttle_scope = 'password_reset'
 
     def post(self, request, format=None):
         serializer = PasswordResetRequestSerializer(data=request.data)
@@ -90,9 +92,35 @@ class ExampleView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
+        user = request.user
         content = {
-            'user': str(request.user),  # `django.contrib.auth.User` instance.
-            'auth': str(request.auth),  # None
+            'id': user.id,
+            'username': user.get_username(),
+            'email': user.email,
+            'nombre': user.get_full_name() or user.get_username(),
+            'rol': 'administrador' if user.is_staff else 'tecnico',
         }
         return Response(content)
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        refresh_token = request.data.get('refresh')
+        if not refresh_token:
+            return Response(
+                {'detail': 'Debe enviar el refresh token.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            RefreshToken(refresh_token).blacklist()
+        except TokenError:
+            return Response(
+                {'detail': 'El refresh token no es válido o ya fue invalidado.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 

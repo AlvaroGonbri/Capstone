@@ -16,6 +16,7 @@ export interface Usuario {
 export interface SesionIniciada {
   usuario: Usuario;
   token: string;
+  refreshToken: string;
 }
 
 // ----------------------------------------------------------------- Activos

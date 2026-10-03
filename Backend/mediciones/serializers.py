@@ -1,6 +1,90 @@
 from rest_framework import serializers
 
-from .models import Medicion
+from .models import Medicion, Sensor, Ubicacion, UmbralAmbiental
+
+
+class UbicacionReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ubicacion
+        fields = ('id', 'sala', 'zona', 'rack', 'posicion', 'ubicacion_padre_id')
+
+
+class MedicionReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Medicion
+        fields = (
+            'id',
+            'sensor',
+            'evento_id',
+            'temperatura',
+            'humedad',
+            'fecha_hora_medicion',
+            'fecha_hora_recepcion',
+            'origen',
+        )
+
+
+class SensorReadSerializer(serializers.ModelSerializer):
+    ubicacion = UbicacionReadSerializer(read_only=True)
+    ultima_medicion = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Sensor
+        fields = (
+            'id',
+            'codigo',
+            'tipo',
+            'estado',
+            'intervalo_esperado_segundos',
+            'ubicacion',
+            'ultima_medicion',
+        )
+
+    def get_ultima_medicion(self, sensor):
+        mediciones = getattr(sensor, 'ultima_medicion_lista', [])
+        medicion = mediciones[0] if mediciones else None
+        return MedicionReadSerializer(medicion).data if medicion else None
+
+
+class UmbralReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UmbralAmbiental
+        fields = (
+            'variable',
+            'valor_minimo',
+            'valor_maximo',
+            'version',
+            'vigente_desde',
+        )
+
+
+class MedicionFilterSerializer(serializers.Serializer):
+    sensor = serializers.IntegerField(required=False, min_value=1)
+    desde = serializers.DateTimeField(required=False)
+    hasta = serializers.DateTimeField(required=False)
+    recibido_desde = serializers.DateTimeField(required=False)
+    origen = serializers.ChoiceField(
+        choices=('Real', 'Simulado'),
+        required=False,
+    )
+    ordering = serializers.ChoiceField(
+        choices=('fecha_hora_medicion', '-fecha_hora_medicion'),
+        required=False,
+        default='fecha_hora_medicion',
+    )
+
+    def validate(self, attrs):
+        desde = attrs.get('desde')
+        hasta = attrs.get('hasta')
+        if desde and hasta and desde > hasta:
+            raise serializers.ValidationError({
+                'hasta': 'Debe ser posterior o igual a desde.',
+            })
+        return attrs
+
+
+class UmbralFilterSerializer(serializers.Serializer):
+    ubicacion = serializers.IntegerField(min_value=1)
 
 
 class MedicionIngestSerializer(serializers.ModelSerializer):

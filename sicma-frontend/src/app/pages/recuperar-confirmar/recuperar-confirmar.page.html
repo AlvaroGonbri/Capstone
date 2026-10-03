@@ -1,0 +1,71 @@
+<ion-content class="ion-padding">
+  <div class="recuperacion">
+    <header class="recuperacion__marca">
+      <h1>SICMA</h1>
+      <p>Nueva contraseña</p>
+    </header>
+
+    @if (actualizado()) {
+      <ion-text color="success">
+        <p class="recuperacion__mensaje" role="status">
+          Tu contraseña fue actualizada correctamente.
+        </p>
+      </ion-text>
+      <ion-button expand="block" routerLink="/login">Ir al ingreso</ion-button>
+    } @else {
+      <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+        <ion-list lines="full">
+          <ion-item>
+            <ion-input
+              label="Nueva contraseña"
+              labelPlacement="stacked"
+              type="password"
+              autocomplete="new-password"
+              formControlName="nuevaClave"
+            >
+              <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+            </ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-input
+              label="Repetir contraseña"
+              labelPlacement="stacked"
+              type="password"
+              autocomplete="new-password"
+              formControlName="confirmarClave"
+            >
+              <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+            </ion-input>
+          </ion-item>
+        </ion-list>
+
+        @if (error()) {
+          <ion-text color="danger">
+            <p class="recuperacion__error" role="alert">{{ error() }}</p>
+          </ion-text>
+        }
+
+        <ion-button
+          type="submit"
+          expand="block"
+          class="ion-margin-top"
+          [disabled]="cargando()"
+        >
+          @if (cargando()) {
+            <ion-spinner name="dots" aria-label="Actualizando"></ion-spinner>
+          } @else {
+            Cambiar contraseña
+          }
+        </ion-button>
+      </form>
+
+      <ion-button fill="clear" expand="block" routerLink="/login">
+        Volver al ingreso
+      </ion-button>
+    }
+
+    <ion-note class="recuperacion__nota">
+      La contraseña debe tener al menos 8 caracteres y cumplir las reglas de seguridad.
+    </ion-note>
+  </div>
+</ion-content>

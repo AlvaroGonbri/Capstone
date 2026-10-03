@@ -40,9 +40,12 @@ INSTALLED_APPS = [
     'login',
     'mediciones',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -89,8 +92,23 @@ DATABASES = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ]
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'login': '10/minute',
+        'password_reset': '3/hour',
+    },
 }
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:4200',
+    'http://localhost:8100',
+    'http://localhost',
+    'https://localhost',
+    'capacitor://localhost',
+]
 
 
 # Password validation
@@ -142,4 +160,4 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-PASSWORD_RESET_CONFIRM_URL = 'http://127.0.0.1:8000/api/auth/password-reset/confirm/'
+PASSWORD_RESET_CONFIRM_URL = 'http://localhost:4200/recuperar/confirmar'

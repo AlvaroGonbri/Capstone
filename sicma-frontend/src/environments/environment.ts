@@ -8,7 +8,7 @@
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:8000/api',
-  usarDatosSimulados: true,
+  usarDatosSimulados: false,
   /** Periodo de refresco del panel de monitoreo, en milisegundos. */
   refrescoMonitoreoMs: 30_000,
 };

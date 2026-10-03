@@ -9,6 +9,20 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login.page').then((m) => m.LoginPage),
   },
   {
+    path: 'recuperar',
+    title: 'Recuperar contraseña · SICMA',
+    loadComponent: () =>
+      import('./pages/recuperar/recuperar.page').then((m) => m.RecuperarPage),
+  },
+  {
+    path: 'recuperar/confirmar',
+    title: 'Nueva contraseña · SICMA',
+    loadComponent: () =>
+      import('./pages/recuperar-confirmar/recuperar-confirmar.page').then(
+        (m) => m.RecuperarConfirmarPage,
+      ),
+  },
+  {
     path: 'panel',
     title: 'Panel · SICMA',
     canActivate: [authGuard],

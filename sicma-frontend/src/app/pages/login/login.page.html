@@ -9,13 +9,13 @@
       <ion-list lines="full">
         <ion-item>
           <ion-input
-            id="correo"
-            label="Correo institucional"
+            id="identificador"
+            label="Usuario o correo"
             labelPlacement="stacked"
-            type="email"
+            type="text"
             autocomplete="username"
-            formControlName="correo"
-            placeholder="usuario@sicma.cl"
+            formControlName="identificador"
+            placeholder="usuario o usuario@dominio.cl"
           ></ion-input>
         </ion-item>
         <ion-item>
@@ -52,9 +52,12 @@
       </ion-button>
     </form>
 
+    <ion-button fill="clear" expand="block" routerLink="/recuperar">
+      ¿Olvidaste tu contraseña?
+    </ion-button>
+
     <ion-note class="ingreso__ayuda">
-      Datos de prueba mientras no existe el API: admin&#64;sicma.cl, tecnico&#64;sicma.cl o
-      jefatura&#64;sicma.cl, clave sicma2026.
+      Usa las credenciales de tu cuenta SICMA.
     </ion-note>
   </div>
 </ion-content>

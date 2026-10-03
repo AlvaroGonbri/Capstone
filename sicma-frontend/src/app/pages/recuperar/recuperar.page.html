@@ -1,0 +1,71 @@
+<ion-content class="ion-padding">
+  <div class="recuperacion">
+    <header class="recuperacion__marca">
+      <h1>SICMA</h1>
+      <p>Recuperación de contraseña</p>
+    </header>
+
+    @if (enviado()) {
+      <ion-text color="success">
+        <p class="recuperacion__mensaje" role="status">
+          Si el correo existe, recibirás instrucciones para restablecer tu contraseña.
+        </p>
+      </ion-text>
+      <ion-button expand="block" (click)="volverAlLogin()">Volver al ingreso</ion-button>
+    } @else {
+      <p class="recuperacion__ayuda">
+        Escribe el correo asociado a tu cuenta y revisa tu bandeja de entrada.
+      </p>
+
+      <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+        <ion-list lines="full">
+          <ion-item>
+            <ion-input
+              id="correo-recuperacion"
+              label="Correo institucional"
+              labelPlacement="stacked"
+              type="email"
+              autocomplete="email"
+              formControlName="correo"
+              placeholder="usuario@dominio.cl"
+            ></ion-input>
+          </ion-item>
+        </ion-list>
+
+        @if (validacion()) {
+          <ion-text color="danger">
+            <p class="recuperacion__error" role="alert">{{ validacion() }}</p>
+          </ion-text>
+        }
+
+        @if (error()) {
+          <ion-text color="danger">
+            <p class="recuperacion__error" role="alert">{{ error() }}</p>
+          </ion-text>
+        }
+
+        <ion-button
+          type="button"
+          (click)="enviar()"
+          expand="block"
+          class="ion-margin-top"
+          [disabled]="cargando()"
+        >
+          @if (cargando()) {
+            <ion-spinner name="dots" aria-label="Enviando"></ion-spinner>
+          } @else {
+            Enviar instrucciones
+          }
+        </ion-button>
+      </form>
+
+      <ion-button fill="clear" expand="block" routerLink="/login">
+        Volver al ingreso
+      </ion-button>
+    }
+
+    <ion-note class="recuperacion__nota">
+      Si la dirección no existe o no puede recibir mensajes, no llegará ningún correo.
+    </ion-note>
+  </div>
+</ion-content>
