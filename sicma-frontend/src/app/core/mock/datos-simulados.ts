@@ -28,6 +28,7 @@ function haceDias(dias: number): string {
   return d.toISOString();
 }
 
+/** Umbrales operativos para entrada de aire en racks de un datacenter. */
 export const UMBRALES: Umbrales = {
   temperaturaAdvertencia: 24,
   temperaturaCritica: 27,

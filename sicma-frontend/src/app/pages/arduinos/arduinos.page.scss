@@ -1,0 +1,75 @@
+.intro {
+  padding: 18px 16px 8px;
+
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+  }
+
+  p {
+    margin-top: 4px;
+    color: var(--ion-color-medium);
+  }
+}
+
+.mensaje {
+  display: block;
+  padding: 8px 16px;
+  color: var(--ion-color-primary);
+}
+
+.rejilla-arduinos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 8px 16px 24px;
+}
+
+.encabezado-tarjeta {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+
+  ion-note {
+    display: block;
+    margin-top: 4px;
+  }
+}
+
+.lectura,
+.ubicacion {
+  margin: 0;
+}
+
+.lectura {
+  font-size: 1rem;
+}
+
+.lectura strong {
+  font-size: 1.35rem;
+}
+
+.ubicacion {
+  margin-top: 4px;
+  color: var(--ion-color-medium);
+  font-size: 0.78rem;
+}
+
+h3 {
+  margin: 20px 0 4px;
+  font-size: 0.95rem;
+}
+
+ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+ion-button {
+  margin: 18px 0 0;
+}

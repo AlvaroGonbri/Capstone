@@ -48,6 +48,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/monitoreo/monitoreo.page').then((m) => m.MonitoreoPage),
   },
   {
+    path: 'arduinos',
+    title: 'Arduinos · SICMA',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/arduinos/arduinos.page').then((m) => m.ArduinosPage),
+  },
+  {
     path: 'accesos',
     title: 'Accesos · SICMA',
     canActivate: [authGuard],

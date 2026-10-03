@@ -70,6 +70,28 @@ export class MonitoreoPage {
     });
   }
 
+  protected motivoAlerta(sensor: EstadoSensor): string {
+    const umbrales = this.umbrales();
+    const motivos: string[] = [];
+
+    if (umbrales && sensor.temperatura >= umbrales.temperaturaCritica) {
+      motivos.push('temperatura crítica');
+    } else if (umbrales && sensor.temperatura >= umbrales.temperaturaAdvertencia) {
+      motivos.push('temperatura en advertencia');
+    }
+
+    if (umbrales && (sensor.humedad < umbrales.humedadMinima || sensor.humedad > umbrales.humedadMaxima)) {
+      motivos.push('humedad crítica');
+    }
+
+    return motivos.join(' y ');
+  }
+
+  protected temperaturaCritica(sensor: EstadoSensor): boolean {
+    const umbrales = this.umbrales();
+    return umbrales !== null && sensor.temperatura >= umbrales.temperaturaCritica;
+  }
+
   /** Convierte el historial de temperatura en los puntos de una linea de 120x36. */
   protected puntos(historial: number[]): string {
     if (historial.length < 2) {

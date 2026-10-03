@@ -24,6 +24,7 @@ import {
   keyOutline,
   logOutOutline,
   thermometerOutline,
+  hardwareChipOutline,
 } from 'ionicons/icons';
 import { AuthService } from './core/services/auth.service';
 
@@ -64,6 +65,7 @@ export class App {
     { titulo: 'Panel', ruta: '/panel', icono: 'grid-outline' },
     { titulo: 'Activos', ruta: '/activos', icono: 'cube-outline' },
     { titulo: 'Monitoreo', ruta: '/monitoreo', icono: 'thermometer-outline' },
+    { titulo: 'Arduinos', ruta: '/arduinos', icono: 'hardware-chip-outline' },
     { titulo: 'Accesos', ruta: '/accesos', icono: 'key-outline' },
     { titulo: 'Intervenciones', ruta: '/intervenciones', icono: 'build-outline' },
   ];
@@ -73,6 +75,7 @@ export class App {
       gridOutline,
       cubeOutline,
       thermometerOutline,
+      hardwareChipOutline,
       keyOutline,
       buildOutline,
       logOutOutline,

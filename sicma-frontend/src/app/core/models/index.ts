@@ -81,6 +81,22 @@ export interface Umbrales {
   humedadMaxima: number;
 }
 
+// --------------------------------------------------------------- Arduinos
+
+export interface Arduino {
+  id: string;
+  nombre: string;
+  ubicacion: string;
+  sitio: Sitio;
+  rack: string;
+  estado: 'conectado' | 'desconectado';
+  ultimaLectura: string;
+  temperatura: number;
+  temperaturaMinima: number;
+  temperaturaAdvertencia: number;
+  temperaturaCritica: number;
+}
+
 // ----------------------------------------------------------------- Accesos
 
 export type MetodoAcceso = 'biometrico' | 'tarjeta' | 'manual';

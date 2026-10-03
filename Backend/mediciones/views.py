@@ -67,9 +67,9 @@ class MedicionIngestView(APIView):
 
         sensor_codigo = serializer.validated_data.pop('sensor_codigo')
         device_key = request.headers.get('X-Device-Key', '')
-        sensor = get_object_or_404(Sensor, codigo=sensor_codigo)
+        sensor = Sensor.objects.filter(codigo=sensor_codigo).first()
 
-        if sensor.estado != 'Activo' or not device_key:
+        if sensor is None or sensor.estado != 'Activo' or not device_key:
             return Response(
                 {'detail': 'Credenciales del dispositivo no válidas.'},
                 status=status.HTTP_401_UNAUTHORIZED,

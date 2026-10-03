@@ -52,6 +52,28 @@
   opacity: 0.6;
 }
 
+.lectura-critica {
+  color: var(--sicma-critico);
+  font-weight: 700;
+}
+
+.detalle-alerta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 9px 10px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--sicma-critico) 12%, transparent);
+  color: var(--sicma-critico);
+  font-size: 0.88rem;
+
+  strong {
+    font-size: 0.8rem;
+  }
+}
+
 .linea {
   display: block;
   width: 100%;

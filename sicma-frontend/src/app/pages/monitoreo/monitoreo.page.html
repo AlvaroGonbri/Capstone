@@ -43,14 +43,25 @@
             <ion-card-content>
               <div class="lecturas">
                 <div>
-                  <p class="etiqueta-menor">Temperatura</p>
+                  <p class="etiqueta-menor" [class.lectura-critica]="temperaturaCritica(sensor)">
+                    Temperatura
+                  </p>
                   <p class="dato-grande">{{ sensor.temperatura }}<span class="unidad">°C</span></p>
                 </div>
                 <div>
-                  <p class="etiqueta-menor">Humedad</p>
+                  <p class="etiqueta-menor" [class.lectura-critica]="sensor.humedad < 35 || sensor.humedad > 60">
+                    Humedad
+                  </p>
                   <p class="dato-grande">{{ sensor.humedad }}<span class="unidad">%</span></p>
                 </div>
               </div>
+
+              @if (sensor.nivel !== 'normal') {
+                <div class="detalle-alerta" role="alert">
+                  <strong>{{ sensor.nivel === 'critico' ? 'ESTADO CRÍTICO' : 'ADVERTENCIA' }}</strong>
+                  <span>{{ motivoAlerta(sensor) }}</span>
+                </div>
+              }
 
               <svg
                 class="linea"

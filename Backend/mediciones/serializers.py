@@ -115,4 +115,9 @@ class MedicionIngestSerializer(serializers.ModelSerializer):
                 {'humedad': 'Debe estar entre 0 y 100.'}
             )
 
+        if temperatura is not None and not -40 <= temperatura <= 80:
+            raise serializers.ValidationError(
+                {'temperatura': 'Debe estar entre -40 y 80 grados Celsius.'}
+            )
+
         return attrs

@@ -1,0 +1,1 @@
+import{f as a}from"./chunk-Y742QVME.js";import{a as o,c as i,i as n}from"./chunk-RJPEFWAB.js";var c=class r{listar(){return o(a)}listarPorActivo(e){return this.listar().pipe(i(t=>t.filter(f=>f.activoId===e)))}static \u0275fac=function(t){return new(t||r)};static \u0275prov=n({token:r,factory:r.\u0275fac,providedIn:"root"})};export{c as a};
