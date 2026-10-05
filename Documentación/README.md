@@ -1,7 +1,5 @@
 # Documentación vigente de SICMA
 
-Revisión de alineación del 5 de octubre de 2026. Se conserva el formato y la ruta de los documentos para mantener sus enlaces. El historial de Git conserva las revisiones anteriores.
-
 ## Capacidad y estimaciones
 
 **15 horas semanales por integrante**, tres integrantes y 18 semanas: **810 horas-persona**. El Kanban contiene **36 tarjetas y 720 horas estimadas**, más **90 horas de reserva** dentro del semestre. No son horas ejecutadas ni prueba de cumplimiento del plazo.
@@ -12,8 +10,6 @@ Revisión de alineación del 5 de octubre de 2026. Se conserva el formato y la r
 | Fidel | 252 h | 18 h | 270 h |
 | Claudio | 228 h | 42 h | 270 h |
 | Total | 720 h | 90 h | 810 h |
-
-Las 20 h de #31 ya están incluidas. La tarjeta está completada, pero su estimación no sustituye las horas reales. Los grupos A1–A8 no se suman nuevamente a las tarjetas. A3 tiene 0 h **adicionales** porque el prototipado está incluido en #7 y en interfaces.
 
 ## Archivos actuales
 
@@ -29,28 +25,6 @@ Las 20 h de #31 ya están incluidas. La tarjeta está completada, pero su estima
 - [SICMA_Diagramas_de_Actividad_v1.1.docx](../Documentación/SICMA_Diagramas_de_Actividad_v1.1.docx)
 - [SICMA_Mockups_v1.2.docx](../Documentación/SICMA_Mockups_v1.2.docx)
 - [Presentación HTML](../Fase1/Evidencias%20Grupales/Presentación%20Proyecto.html), con 18 semanas y capacidad actualizada.
-
-## Alcance
-
-Web Angular operativa según rol; móvil Ionic de solo consulta; inventario e historial; ESP32-S3/DHT22 para temperatura y humedad; Zabbix para infraestructura; registro de accesos decididos por HID; solicitudes en Forms, calendario compartido y avisos con Power Automate; indicadores en Power BI.
-
-Quedan fuera reservas propias y resolución de solapamientos, permisos físicos administrados en SICMA, salud general de dependencias, adjuntos, exportaciones generales y un dashboard analítico web que duplique Power BI. Se mantienen las exclusiones de QR, auditoría general, respaldo lógico, biometría cruda y actuación física.
-
-La fuente funcional es el archivo de instrucciones de SICMA aportado por el equipo. Los 31 RF de esta revisión sustituyen el catálogo ampliado anterior; CU-01 a CU-21 son la numeración vigente. Las figuras y modelos son diseños, no evidencia de implementación.
-
-## Referencias históricas
-
-`SICMA_RHU.docx` y `SICMA_Casos_de_Uso_v2.docx` son antecedentes; usar RHU_v1.3 y Casos_de_Uso_v2.1 con la revisión de octubre. `sicma_schema.sql` y las guías de API describen un estado técnico anterior y deben contrastarse con las migraciones de #9 y los contratos actuales. No se ha modificado el código para aparentar que el nuevo diseño está implementado.
-
-El archivo `Presentación_Proyecto.pptx` contiene solo un salto de línea y **no es un PowerPoint utilizable**. La presentación disponible es HTML; la versión final sigue pendiente en #79. Las evidencias individuales, actas y registros de conflictos conservan su naturaleza histórica y no se rellenan con hechos supuestos.
-
-## Pendientes de validación
-
-- Vincular S1–S18 a fechas académicas oficiales y distribuir horas por semana y persona (máximo 15 h). Registrar horas reales y ausencias.
-- Confirmar el mapeo de key users al rol Jefatura.
-- Verificar contrato HID, hardware, cuentas, licencias y conectores Microsoft/Power BI.
-- Acordar parámetros no cuantificados por la fuente: bloqueo, política y antigüedad de contraseña, intervalo de lectura y retención posterior.
-- Ejecutar migraciones, pruebas e integración; la documentación no acredita esos resultados.
 
 ## Tarjetas y esfuerzo
 
