@@ -51,9 +51,9 @@ export function nivelPorLectura(temperatura: number, humedad: number): NivelAmbi
 }
 
 export const USUARIOS_DEMO: Array<Usuario & { clave: string }> = [
-  { id: 1, nombre: 'Fidel Rodriguez', correo: 'admin@sicma.cl', rol: 'administrador', clave: 'sicma2026' },
-  { id: 2, nombre: 'Alvaro Gonzalez', correo: 'tecnico@sicma.cl', rol: 'tecnico', clave: 'sicma2026' },
-  { id: 3, nombre: 'Claudio Varas', correo: 'jefatura@sicma.cl', rol: 'jefatura', clave: 'sicma2026' },
+  { id: 1, nombre: 'Fidel Rodriguez', correo: 'admin@sicma.cl', rol: 'administrador', inactivityTimeoutMinutes: 15, clave: 'sicma2026' },
+  { id: 2, nombre: 'Alvaro Gonzalez', correo: 'tecnico@sicma.cl', rol: 'tecnico', inactivityTimeoutMinutes: 15, clave: 'sicma2026' },
+  { id: 3, nombre: 'Claudio Varas', correo: 'jefatura@sicma.cl', rol: 'jefatura', inactivityTimeoutMinutes: 15, clave: 'sicma2026' },
 ];
 
 export const ACTIVOS: Activo[] = [

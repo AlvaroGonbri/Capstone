@@ -4,13 +4,28 @@ export type Sitio = 'A' | 'B';
 
 // ---------------------------------------------------------------- Usuarios
 
-export type RolUsuario = 'administrador' | 'tecnico' | 'jefatura';
+export type RolUsuario = 'administrador' | 'tecnico' | 'jefatura' | 'auditor';
 
 export interface Usuario {
   id: number;
   nombre: string;
   correo: string;
   rol: RolUsuario;
+  inactivityTimeoutMinutes: number;
+}
+
+export type RolGestion = 'Administrador' | 'AdministradorPrivilegiado' | 'Jefatura' | 'Tecnico' | 'Auditor';
+
+export interface UsuarioGestion {
+  id: number;
+  username: string;
+  nombre: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_active: boolean;
+  rol: string | null;
+  inactivity_timeout_minutes: number;
 }
 
 export interface SesionIniciada {

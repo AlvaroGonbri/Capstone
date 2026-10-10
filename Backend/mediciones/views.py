@@ -20,6 +20,9 @@ from .serializers import (
     UmbralFilterSerializer,
     UmbralReadSerializer,
 )
+from login.permissions import RolePermission
+
+READ_ROLES = ('administrador', 'jefatura', 'tecnico', 'auditor')
 
 
 class MedicionIngestView(APIView):
@@ -118,7 +121,8 @@ class SensorQuerysetMixin:
 
 
 class SensorListView(SensorQuerysetMixin, APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RolePermission]
+    allowed_roles = READ_ROLES
 
     def get(self, request, format=None):
         sensors = self.sensor_queryset()
@@ -126,7 +130,8 @@ class SensorListView(SensorQuerysetMixin, APIView):
 
 
 class SensorDetailView(SensorQuerysetMixin, APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RolePermission]
+    allowed_roles = READ_ROLES
 
     def get(self, request, pk, format=None):
         sensor = get_object_or_404(self.sensor_queryset(), pk=pk)
@@ -134,7 +139,8 @@ class SensorDetailView(SensorQuerysetMixin, APIView):
 
 
 class UbicacionListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RolePermission]
+    allowed_roles = READ_ROLES
 
     def get(self, request, format=None):
         locations = Ubicacion.objects.order_by('sala', 'zona', 'rack', 'posicion')
@@ -142,7 +148,8 @@ class UbicacionListView(APIView):
 
 
 class UmbralListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RolePermission]
+    allowed_roles = READ_ROLES
 
     def get(self, request, format=None):
         filters = UmbralFilterSerializer(data=request.query_params)

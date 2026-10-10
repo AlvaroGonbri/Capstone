@@ -4,19 +4,32 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from rest_framework_simplejwt.views import TokenRefreshView
 
+from .models import UserSessionSettings
+from .permissions import AdministratorPermission
 from .serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    ManagedUserSerializer,
+    InactivityAwareTokenRefreshSerializer,
+    SessionTimeoutSerializer,
+    get_inactivity_timeout_minutes,
+    get_user_role,
 )
 
 
 User = get_user_model()
+
+
+class InactivityAwareTokenRefreshView(TokenRefreshView):
+    serializer_class = InactivityAwareTokenRefreshSerializer
 
 
 class PasswordResetRequestView(APIView):
@@ -98,9 +111,77 @@ class ExampleView(APIView):
             'username': user.get_username(),
             'email': user.email,
             'nombre': user.get_full_name() or user.get_username(),
-            'rol': 'administrador' if user.is_staff else 'tecnico',
+            'rol': get_user_role(user),
+            'inactivity_timeout_minutes': get_inactivity_timeout_minutes(user),
         }
         return Response(content)
+
+
+class ActivityView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        settings, _ = UserSessionSettings.objects.get_or_create(user=request.user)
+        settings.last_activity_at = timezone.now()
+        settings.save(update_fields=['last_activity_at'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SessionTimeoutView(APIView):
+    permission_classes = [AdministratorPermission]
+
+    def patch(self, request, user_id, format=None):
+        user = User.objects.filter(pk=user_id).first()
+        if user is None:
+            return Response(
+                {'detail': 'El usuario no existe.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        settings, _ = UserSessionSettings.objects.get_or_create(user=user)
+        serializer = SessionTimeoutSerializer(
+            settings,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class ManagedUserListView(APIView):
+    permission_classes = [AdministratorPermission]
+
+    def _is_admin(self, request):
+        return request.user.groups.filter(
+            name__in=('Administrador', 'AdministradorPrivilegiado'),
+        ).exists()
+
+    def get(self, request, format=None):
+        users = User.objects.select_related('session_settings').prefetch_related('groups').order_by('id')
+        return Response(ManagedUserSerializer(users, many=True).data)
+
+    def post(self, request, format=None):
+        serializer = ManagedUserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(ManagedUserSerializer(serializer.save()).data, status=status.HTTP_201_CREATED)
+
+
+class ManagedUserDetailView(APIView):
+    permission_classes = [AdministratorPermission]
+
+    def _is_admin(self, request):
+        return request.user.groups.filter(
+            name__in=('Administrador', 'AdministradorPrivilegiado'),
+        ).exists()
+
+    def patch(self, request, user_id, format=None):
+        user = User.objects.filter(pk=user_id).first()
+        if user is None:
+            return Response({'detail': 'El usuario no existe.'}, status=404)
+        serializer = ManagedUserSerializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(ManagedUserSerializer(serializer.save()).data)
 
 
 class LogoutView(APIView):
@@ -123,4 +204,3 @@ class LogoutView(APIView):
             )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-

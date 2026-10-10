@@ -14,6 +14,19 @@
         </div>
 
         <ion-list lines="none">
+          @if (auth.usuario()?.rol === 'administrador') {
+            <ion-menu-toggle autoHide="false">
+              <ion-item
+                routerLink="/usuarios"
+                routerLinkActive="item-activo"
+                detail="false"
+                button
+              >
+                <ion-icon slot="start" name="people-outline" aria-hidden="true"></ion-icon>
+                <ion-label>Usuarios</ion-label>
+              </ion-item>
+            </ion-menu-toggle>
+          }
           @for (item of menu; track item.ruta) {
             <ion-menu-toggle autoHide="false">
               <ion-item

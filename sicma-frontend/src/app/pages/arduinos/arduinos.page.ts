@@ -15,6 +15,7 @@ import {
   IonSpinner,
 } from '@ionic/angular';
 import { Arduino } from '../../core/models';
+import { AuthService } from '../../core/services/auth.service';
 import { ArduinosService } from '../../core/services/arduinos.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
 
@@ -41,11 +42,13 @@ import { EncabezadoComponent } from '../../shared/encabezado.component';
 })
 export class ArduinosPage {
   private readonly servicio = inject(ArduinosService);
+  private readonly auth = inject(AuthService);
 
   protected readonly cargando = signal(true);
   protected readonly arduinos = signal<Arduino[]>([]);
   protected readonly guardando = signal<string | null>(null);
   protected readonly mensaje = signal<string | null>(null);
+  protected readonly soloConsulta = this.auth.usuario()?.rol === 'auditor';
 
   constructor() {
     this.servicio.listar().subscribe((lista) => {

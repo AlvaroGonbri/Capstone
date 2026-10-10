@@ -1,0 +1,1 @@
+import{u as i}from"./chunk-XC6QBRLS.js";var t=class e{transform(r){switch(r){case"critico":return"danger";case"advertencia":return"warning";default:return"success"}}static \u0275fac=function(n){return new(n||e)};static \u0275pipe=i({name:"colorNivel",type:e,pure:!0})};export{t as a};

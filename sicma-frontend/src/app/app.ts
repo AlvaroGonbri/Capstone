@@ -23,6 +23,7 @@ import {
   gridOutline,
   keyOutline,
   logOutOutline,
+  peopleOutline,
   thermometerOutline,
   hardwareChipOutline,
 } from 'ionicons/icons';
@@ -71,6 +72,7 @@ export class App {
   ];
 
   constructor() {
+    this.auth.iniciarControlInactividad();
     addIcons({
       gridOutline,
       cubeOutline,
@@ -79,6 +81,7 @@ export class App {
       keyOutline,
       buildOutline,
       logOutOutline,
+      peopleOutline,
     });
   }
 

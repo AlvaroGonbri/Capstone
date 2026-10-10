@@ -1,0 +1,50 @@
+<app-encabezado titulo="Usuarios"></app-encabezado>
+
+<ion-content>
+  <div class="contenido-limitado">
+    <ion-button (click)="nuevo()">Nuevo usuario</ion-button>
+
+    @if (error()) {
+      <ion-text color="danger"><p>{{ error() }}</p></ion-text>
+    }
+
+    <ion-list>
+      @for (usuario of usuarios(); track usuario.id) {
+        <ion-item button (click)="editar(usuario)">
+          <ion-label>
+            <h2>{{ usuario.first_name }} {{ usuario.last_name }}</h2>
+            <p>{{ usuario.username }} · {{ usuario.email || 'Sin correo' }}</p>
+            <p>{{ usuario.inactivity_timeout_minutes }} minutos de inactividad</p>
+          </ion-label>
+          <ion-badge slot="end" [color]="usuario.is_active ? 'success' : 'medium'">
+            {{ usuario.rol || 'Sin rol' }}
+          </ion-badge>
+        </ion-item>
+      }
+    </ion-list>
+
+    <form [formGroup]="formulario" (ngSubmit)="guardar()">
+      <h2>{{ editando() ? 'Editar usuario' : 'Crear usuario' }}</h2>
+      <ion-item><ion-input label="Usuario" labelPlacement="stacked" formControlName="username"></ion-input></ion-item>
+      <ion-item><ion-input label="Correo" type="email" labelPlacement="stacked" formControlName="email"></ion-input></ion-item>
+      <ion-item><ion-input label="Nombre" labelPlacement="stacked" formControlName="first_name"></ion-input></ion-item>
+      <ion-item><ion-input label="Apellido" labelPlacement="stacked" formControlName="last_name"></ion-input></ion-item>
+      <ion-item><ion-input label="Contraseña (obligatoria al crear)" type="password" labelPlacement="stacked" formControlName="password"></ion-input></ion-item>
+      <ion-item>
+        <ion-select label="Rol" labelPlacement="stacked" formControlName="role">
+          @for (rol of roles; track rol) { <ion-select-option [value]="rol">{{ rol }}</ion-select-option> }
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-input label="Inactividad (minutos)" type="number" labelPlacement="stacked" formControlName="inactivity_timeout_minutes"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label>Cuenta activa</ion-label>
+        <ion-select formControlName="is_active"><ion-select-option [value]="true">Sí</ion-select-option><ion-select-option [value]="false">No</ion-select-option></ion-select>
+      </ion-item>
+      <ion-button type="submit" [disabled]="guardando()">
+        @if (guardando()) { <ion-spinner name="crescent"></ion-spinner> } @else { Guardar }
+      </ion-button>
+    </form>
+  </div>
+</ion-content>

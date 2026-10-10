@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'panel' },
@@ -21,6 +22,12 @@ export const routes: Routes = [
       import('./pages/recuperar-confirmar/recuperar-confirmar.page').then(
         (m) => m.RecuperarConfirmarPage,
       ),
+  },
+  {
+    path: 'usuarios',
+    title: 'Usuarios · SICMA',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () => import('./pages/usuarios/usuarios.page').then((m) => m.UsuariosPage),
   },
   {
     path: 'panel',

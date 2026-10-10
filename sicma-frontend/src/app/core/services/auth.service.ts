@@ -1,26 +1,49 @@
+import { DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { Observable, catchError, delay, map, of, switchMap, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SesionIniciada, Usuario } from '../models';
 import { USUARIOS_DEMO } from '../mock/datos-simulados';
 
 const CLAVE_ALMACENAMIENTO = 'sicma.sesion';
+const CLAVE_ULTIMA_ACTIVIDAD = 'sicma.ultimaActividad';
+const TIEMPO_INACTIVIDAD_POR_DEFECTO_MINUTOS = 15;
+const EVENTOS_ACTIVIDAD = ['keydown', 'mousedown', 'pointerdown', 'scroll', 'touchstart'];
 
 interface RespuestaToken {
   access: string;
   refresh: string;
 }
 
+interface RespuestaUsuario extends Omit<Usuario, 'inactivityTimeoutMinutes'> {
+  inactivity_timeout_minutes: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
 
   private readonly sesion = signal<SesionIniciada | null>(leerSesionGuardada());
+  private temporizadorInactividad: ReturnType<typeof setTimeout> | null = null;
+  private ultimaActividadPersistida = 0;
 
   readonly usuario = computed<Usuario | null>(() => this.sesion()?.usuario ?? null);
   readonly token = computed<string | null>(() => this.sesion()?.token ?? null);
   readonly autenticado = computed(() => this.sesion() !== null);
+
+  iniciarControlInactividad(): void {
+    for (const evento of EVENTOS_ACTIVIDAD) {
+      this.document.addEventListener(evento, this.registrarActividad, { passive: true });
+    }
+
+    if (this.sesion()) {
+      this.programarCierre();
+    }
+  }
 
   iniciarSesion(identificador: string, clave: string): Observable<SesionIniciada> {
     if (environment.usarDatosSimulados) {
@@ -53,12 +76,12 @@ export class AuthService {
       .pipe(
         switchMap((tokens) =>
           this.http
-            .get<Usuario>(`${environment.apiUrl}/auth/me/`, {
+            .get<RespuestaUsuario>(`${environment.apiUrl}/auth/me/`, {
               headers: { Authorization: `Bearer ${tokens.access}` },
             })
             .pipe(
-              map((usuario) => ({
-                usuario,
+              map(({ inactivity_timeout_minutes, ...usuario }) => ({
+                usuario: { ...usuario, inactivityTimeoutMinutes: inactivity_timeout_minutes },
                 token: tokens.access,
                 refreshToken: tokens.refresh,
               })),
@@ -82,8 +105,10 @@ export class AuthService {
     }
 
     this.sesion.set(null);
+    this.detenerTemporizador();
     try {
       sessionStorage.removeItem(CLAVE_ALMACENAMIENTO);
+      sessionStorage.removeItem(CLAVE_ULTIMA_ACTIVIDAD);
       localStorage.removeItem(CLAVE_ALMACENAMIENTO);
     } catch {
       /* almacenamiento no disponible */
@@ -114,11 +139,74 @@ export class AuthService {
 
   private guardar(sesion: SesionIniciada): void {
     this.sesion.set(sesion);
+    this.registrarActividad();
     try {
       sessionStorage.setItem(CLAVE_ALMACENAMIENTO, JSON.stringify(sesion));
       localStorage.removeItem(CLAVE_ALMACENAMIENTO);
     } catch {
       /* almacenamiento no disponible */
+    }
+  }
+
+  private readonly registrarActividad = (): void => {
+    if (!this.sesion()) {
+      return;
+    }
+
+    const ahora = Date.now();
+    if (ahora - this.ultimaActividadPersistida >= 30_000) {
+      this.ultimaActividadPersistida = ahora;
+      this.enviarActividadAlBackend();
+      try {
+        sessionStorage.setItem(CLAVE_ULTIMA_ACTIVIDAD, String(ahora));
+      } catch {
+        /* almacenamiento no disponible */
+      }
+    }
+    this.programarCierre();
+  };
+
+  private enviarActividadAlBackend(): void {
+    if (!this.sesion()) {
+      return;
+    }
+    this.http.post(`${environment.apiUrl}/auth/activity/`, {}).subscribe({
+      error: () => undefined,
+    });
+  }
+
+  private programarCierre(): void {
+    this.detenerTemporizador();
+    let ultimaActividad = Date.now();
+    try {
+      const guardada = Number(sessionStorage.getItem(CLAVE_ULTIMA_ACTIVIDAD));
+      if (Number.isFinite(guardada) && guardada > 0) {
+        ultimaActividad = guardada;
+      }
+    } catch {
+      /* almacenamiento no disponible */
+    }
+
+    const timeoutMinutes =
+      this.sesion()?.usuario.inactivityTimeoutMinutes ??
+      TIEMPO_INACTIVIDAD_POR_DEFECTO_MINUTOS;
+    const timeoutMs = timeoutMinutes * 60 * 1000;
+    const restante = Math.max(timeoutMs - (Date.now() - ultimaActividad), 0);
+    this.temporizadorInactividad = setTimeout(() => {
+      if (!this.sesion()) {
+        return;
+      }
+      this.cerrarSesion();
+      void this.router.navigate(['/login'], {
+        queryParams: { sesionExpirada: 'inactividad' },
+      });
+    }, restante);
+  }
+
+  private detenerTemporizador(): void {
+    if (this.temporizadorInactividad !== null) {
+      clearTimeout(this.temporizadorInactividad);
+      this.temporizadorInactividad = null;
     }
   }
 }

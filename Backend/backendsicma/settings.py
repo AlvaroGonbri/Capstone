@@ -134,6 +134,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Los enlaces de recuperación son válidos durante 30 minutos y se invalidan
+# después de cambiar la contraseña mediante el token generator de Django.
+PASSWORD_RESET_TIMEOUT = 60 * 30
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
