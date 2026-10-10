@@ -1,0 +1,902 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>SICMA API para Frontend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root{
+  --ground:#F2F4F3; --surface:#FFFFFF; --sunk:#E7ECEA; --ink:#15201C; --muted:#56635E; --rule:#D3DBD8;
+  --accent:#0E7A5A; --accent-soft:#D6EDE4;
+  --get:#1F5FA8; --get-soft:#DCE8F6; --post:#0E7A5A; --post-soft:#D6EDE4;
+  --crit:#B3261E; --crit-soft:#F7DEDB; --warn:#8A5A00; --warn-soft:#F6EACB; --info-soft:#E3E9F2;
+  --prop:#6B4FA8; --prop-soft:#ECE6F7;
+  --code-bg:#17211E; --code-ink:#DCE6E2; --code-dim:#7F9790; --code-key:#7FD3B4; --code-str:#E8C67A;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --cond:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#0F1513; --surface:#161E1B; --sunk:#1D2723; --ink:#E3EBE7; --muted:#97A8A1; --rule:#2B3833;
+    --accent:#4CC69A; --accent-soft:#16372B;
+    --get:#86B4EC; --get-soft:#1B2C42; --post:#4CC69A; --post-soft:#16372B;
+    --crit:#F2978F; --crit-soft:#3E1D1A; --warn:#E6C06A; --warn-soft:#3A2F14; --info-soft:#1D2635;
+    --prop:#BBA6EC; --prop-soft:#2A2340;
+    --code-bg:#0A0F0D; --code-ink:#D5E2DC; --code-dim:#6E857D;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#0F1513; --surface:#161E1B; --sunk:#1D2723; --ink:#E3EBE7; --muted:#97A8A1; --rule:#2B3833;
+  --accent:#4CC69A; --accent-soft:#16372B;
+  --get:#86B4EC; --get-soft:#1B2C42; --post:#4CC69A; --post-soft:#16372B;
+  --crit:#F2978F; --crit-soft:#3E1D1A; --warn:#E6C06A; --warn-soft:#3A2F14; --info-soft:#1D2635;
+  --prop:#BBA6EC; --prop-soft:#2A2340;
+  --code-bg:#0A0F0D; --code-ink:#D5E2DC; --code-dim:#6E857D;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font:16px/1.6 var(--sans);padding-inline:20px}
+.shell{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:230px minmax(0,1fr);gap:48px;padding-block:40px 80px}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;font-size:14px;max-height:calc(100vh - 48px);overflow-y:auto;padding-bottom:12px}
+nav.toc .brand{font:700 20px/1 var(--cond);letter-spacing:.02em;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.led{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+nav.toc p{font:600 11px/1 var(--cond);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:18px 0 6px}
+nav.toc a{display:block;color:var(--ink);text-decoration:none;padding:3px 0 3px 10px;border-left:2px solid var(--rule)}
+nav.toc a:hover{border-left-color:var(--accent);color:var(--accent)}
+nav.toc a code{font-size:12px}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{min-width:0}
+header.doc{border-bottom:1px solid var(--rule);padding-bottom:28px;margin-bottom:8px}
+.eyebrow{font:600 12px/1 var(--cond);text-transform:uppercase;letter-spacing:.12em;color:var(--accent)}
+h1{font:700 clamp(32px,5vw,46px)/1.05 var(--cond);margin:10px 0 14px;text-wrap:balance;letter-spacing:-.01em}
+.lede{font-size:18px;color:var(--muted);max-width:64ch;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:20px;font-size:13px;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:500;font-family:var(--mono);font-size:12.5px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-size:13px;color:var(--muted);align-items:center}
+section{padding-top:44px}
+.part{font:600 12px/1 var(--cond);text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:64px 0 0;padding-top:14px;border-top:2px solid var(--ink)}
+.part + section{padding-top:22px}
+h2{font:600 26px/1.2 var(--cond);margin:0 0 14px;text-wrap:balance;scroll-margin-top:24px}
+h3{font:600 18px/1.3 var(--cond);margin:28px 0 8px;letter-spacing:.01em;scroll-margin-top:24px}
+p,li{max-width:70ch}
+p{margin:0 0 14px}
+ul,ol{padding-left:20px;margin:0 0 14px}
+li{margin-bottom:6px}
+code{font-family:var(--mono);font-size:.88em;background:var(--sunk);padding:1px 5px;border-radius:3px}
+pre{background:var(--code-bg);color:var(--code-ink);font:13px/1.6 var(--mono);padding:16px 18px;border-radius:6px;overflow-x:auto;margin:0 0 16px}
+pre code{background:none;padding:0;font-size:inherit;color:inherit}
+.k{color:var(--code-key)} .s{color:var(--code-str)} .c{color:var(--code-dim)}
+.tbl{overflow-x:auto;margin:0 0 18px;border:1px solid var(--rule);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font:600 12px/1.2 var(--cond);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--sunk)}
+td code{white-space:nowrap}
+.num{font-variant-numeric:tabular-nums}
+.m{display:inline-block;font:600 11px/1 var(--mono);padding:4px 6px;border-radius:3px;letter-spacing:.04em;min-width:42px;text-align:center}
+.m.get{color:var(--get);background:var(--get-soft)} .m.post{color:var(--post);background:var(--post-soft)}
+.chip{display:inline-block;font:600 11px/1 var(--cond);text-transform:uppercase;letter-spacing:.08em;padding:4px 7px;border-radius:3px;white-space:nowrap}
+.chip.pub{background:var(--sunk);color:var(--muted)} .chip.jwt{background:var(--accent-soft);color:var(--accent)} .chip.dev{background:var(--warn-soft);color:var(--warn)}
+.chip.crit{background:var(--crit-soft);color:var(--crit)} .chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.info{background:var(--info-soft);color:var(--get)}
+.chip.prop{background:var(--prop-soft);color:var(--prop)} .chip.ok{background:var(--accent-soft);color:var(--accent)}
+.ep{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:22px 24px 8px;margin:22px 0}
+.ep.proposed{border-style:dashed;border-color:var(--prop)}
+.ep-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px}
+.ep-head .path{font:500 17px/1.2 var(--mono);word-break:break-all}
+.ep-head .chips{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.ep h4{font:600 12px/1 var(--cond);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:18px 0 8px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:16px}
+.two pre{margin:0}
+.note{border-left:3px solid var(--warn);background:var(--warn-soft);padding:12px 16px;border-radius:0 4px 4px 0;margin:0 0 16px;font-size:15px}
+.note.crit{border-left-color:var(--crit);background:var(--crit-soft)}
+.note.prop{border-left-color:var(--prop);background:var(--prop-soft)}
+.note.ok{border-left-color:var(--accent);background:var(--accent-soft)}
+.note p{max-width:none}
+.note p:last-child{margin:0}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin:0 0 18px}
+.flow div{background:var(--surface);padding:14px 16px;font-size:14px}
+.flow b{display:block;font:600 11px/1 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.flow div.edge b{color:var(--muted)}
+.issues{list-style:none;padding:0;display:grid;gap:10px}
+.issues li{max-width:none;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px 16px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:4px 14px;margin:0}
+.issues .chip{align-self:start;justify-self:start}
+.issues strong{display:block;margin-bottom:2px}
+.issues span.fix{color:var(--muted);font-size:14px;display:block}
+.enums{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:16px}
+.enum{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px 16px}
+.enum h5{font:500 12.5px/1.2 var(--mono);margin:0 0 10px;color:var(--muted)}
+.enum .vals{display:flex;flex-wrap:wrap;gap:6px}
+.enum .vals span{font:500 12px/1 var(--mono);padding:5px 7px;border:1px solid var(--rule);border-radius:3px}
+/* Diagram: late burst */
+.burst{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:16px 18px 10px;margin:0 0 18px;overflow-x:auto}
+.burst svg{display:block;width:100%;min-width:520px;height:auto}
+.burst .cap{font-size:13px;color:var(--muted);margin:8px 0 0}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--rule);font-size:13px;color:var(--muted)}
+@media (max-width:860px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:8px;padding-block:24px 60px}
+  nav.toc{display:none}
+  .issues li{grid-template-columns:minmax(0,1fr)}
+  .ep{padding:18px 16px 4px}
+  .ep-head .chips{margin-left:0}
+}
+</style>
+
+<div class="shell">
+<nav class="toc" aria-label="Contenido">
+  <div class="brand"><span class="led"></span>SICMA API</div>
+  <p>Empezar</p>
+  <a href="#estado">Qué existe hoy</a>
+  <a href="#flujo">Cómo llegan los datos</a>
+  <a href="#auth">Autenticación y perfiles</a>
+  <p>Entorno</p>
+  <a href="#remoto">Desarrollo desde otra red</a>
+  <a href="#cors">CORS y orígenes</a>
+  <a href="#android">Android, HTTP y HTTPS</a>
+  <a href="#environment">environment.ts</a>
+  <p>Monitoreo ambiental</p>
+  <a href="#modelo">Modelo de datos</a>
+  <a href="#fechas">Fechas y zona horaria</a>
+  <a href="#serie">Particularidades de la serie</a>
+  <a href="#en-linea">Estado del sensor</a>
+  <a href="#polling">Actualización en pantalla</a>
+  <a href="#pantallas">Pantallas</a>
+  <a href="#contrato">Endpoints de lectura (propuesta)</a>
+  <p>Endpoints actuales</p>
+  <a href="#ep-token"><code>/auth/token/</code></a>
+  <a href="#ep-refresh"><code>/auth/token/refresh/</code></a>
+  <a href="#ep-me"><code>/auth/me/</code></a>
+  <a href="#ep-reset"><code>/auth/password-reset/</code></a>
+  <a href="#ep-confirm"><code>…/confirm/</code></a>
+  <a href="#ep-mediciones"><code>/mediciones/</code> (dispositivo)</a>
+  <p>Construir</p>
+  <a href="#errores">Formato de errores</a>
+  <a href="#cliente">Cliente Angular</a>
+  <a href="#dominio">Valores del dominio</a>
+  <a href="#confirmar">Por confirmar</a>
+  <a href="#pendientes">Pendientes del backend</a>
+</nav>
+
+<main>
+<header class="doc">
+  <div class="eyebrow">Guía de integración · Angular + Ionic</div>
+  <h1>SICMA: cómo consumir la API del backend</h1>
+  <p class="lede">Endpoints, autenticación, reglas para mostrar los datos del sensor y cómo conectarse al backend desde otra red. Todo lo que no está implementado aparece marcado como tal.</p>
+  <div class="meta">
+    <span>Backend <b>Django 6.1 · DRF 3.18 · SimpleJWT 5.5</b></span>
+    <span>Base de datos <b>MySQL 8 (InnoDB Cluster)</b></span>
+    <span>Sensor <b>ESP32-S3 + DHT22 · 60 s</b></span>
+    <span>Revisado <b>24-09-2026 · rama main</b></span>
+  </div>
+  <div class="legend">
+    <span><span class="chip ok">Implementado</span> existe en el código</span>
+    <span><span class="chip prop">Propuesta</span> contrato acordado, falta programarlo</span>
+    <span><span class="chip warn">Por confirmar</span> decisión pendiente</span>
+  </div>
+</header>
+
+<section id="estado">
+  <h2>Qué existe hoy</h2>
+  <p>El backend tiene dos apps: <code>login</code> (autenticación y recuperación de contraseña) y <code>mediciones</code> (recepción de lecturas del sensor). Todas las rutas cuelgan de <code>/api/</code>.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Método</th><th>Ruta</th><th>Acceso</th><th>Para qué sirve</th></tr></thead>
+    <tbody>
+      <tr><td><span class="m post">POST</span></td><td><code>/api/auth/token/</code></td><td><span class="chip pub">Público</span></td><td>Iniciar sesión: devuelve <code>access</code> y <code>refresh</code></td></tr>
+      <tr><td><span class="m post">POST</span></td><td><code>/api/auth/token/refresh/</code></td><td><span class="chip pub">Público</span></td><td>Obtener un <code>access</code> nuevo</td></tr>
+      <tr><td><span class="m get">GET</span></td><td><code>/api/auth/me/</code></td><td><span class="chip jwt">JWT</span></td><td>Comprobar la sesión (hoy solo devuelve el username)</td></tr>
+      <tr><td><span class="m post">POST</span></td><td><code>/api/auth/password-reset/</code></td><td><span class="chip pub">Público</span></td><td>Pedir el correo de recuperación</td></tr>
+      <tr><td><span class="m post">POST</span></td><td><code>/api/auth/password-reset/confirm/</code></td><td><span class="chip pub">Público</span></td><td>Guardar la nueva contraseña</td></tr>
+      <tr><td><span class="m post">POST</span></td><td><code>/api/mediciones/</code></td><td><span class="chip dev">Dispositivo</span></td><td>Lo usa el ESP32. <strong>El frontend no lo llama.</strong></td></tr>
+    </tbody>
+  </table></div>
+  <div class="note crit"><p><strong>Todavía no hay endpoints de lectura.</strong> Con la API actual el frontend puede construir el login, la recuperación de contraseña y el control de sesión. Para el dashboard, el detalle y el historial, este documento define un <a href="#contrato">contrato propuesto</a>: puedes maquetar con datos simulados que sigan esa forma exacta y conectarlos cuando el backend los publique.</p></div>
+</section>
+
+<section id="flujo">
+  <h2>Cómo llegan los datos</h2>
+  <div class="flow">
+    <div class="edge"><b>Sensor</b>ESP32-S3 + DHT22 mide temperatura y humedad</div>
+    <div><b>Envío · cada 60 s</b><code>POST /api/mediciones/</code> con <code>X-Device-Key</code></div>
+    <div><b>Backend</b>Django valida, descarta duplicados y guarda</div>
+    <div class="edge"><b>Base de datos</b>MySQL en InnoDB Cluster</div>
+    <div><b>Lectura</b>Angular (web) e Ionic (móvil) con <code>GET</code> + JWT</div>
+  </div>
+  <p>El frontend <strong>solo lee a través de la API de Django</strong>: nunca habla con el sensor ni con la base de datos.</p>
+  <p>El header <code>X-Device-Key</code> es exclusivo del dispositivo y no debe aparecer en ningún archivo del código Angular o Ionic.</p>
+</section>
+
+<section id="auth">
+  <h2>Autenticación y perfiles</h2>
+  <p>El frontend usa el JWT de usuario (SimpleJWT). No hay sesiones ni cookies, así que tampoco hace falta token CSRF.</p>
+  <div class="flow">
+    <div><b>1 · Login</b>POST usuario y contraseña a <code>/auth/token/</code></div>
+    <div><b>2 · Guardar</b><code>access</code> y <code>refresh</code></div>
+    <div><b>3 · Llamar</b>Header <code>Authorization: Bearer &lt;access&gt;</code></div>
+    <div><b>4 · Renovar</b>Si responde 401, POST del <code>refresh</code> y repetir</div>
+    <div><b>5 · Salir</b>Borrar los tokens. No hay endpoint de logout.</div>
+  </div>
+
+  <h3>Lo acordado frente a lo que hay hoy</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Tema</th><th>Acordado</th><th>Hoy en el código</th></tr></thead>
+    <tbody>
+      <tr><td>Rol del usuario</td><td>Claim <code>rol</code> dentro del token</td><td><span class="chip warn">No existe</span> El token solo trae <code>user_id</code>, <code>exp</code>, <code>iat</code>, <code>jti</code> y <code>token_type</code>. El login usa <code>auth_user</code>; el rol está en otra tabla (<code>usuario</code>) sin enlazar.</td></tr>
+      <tr><td>Expiración</td><td>15 min de inactividad</td><td><span class="chip warn">No existe</span> Configuración por defecto: <code>access</code> de 5 min, <code>refresh</code> de 24 h, sin rotación.</td></tr>
+      <tr><td>Campo de login</td><td>—</td><td><span class="chip ok">Hecho</span> <code>username</code> de Django, no el correo.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Cuando el backend agregue el claim, el payload del <code>access</code> se verá así (se lee decodificando la parte central del JWT en base64url; no hace falta ninguna librería):</p>
+<pre>{ <span class="k">"token_type"</span>: <span class="s">"access"</span>, <span class="k">"exp"</span>: 1790265600, <span class="k">"user_id"</span>: 14, <span class="k">"rol"</span>: <span class="s">"Jefatura"</span>, <span class="k">"jti"</span>: <span class="s">"…"</span> }</pre>
+  <p>Usa el rol solo para mostrar u ocultar opciones. Los permisos reales los aplica el backend en cada endpoint.</p>
+
+  <h3>Inactividad de 15 minutos</h3>
+  <p><strong>El polling no cuenta como actividad.</strong> El dashboard llama a la API cada 60 s; si cada 401 se renueva el token automáticamente, la sesión no vencería nunca. Por eso la inactividad se mide en el frontend:</p>
+  <ul>
+    <li>Guarda la hora de la última interacción real (<code>click</code>, <code>keydown</code>, <code>touchstart</code>, cambio de ruta).</li>
+    <li>Antes de renovar el token, comprueba esa hora. Si pasaron más de 15 min, cierra la sesión y ve al login en vez de renovar.</li>
+    <li>En el backend, el <code>access</code> durará 15 min (<code>SIMPLE_JWT</code>). Así, si alguien copia un token, sirve como máximo 15 min.</li>
+  </ul>
+
+  <h3>Qué puede hacer cada perfil en este módulo</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Perfil</th><th>Web (Angular)</th><th>Móvil (Ionic)</th></tr></thead>
+    <tbody>
+      <tr><td>Administrador</td><td>Ve todo</td><td rowspan="4">Solo visualización (dashboard y detalle) para todos los perfiles</td></tr>
+      <tr><td>Jefatura</td><td>Ve todo</td></tr>
+      <tr><td>Tecnico</td><td><span class="chip warn">Por confirmar</span> alcance según lo que se defina</td></tr>
+      <tr><td>Auditor</td><td>Solo consulta</td></tr>
+    </tbody>
+  </table></div>
+  <p>Hoy este módulo solo tiene lecturas, así que los perfiles no se diferencian en la práctica. Pesarán cuando exista algo editable, como la configuración de umbrales.</p>
+</section>
+
+<div class="part">Entorno de desarrollo</div>
+
+<section id="remoto">
+  <h2>Desarrollo desde otra red</h2>
+  <p>El backend corre en un PC de la red del equipo y la base de datos está en <code>192.168.100.95</code>, una IP privada. Desde otra casa o red, <strong><code>http://192.168.100.102:8000</code> no responde</strong>, y el backend tampoco se puede correr en tu equipo porque no alcanza la base de datos.</p>
+  <p>Hay tres formas de trabajar. Tu IP o tu red no importan: lo que cambia es cómo llegas al backend.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Opción</th><th>Qué hace el backend</th><th>Qué hace el frontend</th><th>HTTPS</th><th>Celular</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>A · Tailscale</strong><br><span class="chip ok">Recomendada</span></td>
+        <td>Instala Tailscale en el PC del backend y te invita a la red (tailnet). Ejecuta <code>tailscale serve --bg 8000</code> para publicar Django en <code>https://pc-sicma.&lt;tailnet&gt;.ts.net</code>.</td>
+        <td>Instala Tailscale, acepta la invitación y usa esa URL como <code>apiUrl</code>.</td>
+        <td>Sí, con certificado válido</td>
+        <td>Instala la app Tailscale en el celular con la misma cuenta</td>
+      </tr>
+      <tr>
+        <td><strong>B · Cloudflare Tunnel</strong></td>
+        <td>Ejecuta <code>cloudflared tunnel --url http://localhost:8000</code> y te envía la URL <code>https://&lt;algo&gt;.trycloudflare.com</code>.</td>
+        <td>Usa esa URL. Cambia cada vez que se reinicia el túnel.</td>
+        <td>Sí</td>
+        <td>Funciona desde cualquier red</td>
+      </tr>
+      <tr>
+        <td><strong>C · Datos simulados</strong></td>
+        <td>Nada.</td>
+        <td>Trabaja con JSON de ejemplo que sigan el <a href="#contrato">contrato</a> y activa <code>useMock</code> en <code>environment.ts</code>.</td>
+        <td>—</td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><strong>Opción A:</strong> el backend queda accesible solo para quienes están en la tailnet, no en internet. Para usar <code>tailscale serve</code> hay que activar HTTPS una vez en la consola de administración de Tailscale.</li>
+    <li><strong>Opción B:</strong> expone el backend a internet con <code>DEBUG = True</code>, que muestra trazas de error detalladas. Úsala solo mientras pruebas y cierra el túnel al terminar.</li>
+    <li><strong>Para A o B, el backend debe:</strong> correr con <code>python manage.py runserver 0.0.0.0:8000</code>, agregar el nombre público a <code>ALLOWED_HOSTS</code> (si no, responde <code>400 Bad Request</code>) y configurar CORS (siguiente sección).</li>
+    <li>Combina C con A o B: avanza con datos simulados y conéctate al backend real para probar la integración.</li>
+  </ul>
+</section>
+
+<section id="cors">
+  <h2>CORS y orígenes</h2>
+  <p>CORS compara el <strong>origen del frontend</strong> (esquema + host + puerto de la página), no la IP del desarrollador. Mientras trabajes con <code>ng serve</code> o <code>ionic serve</code> en tu equipo, tu origen es <code>localhost</code> desde cualquier red, así que la lista es fija:</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Origen</th><th>De dónde viene</th></tr></thead>
+    <tbody>
+      <tr><td><code>http://localhost:4200</code></td><td><code>ng serve</code> (Angular web)</td></tr>
+      <tr><td><code>http://localhost:8100</code></td><td><code>ionic serve</code> (Ionic en el navegador)</td></tr>
+      <tr><td><code>https://localhost</code></td><td>App Capacitor en Android (esquema por defecto desde Capacitor 6)</td></tr>
+      <tr><td><code>http://localhost</code></td><td>App Capacitor en Android con <code>androidScheme: 'http'</code> (ver siguiente sección)</td></tr>
+      <tr><td><code>capacitor://localhost</code></td><td>App Capacitor en iOS</td></tr>
+    </tbody>
+  </table></div>
+  <p>Configuración que debe agregar el backend (<code>django-cors-headers</code> ya está instalado, pero no activado):</p>
+<pre><span class="c"># backendsicma/settings.py</span>
+INSTALLED_APPS += [<span class="s">'corsheaders'</span>]
+MIDDLEWARE.insert(0, <span class="s">'corsheaders.middleware.CorsMiddleware'</span>)   <span class="c"># debe ir primero</span>
+
+CORS_ALLOWED_ORIGINS = [
+    <span class="s">'http://localhost:4200'</span>, <span class="s">'http://localhost:8100'</span>,
+    <span class="s">'http://localhost'</span>, <span class="s">'https://localhost'</span>, <span class="s">'capacitor://localhost'</span>,
+]
+
+ALLOWED_HOSTS = [<span class="s">'localhost'</span>, <span class="s">'127.0.0.1'</span>, <span class="s">'192.168.100.102'</span>,
+                 <span class="s">'pc-sicma.&lt;tailnet&gt;.ts.net'</span>,   <span class="c"># opción A</span>
+                 <span class="s">'.trycloudflare.com'</span>]           <span class="c"># opción B (solo desarrollo)</span></pre>
+  <p>Si abres la web desde el navegador del celular con <code>ng serve --host 0.0.0.0</code>, el origen pasa a ser <code>http://&lt;tu-ip&gt;:4200</code> y habría que agregarlo a la lista. Para probar en el celular es más simple usar la app Capacitor.</p>
+  <p>Para la web también puedes saltarte CORS con el proxy de Angular: <code>proxy.conf.json</code> con <code>{"/api": {"target": "https://pc-sicma.&lt;tailnet&gt;.ts.net", "secure": true, "changeOrigin": true}}</code> y <code>apiUrl: '/api'</code>.</p>
+</section>
+
+<section id="android">
+  <h2>Android, HTTP y HTTPS</h2>
+  <p>Con las opciones A o B la API ya va por HTTPS y no hace falta nada especial en Android. Esta sección aplica solo si pruebas contra <code>http://</code>, por ejemplo con la IP de la red local cuando estás en la oficina.</p>
+  <p>En ese caso chocan dos bloqueos:</p>
+  <ul>
+    <li><strong>Tráfico sin cifrar:</strong> Android bloquea <code>http://</code> por defecto. Habilítalo <strong>solo en la build de desarrollo</strong> con un manifiesto de debug, así nunca llega a producción:</li>
+  </ul>
+<pre><span class="c">&lt;!-- android/app/src/debug/AndroidManifest.xml (solo se usa en builds debug) --&gt;</span>
+&lt;manifest xmlns:android=<span class="s">"http://schemas.android.com/apk/res/android"</span>
+          xmlns:tools=<span class="s">"http://schemas.android.com/tools"</span>&gt;
+  &lt;application android:usesCleartextTraffic=<span class="s">"true"</span>
+               tools:replace=<span class="s">"android:usesCleartextTraffic"</span> /&gt;
+&lt;/manifest&gt;</pre>
+  <ul>
+    <li><strong>Contenido mixto:</strong> desde Capacitor 6 la app se sirve desde <code>https://localhost</code>, y el WebView bloquea llamadas de una página HTTPS a una API HTTP. En desarrollo, cambia el esquema:</li>
+  </ul>
+<pre><span class="c">// capacitor.config.ts (solo desarrollo; no dejarlo en la build de producción)</span>
+server: { androidScheme: <span class="s">'http'</span> }</pre>
+  <div class="note"><p>En producción todo va por HTTPS: sin <code>usesCleartextTraffic</code>, con <code>androidScheme</code> por defecto, <code>DEBUG = False</code> y <code>CORS_ALLOWED_ORIGINS</code> solo con los orígenes reales.</p></div>
+</section>
+
+<section id="environment">
+  <h2>environment.ts</h2>
+  <p>La URL base va en los archivos de entorno de Angular, nunca escrita dentro de los servicios. Con Tailscale o Cloudflare usa el nombre público, no <code>localhost</code> ni una IP <code>192.168.x.x</code>: el celular o tu equipo en otra red no la alcanzan.</p>
+<pre><span class="c">// src/environments/environment.development.ts</span>
+export const environment = {
+  production: false,
+  apiUrl: <span class="s">'https://pc-sicma.&lt;tailnet&gt;.ts.net/api'</span>,   <span class="c">// o la URL de trycloudflare, o '/api' con proxy</span>
+  pollMs: 60_000,
+  idleLogoutMs: 15 * 60_000,
+  useMock: false,
+};
+
+<span class="c">// src/environments/environment.ts (producción)</span>
+export const environment = {
+  production: true,
+  apiUrl: <span class="s">'https://sicma.&lt;dominio&gt;/api'</span>,
+  pollMs: 60_000,
+  idleLogoutMs: 15 * 60_000,
+  useMock: false,
+};</pre>
+</section>
+
+<div class="part">Módulo de monitoreo ambiental</div>
+
+<section id="modelo">
+  <h2>Modelo de datos</h2>
+  <h3>medicion</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Campo</th><th>Tipo en la API</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>number</td><td>Autoincremental (BIGINT)</td></tr>
+      <tr><td><code>sensor</code></td><td>number</td><td>Id del sensor</td></tr>
+      <tr><td><code>evento_id</code></td><td>string (UUID)</td><td>Único por sensor, lo genera el ESP32. Sirve para descartar duplicados.</td></tr>
+      <tr><td><code>temperatura</code></td><td>string decimal | null</td><td>°C, 2 decimales. Ej. <code>"24.50"</code></td></tr>
+      <tr><td><code>humedad</code></td><td>string decimal | null</td><td>% HR, entre 0 y 100</td></tr>
+      <tr><td><code>fecha_hora_medicion</code></td><td>string ISO 8601 UTC</td><td>Cuándo se midió. <strong>Úsala para ordenar y graficar.</strong></td></tr>
+      <tr><td><code>fecha_hora_recepcion</code></td><td>string ISO 8601 UTC</td><td>Cuándo llegó al backend. Úsala para traer lo nuevo.</td></tr>
+      <tr><td><code>origen</code></td><td>string</td><td><code>Real</code> o <code>Simulado</code>. Marca visualmente los datos simulados.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Una medición trae temperatura, humedad o ambas, nunca ninguna. Si un valor viene <code>null</code>, muestra “—”, no <code>0</code>.</p>
+
+  <h3>sensor y ubicación</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Campo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code>, <code>codigo</code></td><td>Código legible, ej. <code>arduino-01</code></td></tr>
+      <tr><td><code>tipo</code></td><td>Texto libre, ej. <code>DHT22</code></td></tr>
+      <tr><td><code>estado</code></td><td><code>Activo</code> o <code>Inactivo</code>. Es un estado <em>administrativo</em>, distinto de “en línea” (ver <a href="#en-linea">Estado del sensor</a>).</td></tr>
+      <tr><td><code>intervalo_esperado_segundos</code></td><td>Hoy es 60. Léelo de la API y no lo escribas fijo en el código.</td></tr>
+      <tr><td><code>ubicacion</code></td><td><code>sala</code> (obligatoria), <code>zona</code>, <code>rack</code> y <code>posicion</code> (opcionales). Las ubicaciones pueden anidarse.</td></tr>
+    </tbody>
+  </table></div>
+  <p>A 60 s por lectura, cada sensor genera 1.440 mediciones al día y unas 10.000 por semana.</p>
+
+  <h3>Decimales: string a número</h3>
+  <p>DRF envía los <code>DecimalField</code> como texto (<code>"24.50"</code>) para no perder precisión (<code>COERCE_DECIMAL_TO_STRING = True</code> por defecto). Conviértelos al recibirlos, en un solo lugar:</p>
+<pre>const num = (v: string | number | null): number | null =&gt; (v === null ? null : Number(v));</pre>
+  <p>Si el backend cambia <code>COERCE_DECIMAL_TO_STRING</code> a <code>False</code>, llegarán como números y esta función sigue funcionando.</p>
+</section>
+
+<section id="fechas">
+  <h2>Fechas y zona horaria</h2>
+  <ul>
+    <li>La API entrega todas las fechas en <strong>UTC, ISO 8601</strong> (<code>2026-09-24T14:05:00Z</code>).</li>
+    <li>Conviértelas a hora de Chile solo al mostrarlas, con la zona <code>America/Santiago</code>. <strong>No uses <code>-03:00</code> fijo</strong>: Chile pasa a UTC−4 en invierno.</li>
+    <li><code>DatePipe</code> de Angular convierte a la zona del equipo del usuario y solo acepta desfases (<code>'-0300'</code>), no nombres IANA. Para forzar la hora de Chile, usa <code>Intl.DateTimeFormat</code>:</li>
+  </ul>
+<pre><span class="c">// hora-chile.pipe.ts</span>
+const fmt = new Intl.DateTimeFormat(<span class="s">'es-CL'</span>, {
+  timeZone: <span class="s">'America/Santiago'</span>,
+  day: <span class="s">'2-digit'</span>, month: <span class="s">'2-digit'</span>, year: <span class="s">'numeric'</span>,
+  hour: <span class="s">'2-digit'</span>, minute: <span class="s">'2-digit'</span>, second: <span class="s">'2-digit'</span>, hourCycle: <span class="s">'h23'</span>,
+});
+
+@Pipe({ name: <span class="s">'horaChile'</span>, standalone: true })
+export class HoraChilePipe implements PipeTransform {
+  transform(iso: string | null): string { return iso ? fmt.format(new Date(iso)) : <span class="s">'—'</span>; }
+}
+<span class="c">// {{ m.fecha_hora_medicion | horaChile }}  →  24-09-2026, 11:05:00</span></pre>
+  <p>Para filtrar (<code>desde</code>/<code>hasta</code>), envía a la API instantes UTC con <code>date.toISOString()</code>. Un rango “últimas 24 h” es <code>new Date(Date.now() - 24*3600e3).toISOString()</code>, sin cálculos de zona.</p>
+</section>
+
+<section id="serie">
+  <h2>Particularidades de la serie</h2>
+  <h3>Las mediciones pueden llegar atrasadas y en ráfaga</h3>
+  <p>Si el ESP32 pierde la conexión, guarda las lecturas en cola y las envía al reconectarse con su hora original. En las pruebas llegaron 6 mediciones de 5 minutos distintos en el mismo segundo:</p>
+  <figure class="burst" aria-label="Seis mediciones tomadas en cinco minutos distintos llegan al backend en el mismo segundo">
+    <svg viewBox="0 0 640 170" role="img" aria-hidden="true">
+      <g font-family="IBM Plex Mono, monospace" font-size="11" style="fill:var(--muted)">
+        <text x="8" y="38">medición</text>
+        <text x="8" y="138">recepción</text>
+      </g>
+      <line x1="90" y1="34" x2="620" y2="34" style="stroke:var(--rule)" stroke-width="1"/>
+      <line x1="90" y1="134" x2="620" y2="134" style="stroke:var(--rule)" stroke-width="1"/>
+      <g style="stroke:var(--muted)" stroke-width="1" stroke-dasharray="3 3" fill="none">
+        <line x1="110" y1="40" x2="560" y2="128"/>
+        <line x1="200" y1="40" x2="560" y2="128"/>
+        <line x1="290" y1="40" x2="560" y2="128"/>
+        <line x1="380" y1="40" x2="560" y2="128"/>
+        <line x1="470" y1="40" x2="560" y2="128"/>
+        <line x1="510" y1="40" x2="560" y2="128"/>
+      </g>
+      <g style="fill:var(--accent)">
+        <circle cx="110" cy="34" r="5"/><circle cx="200" cy="34" r="5"/><circle cx="290" cy="34" r="5"/>
+        <circle cx="380" cy="34" r="5"/><circle cx="470" cy="34" r="5"/><circle cx="510" cy="34" r="5"/>
+      </g>
+      <rect x="548" y="124" width="24" height="20" rx="3" style="fill:var(--warn)"/>
+      <g font-family="IBM Plex Mono, monospace" font-size="11" style="fill:var(--ink)">
+        <text x="98" y="20">10:01</text><text x="188" y="20">10:02</text><text x="278" y="20">10:03</text>
+        <text x="368" y="20">10:04</text><text x="458" y="20">10:05</text>
+        <text x="520" y="162">10:06:14 · las 6 juntas</text>
+      </g>
+    </svg>
+    <p class="cap">Hora de medición (arriba) frente a hora de recepción (abajo). Si ordenas por <code>id</code> o por recepción, la serie queda desordenada.</p>
+  </figure>
+  <ul>
+    <li><strong>Gráficos e historial:</strong> ordena siempre por <code>fecha_hora_medicion</code>, nunca por <code>id</code> ni por recepción.</li>
+    <li><strong>Traer lo nuevo:</strong> filtra por <code>fecha_hora_recepcion</code> (o por <code>id</code>). Si filtras por hora de medición, las lecturas atrasadas quedan fuera porque su hora es anterior a la última que ya tienes.</li>
+    <li><strong>Duplicados:</strong> al combinar datos nuevos con los que ya tienes, usa <code>evento_id</code> como clave.</li>
+  </ul>
+
+  <h3>Huecos: no unir lo que no se midió</h3>
+  <p>Si el sensor estuvo apagado, la serie queda con huecos. Si el gráfico une dos puntos separados por más de 3 intervalos (180 s), dibuja una tendencia que no existe. Inserta un punto nulo en cada hueco y desactiva la unión de nulos en la librería (<code>spanGaps: false</code> en Chart.js, <code>connectNulls: false</code> en ECharts):</p>
+<pre>interface Punto { t: number; temp: number | null; hum: number | null }
+
+export function serieConHuecos(ms: Medicion[], intervaloSeg: number, factor = 3): Punto[] {
+  const limite = factor * intervaloSeg * 1000;
+  const orden = [...ms].sort((a, b) =&gt;
+    Date.parse(a.fecha_hora_medicion) - Date.parse(b.fecha_hora_medicion));
+  const out: Punto[] = [];
+  let prev: number | null = null;
+  for (const m of orden) {
+    const t = Date.parse(m.fecha_hora_medicion);
+    if (prev !== null &amp;&amp; t - prev &gt; limite) out.push({ t: prev + intervaloSeg * 1000, temp: null, hum: null });
+    out.push({ t, temp: num(m.temperatura), hum: num(m.humedad) });
+    prev = t;
+  }
+  return out;
+}</pre>
+</section>
+
+<section id="en-linea">
+  <h2>Estado del sensor: en línea o sin datos</h2>
+  <p>No hay una señal de “sigo vivo” aparte: el estado se calcula con la última medición. Si la última <code>fecha_hora_medicion</code> tiene más de <strong>3 × intervalo</strong> de antigüedad (180 s con el intervalo actual), el sensor se muestra como <strong>sin datos</strong>.</p>
+<pre>export function enLinea(ultima: string | null, intervaloSeg: number, ahora = Date.now()): boolean {
+  return ultima !== null &amp;&amp; ahora - Date.parse(ultima) &lt;= 3 * intervaloSeg * 1000;
+}</pre>
+  <div class="tbl"><table>
+    <thead><tr><th><code>sensor.estado</code></th><th>Última lectura</th><th>Mostrar</th></tr></thead>
+    <tbody>
+      <tr><td>Activo</td><td>Hace ≤ 3 × intervalo</td><td><span class="chip ok">En línea</span></td></tr>
+      <tr><td>Activo</td><td>Más antigua, o no hay</td><td><span class="chip crit">Sin datos</span> con la hora de la última lectura</td></tr>
+      <tr><td>Inactivo</td><td>Cualquiera</td><td><span class="chip pub">Inactivo</span> (dado de baja; no es una falla)</td></tr>
+    </tbody>
+  </table></div>
+  <p>Este cálculo usa el reloj del equipo del usuario. Si ese reloj está desfasado, el estado puede fallar. Si ocurre, el backend puede calcular <code>en_linea</code> y entregarlo en la respuesta.</p>
+</section>
+
+<section id="polling">
+  <h2>Actualización en pantalla</h2>
+  <p>Basta con consultar la API cada 60 s, el mismo intervalo del sensor. El prototipo no necesita WebSockets.</p>
+<pre><span class="c">// Dashboard: una llamada trae los sensores con su última medición</span>
+sensores$ = timer(0, environment.pollMs).pipe(
+  switchMap(() =&gt; this.api.sensores()),
+  shareReplay({ bufferSize: 1, refCount: true }),
+);
+
+<span class="c">// Detalle: carga el rango y luego pide solo lo recibido después de lo último que tienes</span>
+private ultimaRecepcion = <span class="s">''</span>;
+private porEvento = new Map&lt;string, Medicion&gt;();
+
+refrescar(sensorId: number) {
+  return this.api.mediciones({ sensor: sensorId, recibido_desde: this.ultimaRecepcion }).pipe(
+    map(page =&gt; {
+      for (const m of page.results) {
+        this.porEvento.set(m.evento_id, m);
+        if (m.fecha_hora_recepcion &gt; this.ultimaRecepcion) this.ultimaRecepcion = m.fecha_hora_recepcion;
+      }
+      return serieConHuecos([...this.porEvento.values()], this.intervaloSeg);
+    }),
+  );
+}</pre>
+  <ul>
+    <li>Las fechas ISO en UTC con el mismo formato se pueden comparar como texto; por eso funciona <code>&gt;</code> entre strings.</li>
+    <li>Detén el polling cuando la vista no esté visible (<code>takeUntilDestroyed</code>; en Ionic, <code>ionViewWillLeave</code>) y cuando la app pase a segundo plano.</li>
+    <li>Recuerda que el polling no cuenta como actividad del usuario (ver <a href="#auth">inactividad</a>).</li>
+  </ul>
+</section>
+
+<section id="pantallas">
+  <h2>Pantallas</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Pantalla</th><th>Contenido</th><th>Datos</th><th>Web</th><th>Móvil</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Login</strong></td><td>Usuario, contraseña, “¿Olvidaste tu contraseña?”</td><td><code>auth/token/</code> <span class="chip ok">Listo</span></td><td>Sí</td><td>Sí</td></tr>
+      <tr><td><strong>Recuperar / restablecer</strong></td><td>Correo; luego nueva contraseña con <code>?uid=&amp;token=</code></td><td><code>password-reset/…</code> <span class="chip ok">Listo</span></td><td>Sí</td><td>—</td></tr>
+      <tr><td><strong>Dashboard</strong></td><td>Una tarjeta por sensor: temperatura y humedad actuales, hora de la última lectura (Chile), en línea / sin datos, sala y zona</td><td><code>GET /sensores/</code> <span class="chip prop">Propuesta</span></td><td>Sí</td><td>Sí, solo lectura</td></tr>
+      <tr><td><strong>Detalle del sensor</strong></td><td>Gráfico de temperatura y humedad con rango 1 h / 24 h / 7 días; huecos sin unir; bandas de umbral si existen</td><td><code>GET /mediciones/</code>, <code>GET /umbrales/</code> <span class="chip prop">Propuesta</span></td><td>Sí</td><td>Sí, solo lectura</td></tr>
+      <tr><td><strong>Historial</strong></td><td>Tabla paginada con filtros por sensor, rango de fechas y origen; los simulados se distinguen visualmente</td><td><code>GET /mediciones/</code> <span class="chip prop">Propuesta</span></td><td>Sí</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p>Temperatura y humedad tienen escalas distintas (°C y %). En un mismo gráfico usa dos ejes Y o dos gráficos apilados que compartan el eje de tiempo.</p>
+</section>
+
+<section id="contrato">
+  <h2>Endpoints de lectura (propuesta)</h2>
+  <div class="note prop"><p><strong>Estos endpoints no existen todavía.</strong> Es el contrato que se propone implementar en el backend. Maqueta con JSON que siga esta forma exacta para que conectar la API real solo sea cambiar <code>useMock</code>. Si el backend cambia algo al implementarlo, se actualizará aquí.</p></div>
+
+  <article class="ep proposed">
+    <div class="ep-head"><span class="m get">GET</span><span class="path">/api/sensores/</span><span class="chips"><span class="chip jwt">JWT</span><span class="chip prop">Propuesta</span></span></div>
+    <p>Lista de sensores con su ubicación, su intervalo y la última medición. Con esta sola llamada se arma el dashboard.</p>
+<pre><span class="c">// 200 OK</span>
+[
+  {
+    <span class="k">"id"</span>: 1,
+    <span class="k">"codigo"</span>: <span class="s">"arduino-01"</span>,
+    <span class="k">"tipo"</span>: <span class="s">"DHT22"</span>,
+    <span class="k">"estado"</span>: <span class="s">"Activo"</span>,
+    <span class="k">"intervalo_esperado_segundos"</span>: 60,
+    <span class="k">"ubicacion"</span>: { <span class="k">"id"</span>: 3, <span class="k">"sala"</span>: <span class="s">"Sala de servidores"</span>, <span class="k">"zona"</span>: <span class="s">"Zona A"</span>, <span class="k">"rack"</span>: null, <span class="k">"posicion"</span>: null },
+    <span class="k">"ultima_medicion"</span>: {
+      <span class="k">"id"</span>: 81234, <span class="k">"evento_id"</span>: <span class="s">"3f2b8c1e-9a4d-4e7b-8f10-2c6d5a9e7b41"</span>,
+      <span class="k">"temperatura"</span>: <span class="s">"24.50"</span>, <span class="k">"humedad"</span>: <span class="s">"45.10"</span>,
+      <span class="k">"fecha_hora_medicion"</span>: <span class="s">"2026-09-24T14:05:00Z"</span>,
+      <span class="k">"fecha_hora_recepcion"</span>: <span class="s">"2026-09-24T14:05:01Z"</span>,
+      <span class="k">"origen"</span>: <span class="s">"Real"</span>
+    }                                                   <span class="c">// null si el sensor nunca envió datos</span>
+  }
+]</pre>
+    <p><code>GET /api/sensores/{id}/</code> devuelve el mismo objeto para un solo sensor (pantalla de detalle).</p>
+  </article>
+
+  <article class="ep proposed">
+    <div class="ep-head"><span class="m get">GET</span><span class="path">/api/mediciones/</span><span class="chips"><span class="chip jwt">JWT</span><span class="chip prop">Propuesta</span></span></div>
+    <p>Mediciones filtradas y paginadas, ordenadas por <code>fecha_hora_medicion</code> de forma ascendente.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Parámetro</th><th>Ejemplo</th><th>Uso</th></tr></thead>
+      <tbody>
+        <tr><td><code>sensor</code></td><td><code>1</code></td><td>Id del sensor</td></tr>
+        <tr><td><code>desde</code>, <code>hasta</code></td><td><code>2026-09-23T14:05:00Z</code></td><td>Rango sobre <code>fecha_hora_medicion</code> (UTC). Para el gráfico y el historial.</td></tr>
+        <tr><td><code>recibido_desde</code></td><td><code>2026-09-24T14:05:01Z</code></td><td>Solo lo recibido <em>después</em> de esa hora de recepción. Para el polling.</td></tr>
+        <tr><td><code>origen</code></td><td><code>Real</code></td><td>Filtro del historial</td></tr>
+        <tr><td><code>page</code>, <code>page_size</code></td><td><code>1</code>, <code>100</code></td><td>Paginación. Un gráfico de 7 días usa <code>page_size</code> alto (hasta ~10.080 puntos por sensor).</td></tr>
+        <tr><td><code>ordering</code></td><td><code>-fecha_hora_medicion</code></td><td>Opcional. El historial puede mostrar primero lo más reciente.</td></tr>
+      </tbody>
+    </table></div>
+<pre><span class="c">// 200 OK — paginación estándar de DRF</span>
+{
+  <span class="k">"count"</span>: 1440,
+  <span class="k">"next"</span>: <span class="s">"https://…/api/mediciones/?sensor=1&amp;page=2"</span>,
+  <span class="k">"previous"</span>: null,
+  <span class="k">"results"</span>: [
+    { <span class="k">"id"</span>: 80001, <span class="k">"sensor"</span>: 1, <span class="k">"evento_id"</span>: <span class="s">"…"</span>, <span class="k">"temperatura"</span>: <span class="s">"23.90"</span>, <span class="k">"humedad"</span>: null,
+      <span class="k">"fecha_hora_medicion"</span>: <span class="s">"2026-09-23T14:06:00Z"</span>, <span class="k">"fecha_hora_recepcion"</span>: <span class="s">"2026-09-23T14:06:01Z"</span>, <span class="k">"origen"</span>: <span class="s">"Real"</span> }
+  ]
+}</pre>
+    <p>Hoy el POST de esta ruta no pide autenticación de usuario. El backend tendrá que exigir JWT solo en el GET para que el ESP32 siga funcionando igual.</p>
+  </article>
+
+  <article class="ep proposed">
+    <div class="ep-head"><span class="m get">GET</span><span class="path">/api/umbrales/?ubicacion=3</span><span class="chips"><span class="chip jwt">JWT</span><span class="chip prop">Propuesta</span></span></div>
+    <p>La versión vigente de los umbrales de temperatura y humedad de una ubicación, para colorear los valores fuera de rango y dibujar bandas en el gráfico.</p>
+<pre>[
+  { <span class="k">"variable"</span>: <span class="s">"Temperatura"</span>, <span class="k">"valor_minimo"</span>: <span class="s">"18.00"</span>, <span class="k">"valor_maximo"</span>: <span class="s">"27.00"</span>, <span class="k">"version"</span>: 2, <span class="k">"vigente_desde"</span>: <span class="s">"2026-09-01T00:00:00Z"</span> },
+  { <span class="k">"variable"</span>: <span class="s">"Humedad"</span>,     <span class="k">"valor_minimo"</span>: <span class="s">"40.00"</span>, <span class="k">"valor_maximo"</span>: <span class="s">"60.00"</span>, <span class="k">"version"</span>: 1, <span class="k">"vigente_desde"</span>: <span class="s">"2026-09-01T00:00:00Z"</span> }
+]</pre>
+    <p>Los valores de ejemplo son ilustrativos: los umbrales reales los define el equipo. Si una ubicación no tiene umbral para una variable, no aparece en la lista; en ese caso muestra el valor sin color.</p>
+  </article>
+</section>
+
+<div class="part">Endpoints actuales</div>
+
+<section id="endpoints">
+  <h2>Autenticación</h2>
+
+  <article class="ep" id="ep-token">
+    <div class="ep-head"><span class="m post">POST</span><span class="path">/api/auth/token/</span><span class="chips"><span class="chip pub">Público</span><span class="chip ok">Implementado</span></span></div>
+    <p>Inicia sesión. Los usuarios son los de <code>auth_user</code> de Django (se crean con <code>createsuperuser</code> o desde <code>/admin/</code>).</p>
+    <div class="two">
+<pre><span class="c">// petición</span>
+{
+  <span class="k">"username"</span>: <span class="s">"agonzalez"</span>,
+  <span class="k">"password"</span>: <span class="s">"MiClave.2026"</span>
+}</pre>
+<pre><span class="c">// 200 OK</span>
+{
+  <span class="k">"refresh"</span>: <span class="s">"eyJhbGciOiJIUzI1NiIs…"</span>,
+  <span class="k">"access"</span>:  <span class="s">"eyJhbGciOiJIUzI1NiIs…"</span>
+}</pre>
+    </div>
+    <h4>Errores</h4>
+    <div class="tbl"><table><tbody>
+      <tr><td class="num">401</td><td><code>{"detail": "No active account found with the given credentials"}</code></td><td>Usuario o contraseña incorrectos, o usuario inactivo. Muestra “Usuario o contraseña incorrectos”.</td></tr>
+      <tr><td class="num">400</td><td><code>{"username": ["This field is required."]}</code></td><td>Falta un campo.</td></tr>
+    </tbody></table></div>
+  </article>
+
+  <article class="ep" id="ep-refresh">
+    <div class="ep-head"><span class="m post">POST</span><span class="path">/api/auth/token/refresh/</span><span class="chips"><span class="chip pub">Público</span><span class="chip ok">Implementado</span></span></div>
+    <div class="two">
+<pre><span class="c">// petición</span>
+{ <span class="k">"refresh"</span>: <span class="s">"eyJhbGciOiJIUzI1NiIs…"</span> }</pre>
+<pre><span class="c">// 200 OK</span>
+{ <span class="k">"access"</span>: <span class="s">"eyJhbGciOiJIUzI1NiIs…"</span> }</pre>
+    </div>
+    <h4>Errores</h4>
+    <div class="tbl"><table><tbody>
+      <tr><td class="num">401</td><td><code>{"detail": "Token is expired", "code": "token_not_valid"}</code> (o <code>"Token is invalid"</code>)</td><td>Decide por <code>code</code>, no por el texto. Cierra la sesión y lleva al login.</td></tr>
+    </tbody></table></div>
+  </article>
+
+  <article class="ep" id="ep-me">
+    <div class="ep-head"><span class="m get">GET</span><span class="path">/api/auth/me/</span><span class="chips"><span class="chip jwt">JWT</span><span class="chip warn">Vista de ejemplo</span></span></div>
+    <p>Sirve para comprobar si el token sigue siendo válido, por ejemplo al recargar la app. Hoy <strong>solo devuelve el username</strong>.</p>
+    <div class="two">
+<pre><span class="c">// headers</span>
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs…</pre>
+<pre><span class="c">// 200 OK</span>
+{
+  <span class="k">"user"</span>: <span class="s">"agonzalez"</span>,
+  <span class="k">"auth"</span>: <span class="s">"eyJhbGciOiJIUzI1NiIs…"</span>  <span class="c">// el mismo token</span>
+}</pre>
+    </div>
+    <h4>Errores</h4>
+    <div class="tbl"><table><tbody>
+      <tr><td class="num">401</td><td><code>{"detail": "Authentication credentials were not provided."}</code></td><td>No se envió el header.</td></tr>
+      <tr><td class="num">401</td><td><code>{"detail": "Given token not valid for any token type", "code": "token_not_valid", "messages": [...]}</code></td><td>Access vencido: renueva y repite la llamada.</td></tr>
+    </tbody></table></div>
+    <p>No uses el campo <code>auth</code>. Cuando se corrija, se propone que devuelva <code>{"id", "username", "email", "nombre", "rol"}</code>.</p>
+  </article>
+
+  <article class="ep" id="ep-reset">
+    <div class="ep-head"><span class="m post">POST</span><span class="path">/api/auth/password-reset/</span><span class="chips"><span class="chip pub">Público</span><span class="chip ok">Implementado</span></span></div>
+    <p>Envía un correo con un enlace de recuperación. Para no revelar qué correos existen, <strong>responde 202 siempre</strong>.</p>
+    <div class="two">
+<pre><span class="c">// petición</span>
+{ <span class="k">"email"</span>: <span class="s">"agonzalez@duoc.cl"</span> }</pre>
+<pre><span class="c">// 202 Accepted</span>
+{
+  <span class="k">"detail"</span>: <span class="s">"Si el correo existe, recibirás instrucciones para restablecer tu contraseña."</span>
+}</pre>
+    </div>
+    <h4>Errores</h4>
+    <div class="tbl"><table><tbody>
+      <tr><td class="num">400</td><td><code>{"email": ["Enter a valid email address."]}</code></td><td>Formato de correo inválido.</td></tr>
+      <tr><td class="num">500</td><td>Página HTML de error</td><td>Falló el envío SMTP (faltan <code>EMAIL_HOST_USER</code>/<code>EMAIL_HOST_PASSWORD</code>). Muestra un error genérico.</td></tr>
+    </tbody></table></div>
+  </article>
+
+  <article class="ep" id="ep-confirm">
+    <div class="ep-head"><span class="m post">POST</span><span class="path">/api/auth/password-reset/confirm/</span><span class="chips"><span class="chip pub">Público</span><span class="chip ok">Implementado</span></span></div>
+    <p>El correo trae un enlace con <code>?uid=…&amp;token=…</code>. El frontend lee esos valores de la URL y los envía junto con la contraseña nueva.</p>
+    <div class="two">
+<pre><span class="c">// petición</span>
+{
+  <span class="k">"uid"</span>: <span class="s">"MTQ"</span>,
+  <span class="k">"token"</span>: <span class="s">"cz4k2p-6f1a0e9c…"</span>,
+  <span class="k">"new_password"</span>: <span class="s">"OtraClave.2026"</span>
+}</pre>
+<pre><span class="c">// 200 OK</span>
+{
+  <span class="k">"detail"</span>: <span class="s">"La contraseña fue actualizada correctamente."</span>
+}</pre>
+    </div>
+    <p>La contraseña debe tener al menos 8 caracteres, no puede ser una contraseña común y no puede ser solo números. Valida lo mismo en el formulario para avisar antes de enviar.</p>
+    <h4>Errores</h4>
+    <div class="tbl"><table><tbody>
+      <tr><td class="num">400</td><td><code>{"new_password": ["This password is too short. …", "…"]}</code></td><td>Lista de mensajes (en inglés). Se valida <em>antes</em> que el enlace.</td></tr>
+      <tr><td class="num">400</td><td><code>{"detail": "El enlace de recuperación no es válido."}</code></td><td><code>uid</code> mal formado o usuario inexistente/inactivo.</td></tr>
+      <tr><td class="num">400</td><td><code>{"detail": "El enlace de recuperación no es válido o ha expirado."}</code></td><td>Token vencido (3 días) o ya usado. Ofrece pedir otro correo.</td></tr>
+    </tbody></table></div>
+    <p>Hoy el enlace del correo apunta a la API y no a una pantalla del frontend (ver <a href="#pendientes">pendientes</a>). Mientras se corrige, puedes probar copiando <code>uid</code> y <code>token</code> del correo.</p>
+  </article>
+
+  <h2 style="margin-top:36px">Dispositivo</h2>
+  <article class="ep" id="ep-mediciones">
+    <div class="ep-head"><span class="m post">POST</span><span class="path">/api/mediciones/</span><span class="chips"><span class="chip dev">X-Device-Key</span><span class="chip ok">Implementado</span></span></div>
+    <p>Lo usa el ESP32 cada 60 s. Aparece aquí solo como referencia, para que sepas de dónde salen los datos. <strong>El frontend nunca lo llama ni guarda la clave del dispositivo.</strong></p>
+<pre><span class="c">// cuerpo que envía el ESP32</span>
+{
+  <span class="k">"sensor_codigo"</span>: <span class="s">"arduino-01"</span>,
+  <span class="k">"evento_id"</span>: <span class="s">"3f2b8c1e-9a4d-4e7b-8f10-2c6d5a9e7b41"</span>,
+  <span class="k">"temperatura"</span>: <span class="s">"24.50"</span>,
+  <span class="k">"humedad"</span>: <span class="s">"45.10"</span>,
+  <span class="k">"fecha_hora_medicion"</span>: <span class="s">"2026-09-24T14:05:00Z"</span>
+}</pre>
+    <ul>
+      <li>Responde <code>201</code> si la lectura es nueva, <code>200</code> con <code>"duplicate": true</code> si el <code>evento_id</code> ya existía, <code>401</code> si la clave es incorrecta o el sensor está inactivo, <code>404</code> si el código no existe y <code>400</code> si los datos no son válidos.</li>
+      <li>El backend completa <code>fecha_hora_recepcion</code> y <code>origen = "Real"</code>.</li>
+    </ul>
+  </article>
+</section>
+
+<div class="part">Construir</div>
+
+<section id="errores">
+  <h2>Formato de errores</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Forma</th><th>Ejemplo</th><th>Dónde mostrarlo</th></tr></thead>
+    <tbody>
+      <tr><td>Error general</td><td><code>{"detail": "…"}</code></td><td>Banner o toast</td></tr>
+      <tr><td>Error por campo</td><td><code>{"new_password": ["…", "…"]}</code></td><td>Debajo del campo</td></tr>
+      <tr><td>Error de validación global</td><td><code>{"non_field_errors": ["…"]}</code></td><td>Banner del formulario</td></tr>
+      <tr><td>Error de servidor</td><td>HTML (con <code>DEBUG = True</code>)</td><td>Mensaje genérico. En <code>HttpErrorResponse</code>, <code>error</code> será un string.</td></tr>
+      <tr><td>Sin conexión</td><td><code>status === 0</code></td><td>“No hay conexión con el servidor”. En el dashboard, conserva los últimos datos y marca la hora.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Los mensajes propios del backend vienen en español. Los de Django y SimpleJWT vienen en inglés (<code>LANGUAGE_CODE = 'en-us'</code>).</p>
+</section>
+
+<section id="cliente">
+  <h2>Cliente Angular</h2>
+  <p>Interceptor funcional (Angular 17+) que agrega el token, lo renueva una sola vez ante un 401 y cierra la sesión si el usuario lleva más de 15 minutos sin interactuar. La renovación se comparte, así varias llamadas simultáneas del polling no piden varios tokens a la vez.</p>
+<pre><span class="c">// auth.service.ts</span>
+@Injectable({ providedIn: <span class="s">'root'</span> })
+export class AuthService {
+  private http = inject(HttpClient);
+  private router = inject(Router);
+  private access: string | null = null;
+  private renovando$: Observable&lt;string&gt; | null = null;
+  private ultimaActividad = Date.now();
+
+  constructor() {
+    for (const ev of [<span class="s">'click'</span>, <span class="s">'keydown'</span>, <span class="s">'touchstart'</span>])
+      window.addEventListener(ev, () =&gt; (this.ultimaActividad = Date.now()), { passive: true });
+  }
+
+  get token() { return this.access; }
+  get rol(): string | null {                        <span class="c">// cuando el backend agregue el claim</span>
+    if (!this.access) return null;
+    const payload = this.access.split(<span class="s">'.'</span>)[1].replace(/-/g, <span class="s">'+'</span>).replace(/_/g, <span class="s">'/'</span>);
+    return JSON.parse(atob(payload)).rol ?? null;
+  }
+
+  login(username: string, password: string) {
+    return this.http.post&lt;{ access: string; refresh: string }&gt;(
+      `${environment.apiUrl}/auth/token/`, { username, password },
+    ).pipe(tap(t =&gt; { this.access = t.access; localStorage.setItem(<span class="s">'sicma_refresh'</span>, t.refresh); }));
+  }
+
+  renovar(): Observable&lt;string&gt; {
+    const refresh = localStorage.getItem(<span class="s">'sicma_refresh'</span>);
+    const inactivo = Date.now() - this.ultimaActividad &gt; environment.idleLogoutMs;
+    if (!refresh || inactivo) { this.logout(); return throwError(() =&gt; new Error(<span class="s">'sesion'</span>)); }
+    this.renovando$ ??= this.http.post&lt;{ access: string }&gt;(
+      `${environment.apiUrl}/auth/token/refresh/`, { refresh },
+    ).pipe(
+      map(r =&gt; (this.access = r.access)),
+      finalize(() =&gt; (this.renovando$ = null)),
+      shareReplay(1),
+    );
+    return this.renovando$;
+  }
+
+  logout() {
+    this.access = null;
+    localStorage.removeItem(<span class="s">'sicma_refresh'</span>);
+    this.router.navigateByUrl(<span class="s">'/login'</span>);
+  }
+}
+
+<span class="c">// auth.interceptor.ts</span>
+export const authInterceptor: HttpInterceptorFn = (req, next) =&gt; {
+  const auth = inject(AuthService);
+  if (!req.url.startsWith(environment.apiUrl) || req.url.includes(<span class="s">'/auth/'</span>)) return next(req);
+
+  const conToken = (t: string | null) =&gt;
+    t ? req.clone({ setHeaders: { Authorization: `Bearer ${t}` } }) : req;
+
+  return next(conToken(auth.token)).pipe(
+    catchError((err: HttpErrorResponse) =&gt;
+      err.status === 401
+        ? auth.renovar().pipe(switchMap(t =&gt; next(conToken(t))))
+        : throwError(() =&gt; err)),
+  );
+};
+
+<span class="c">// app.config.ts</span>
+provideHttpClient(withInterceptors([authInterceptor]))</pre>
+  <p>Al abrir la app sin <code>access</code> en memoria pero con <code>refresh</code> guardado, la primera llamada devolverá 401 y el interceptor renovará el token solo. Si la renovación falla, manda al login.</p>
+  <p>En Ionic, <code>localStorage</code> sirve para el prototipo. Para producción conviene <code>@capacitor/preferences</code> o almacenamiento seguro.</p>
+</section>
+
+<section id="dominio">
+  <h2>Valores del dominio</h2>
+  <p>Valores exactos de los ENUM de <code>sicma_schema.sql</code>. Respeta mayúsculas y guiones bajos, porque la API los devolverá tal cual.</p>
+  <div class="enums">
+    <div class="enum"><h5>medicion.origen</h5><div class="vals"><span>Real</span><span>Simulado</span></div></div>
+    <div class="enum"><h5>sensor.estado</h5><div class="vals"><span>Activo</span><span>Inactivo</span></div></div>
+    <div class="enum"><h5>umbral_ambiental.variable</h5><div class="vals"><span>Temperatura</span><span>Humedad</span></div></div>
+    <div class="enum"><h5>usuario.rol</h5><div class="vals"><span>Administrador</span><span>Jefatura</span><span>Tecnico</span><span>Auditor</span></div></div>
+    <div class="enum"><h5>alerta.severidad</h5><div class="vals"><span>Informativa</span><span>Advertencia</span><span>Alta</span><span>Critica</span></div></div>
+    <div class="enum"><h5>alerta.estado</h5><div class="vals"><span>Nueva</span><span>Reconocida</span><span>Cerrada</span></div></div>
+    <div class="enum"><h5>activo.estado</h5><div class="vals"><span>Operativo</span><span>Degradado</span><span>En_mantenimiento</span><span>Fuera_de_servicio</span><span>Retirado</span></div></div>
+    <div class="enum"><h5>activo.criticidad</h5><div class="vals"><span>Baja</span><span>Media</span><span>Alta</span><span>Critica</span></div></div>
+    <div class="enum"><h5>intervencion.estado</h5><div class="vals"><span>Pendiente</span><span>CambiosSolicitados</span><span>Aprobada</span><span>EnEjecucion</span><span>Ejecutada</span><span>Fallida</span><span>Cancelada</span></div></div>
+  </div>
+<pre><span class="c">// modelos.ts</span>
+export type Origen = <span class="s">'Real'</span> | <span class="s">'Simulado'</span>;
+export type EstadoSensor = <span class="s">'Activo'</span> | <span class="s">'Inactivo'</span>;
+export type Rol = <span class="s">'Administrador'</span> | <span class="s">'Jefatura'</span> | <span class="s">'Tecnico'</span> | <span class="s">'Auditor'</span>;
+
+export interface Medicion {
+  id: number; sensor: number; evento_id: string;
+  temperatura: string | null; humedad: string | null;
+  fecha_hora_medicion: string; fecha_hora_recepcion: string; origen: Origen;
+}
+export interface Ubicacion { id: number; sala: string; zona: string | null; rack: string | null; posicion: string | null }
+export interface Sensor {
+  id: number; codigo: string; tipo: string; estado: EstadoSensor;
+  intervalo_esperado_segundos: number; ubicacion: Ubicacion;
+  ultima_medicion: Omit&lt;Medicion, <span class="s">'sensor'</span>&gt; | null;
+}
+export interface Pagina&lt;T&gt; { count: number; next: string | null; previous: string | null; results: T[] }</pre>
+</section>
+
+<section id="confirmar">
+  <h2>Por confirmar</h2>
+  <p>Respuestas a las preguntas abiertas del handoff, según lo que hay hoy en el código y en el esquema de la base de datos.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Pregunta</th><th>Lo que hay hoy</th><th>Falta</th></tr></thead>
+    <tbody>
+      <tr><td>Endpoints de lectura</td><td>Ninguno. Solo el POST del dispositivo.</td><td>Implementar el <a href="#contrato">contrato propuesto</a>: sensores con última medición, mediciones filtradas y paginadas, umbrales.</td></tr>
+      <tr><td>Umbrales de temperatura y humedad</td><td>La tabla <code>umbral_ambiental</code> existe en la BD: por ubicación y variable, con mínimo, máximo, versión y <code>vigente_desde</code>. No hay modelo, endpoint ni pantalla.</td><td>Exponer el umbral vigente por ubicación y decidir quién lo configura (probablemente Administrador y Jefatura).</td></tr>
+      <tr><td>Valores de <code>origen</code></td><td><code>Real</code> y <code>Simulado</code> (ENUM). La ingesta siempre guarda <code>Real</code>.</td><td>Nada. Distingue visualmente <code>Simulado</code>.</td></tr>
+      <tr><td>Valores de <code>estado</code> del sensor</td><td><code>Activo</code> e <code>Inactivo</code> (ENUM). Un sensor Inactivo no puede enviar datos: la ingesta responde 401.</td><td>Nada. “En línea / sin datos” se calcula aparte.</td></tr>
+      <tr><td>Ubicación del sensor</td><td>En la BD, <code>sensor.ubicacion_id</code> apunta a <code>ubicacion</code> (sala, zona, rack, posición). En Django es un número suelto, sin relación.</td><td>Definir el modelo <code>Ubicacion</code> en el backend para devolver sala y zona.</td></tr>
+      <tr><td>Rol en el token</td><td>No existe; el rol está en la tabla <code>usuario</code>, separada de <code>auth_user</code>.</td><td>Enlazar ambas tablas y agregar el claim <code>rol</code>.</td></tr>
+      <tr><td>Alcance del perfil Técnico</td><td>Sin definir.</td><td>Decisión del equipo.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="pendientes">
+  <h2>Pendientes del backend</h2>
+  <p>Ordenados por cuánto bloquean al frontend.</p>
+  <ul class="issues">
+    <li><span class="chip crit">Bloquea</span><div><strong>Acceso desde otra red</strong>El desarrollador de frontend no alcanza la IP de la red local.<span class="fix">Configurar Tailscale (<code>tailscale serve</code>) o Cloudflare Tunnel y agregar el nombre público a <code>ALLOWED_HOSTS</code>.</span></div></li>
+    <li><span class="chip crit">Bloquea</span><div><strong>CORS sin configurar</strong>Angular e Ionic no pueden llamar a la API desde el navegador ni desde el WebView.<span class="fix">Activar <code>corsheaders</code> con los cinco orígenes de la sección <a href="#cors">CORS</a>.</span></div></li>
+    <li><span class="chip crit">Bloquea</span><div><strong>No hay endpoints de lectura</strong><span class="fix"><code>GET /api/sensores/</code>, <code>GET /api/mediciones/</code> (JWT, con filtros <code>recibido_desde</code> y paginación) y <code>GET /api/umbrales/</code>. El GET de mediciones debe exigir JWT sin afectar al POST del ESP32. Agregar el modelo <code>Ubicacion</code>.</span></div></li>
+    <li><span class="chip crit">Bloquea</span><div><strong>Rol en el token</strong><span class="fix">Enlazar <code>usuario</code> con <code>auth_user</code> y agregar el claim <code>rol</code> con un <code>TokenObtainPairSerializer</code> personalizado.</span></div></li>
+    <li><span class="chip warn">Ajustar</span><div><strong>Expiración a 15 min</strong><span class="fix"><code>SIMPLE_JWT = {'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15)}</code>. La inactividad se controla en el frontend.</span></div></li>
+    <li><span class="chip warn">Ajustar</span><div><strong><code>/auth/me/</code> es una vista de ejemplo</strong><span class="fix">Devolver <code>id</code>, <code>username</code>, <code>email</code>, <code>nombre</code> y <code>rol</code>, sin repetir el token.</span></div></li>
+    <li><span class="chip warn">Ajustar</span><div><strong>El enlace de recuperación apunta a la API</strong><span class="fix">Cambiar <code>PASSWORD_RESET_CONFIRM_URL</code> a la ruta del frontend. Al abrir el enlace actual, el navegador hace un GET y recibe 405.</span></div></li>
+    <li><span class="chip warn">Ajustar</span><div><strong>Decimales como string</strong><span class="fix">Opcional: <code>'COERCE_DECIMAL_TO_STRING': False</code> en <code>REST_FRAMEWORK</code>. El frontend ya convierte en ambos casos.</span></div></li>
+    <li><span class="chip warn">Ajustar</span><div><strong>Mensajes en inglés</strong><span class="fix"><code>LANGUAGE_CODE = 'es'</code> para recibir en español los mensajes de Django y SimpleJWT.</span></div></li>
+    <li><span class="chip info">Seguridad</span><div><strong>Credenciales en el repositorio</strong><span class="fix"><code>SECRET_KEY</code> y la contraseña de MySQL están en <code>settings.py</code>. Moverlas a variables de entorno y cambiar la contraseña de la BD, sobre todo antes de exponer el backend con un túnel.</span></div></li>
+    <li><span class="chip info">Seguridad</span><div><strong>La ingesta revela qué sensores existen</strong><span class="fix">Un código inexistente responde 404 y uno existente con clave incorrecta, 401. Responder 401 en ambos casos y registrar los rechazos en <code>evento_tecnico_ingesta</code>.</span></div></li>
+    <li><span class="chip info">Orden</span><div><strong>Archivos compilados en git y sin dependencias declaradas</strong><span class="fix">Agregar <code>.gitignore</code> para <code>__pycache__</code> y un <code>requirements.txt</code>.</span></div></li>
+  </ul>
+</section>
+
+<footer>Generado a partir del código en <code>Backend/</code> (apps <code>login</code> y <code>mediciones</code>), <code>Documentación/sicma_schema.sql</code> y el handoff del módulo de monitoreo ambiental. Si cambia un endpoint, actualiza este documento en el mismo commit.</footer>
+</main>
+</div>
+
+</body></html>
