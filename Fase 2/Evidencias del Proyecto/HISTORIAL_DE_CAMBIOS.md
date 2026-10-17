@@ -17,6 +17,7 @@ Autor de todas las versiones: Fidel Rodríguez. Este archivo se actualiza con ca
 | SICMA-PLP Plan de pruebas | SICMA_PLP_v1.0.docx | 1.0 | 2026-10-17 |
 | SICMA-CPR Casos de prueba | SICMA_CPR_v1.0.docx | 1.0 | 2026-10-17 |
 | SICMA-PRY Plan del proyecto | SICMA_PRY_v1.0.docx | 1.0 | 2026-10-17 |
+| SICMA-RCF Resolución de conflictos | SICMA_RCF_v1.0.docx | 1.0 | 2026-10-17 |
 
 ## Decisiones de negocio que generaron cambios
 
@@ -109,3 +110,9 @@ Autor de todas las versiones: Fidel Rodríguez. Este archivo se actualiza con ca
 | 0.1 | 2026-10-17 | Primera versión, escrita desde cero con la guía de la Fase 1, Notion, SICMA-REQ v0.4, SICMA-PLP v0.3, SICMA-CPR v0.3 y el estado real del código al 10 de octubre. No usa las actas de reunión. |
 | 0.2 | 2026-10-17 | Decisiones del equipo: la carta Gantt es la fuente oficial de las fechas de las fases (D-01), 15 horas por integrante (D-03), se priorizan los 25 Must y los Should son opcionales (D-07), el costo-beneficio queda cualitativo (D-02). Agrega la priorización de los Must pendientes y los pendientes D-12 a D-14. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
+
+## SICMA-RCF · Resolución de conflictos
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 1.0 | 2026-10-17 | Primera versión, vigente desde su creación, con portada, tabla de contenido y referencias. Define tipos de conflicto, roles, procedimiento por cuatro niveles, criterios de decisión, registro y plantilla. Los plazos y acuerdos de trabajo quedan propuestos hasta confirmarlos el equipo (D-01). |
