@@ -1,0 +1,150 @@
+<app-encabezado titulo="Catálogos"></app-encabezado>
+
+<ion-content>
+  <div class="contenido-limitado">
+    <ion-segment [value]="pestana()" (ionChange)="cambiarPestana($event.detail.value)">
+      <ion-segment-button value="ubicaciones"><ion-label>Ubicaciones y zonas</ion-label></ion-segment-button>
+      <ion-segment-button value="sensores"><ion-label>Dispositivos IoT</ion-label></ion-segment-button>
+      <ion-segment-button value="tipos"><ion-label>Tipos de activo</ion-label></ion-segment-button>
+    </ion-segment>
+
+    @if (!esAdmin) {
+      <ion-note class="nota">Solo los administradores pueden modificar los catálogos.</ion-note>
+    }
+    @if (mensaje(); as m) {
+      <ion-text [color]="m.error ? 'danger' : 'success'"><p class="nota" role="status">{{ m.texto }}</p></ion-text>
+    }
+
+    @switch (pestana()) {
+      @case ('ubicaciones') {
+        @if (esAdmin) {
+          <ion-card>
+            <ion-card-header><ion-card-title>{{ editandoUbicacion() ? 'Editar ubicación' : 'Nueva ubicación' }}</ion-card-title></ion-card-header>
+            <ion-card-content>
+              <form class="rejilla-form" [formGroup]="formUbicacion" (ngSubmit)="guardarUbicacion()">
+                <ion-input label="Sala *" labelPlacement="stacked" formControlName="sala"></ion-input>
+                <ion-input label="Zona" labelPlacement="stacked" formControlName="zona"></ion-input>
+                <ion-input label="Rack" labelPlacement="stacked" formControlName="rack"></ion-input>
+                <ion-input label="Posición" labelPlacement="stacked" formControlName="posicion"></ion-input>
+                <ion-select label="Dentro de" labelPlacement="stacked" interface="popover" formControlName="ubicacion_padre">
+                  <ion-select-option [value]="null">— (nivel superior)</ion-select-option>
+                  @for (u of ubicacionesActivas(); track u.id) {
+                    @if (u.id !== editandoUbicacion()) { <ion-select-option [value]="u.id">{{ nombreUbicacion(u) }}</ion-select-option> }
+                  }
+                </ion-select>
+                <div class="acciones">
+                  <ion-button type="submit" size="small">{{ editandoUbicacion() ? 'Guardar' : 'Crear' }}</ion-button>
+                  @if (editandoUbicacion()) { <ion-button size="small" fill="clear" (click)="nuevaUbicacion()">Cancelar</ion-button> }
+                </div>
+              </form>
+            </ion-card-content>
+          </ion-card>
+        }
+        <ion-list lines="full">
+          @for (u of ubicaciones(); track u.id) {
+            <ion-item>
+              <ion-label>
+                <h3>{{ nombreUbicacion(u) }}</h3>
+                <p>ID {{ u.id }}</p>
+              </ion-label>
+              @if (!u.activa) { <ion-badge slot="end" color="medium">desactivada</ion-badge> }
+              @if (esAdmin) {
+                <ion-button slot="end" size="small" fill="clear" (click)="editarUbicacion(u)">Editar</ion-button>
+                <ion-button slot="end" size="small" fill="clear" [color]="u.activa ? 'danger' : 'success'" (click)="cambiarEstadoUbicacion(u)">
+                  {{ u.activa ? 'Desactivar' : 'Reactivar' }}
+                </ion-button>
+              }
+            </ion-item>
+          } @empty {
+            <p class="vacio">No hay ubicaciones registradas.</p>
+          }
+        </ion-list>
+        <ion-note class="nota">Los umbrales y los responsables de alerta de cada zona se definen en Monitoreo.</ion-note>
+      }
+
+      @case ('sensores') {
+        @if (claveNueva(); as c) {
+          <div class="clave" role="alert">
+            <strong>Clave del dispositivo {{ c.codigo }}:</strong>
+            <code>{{ c.clave }}</code>
+            <span>Cópiala ahora en el firmware (cabecera X-Device-Key). SICMA guarda solo su hash y no la volverá a mostrar.</span>
+            <ion-button size="small" fill="clear" (click)="claveNueva.set(null)">Ya la copié</ion-button>
+          </div>
+        }
+        @if (esAdmin) {
+          <ion-card>
+            <ion-card-header><ion-card-title>{{ editandoSensor() ? 'Editar dispositivo' : 'Nuevo dispositivo' }}</ion-card-title></ion-card-header>
+            <ion-card-content>
+              <form class="rejilla-form" [formGroup]="formSensor" (ngSubmit)="guardarSensor()">
+                <ion-input label="Código *" labelPlacement="stacked" formControlName="codigo" placeholder="esp32-02"></ion-input>
+                <ion-input label="Tipo *" labelPlacement="stacked" formControlName="tipo"></ion-input>
+                <ion-select label="Zona *" labelPlacement="stacked" interface="popover" formControlName="ubicacion">
+                  @for (u of ubicacionesActivas(); track u.id) { <ion-select-option [value]="u.id">{{ nombreUbicacion(u) }}</ion-select-option> }
+                </ion-select>
+                <ion-input label="Intervalo esperado (s) *" labelPlacement="stacked" type="number" formControlName="intervalo_esperado_segundos"></ion-input>
+                <div class="acciones">
+                  <ion-button type="submit" size="small">{{ editandoSensor() ? 'Guardar' : 'Registrar' }}</ion-button>
+                  @if (editandoSensor()) { <ion-button size="small" fill="clear" (click)="nuevoSensor()">Cancelar</ion-button> }
+                </div>
+              </form>
+            </ion-card-content>
+          </ion-card>
+        }
+        <ion-list lines="full">
+          @for (s of sensores(); track s.id) {
+            <ion-item>
+              <ion-label>
+                <h3>{{ s.codigo }} · {{ s.tipo }}</h3>
+                <p>{{ nombreUbicacion(s.ubicacion) }} · cada {{ s.intervalo_esperado_segundos }} s</p>
+                <p>
+                  @if (s.ultima_medicion; as m) {
+                    Última lectura {{ m.fecha_hora_medicion | date: 'dd/MM HH:mm' }}: {{ m.temperatura }} °C · {{ m.humedad }} %
+                  } @else { Sin lecturas }
+                </p>
+              </ion-label>
+              <ion-badge slot="end" [color]="s.estado === 'Activo' ? 'success' : 'medium'">{{ s.estado }}</ion-badge>
+              @if (esAdmin) {
+                <ion-button slot="end" size="small" fill="clear" (click)="editarSensor(s)">Editar</ion-button>
+                <ion-button slot="end" size="small" fill="clear" (click)="regenerarClave(s)">Nueva clave</ion-button>
+                <ion-button slot="end" size="small" fill="clear" [color]="s.estado === 'Activo' ? 'danger' : 'success'" (click)="cambiarEstadoSensor(s)">
+                  {{ s.estado === 'Activo' ? 'Desactivar' : 'Reactivar' }}
+                </ion-button>
+              }
+            </ion-item>
+          } @empty {
+            <p class="vacio">No hay dispositivos registrados.</p>
+          }
+        </ion-list>
+      }
+
+      @case ('tipos') {
+        @if (esAdmin) {
+          <form class="fila-tipo" [formGroup]="formTipo" (ngSubmit)="crearTipo()">
+            <ion-input label="Nuevo tipo" labelPlacement="stacked" formControlName="nombre" placeholder="PDU"></ion-input>
+            <ion-button type="submit" size="small">Agregar</ion-button>
+          </form>
+        }
+        <ion-list lines="full">
+          @for (t of tipos(); track t.id) {
+            <ion-item>
+              @if (esAdmin) {
+                <ion-input [value]="t.nombre" aria-label="Nombre del tipo" (ionChange)="renombrarTipo(t, $any($event.detail).value)"></ion-input>
+              } @else {
+                <ion-label>{{ t.nombre }}</ion-label>
+              }
+              @if (!t.activo) { <ion-badge slot="end" color="medium">desactivado</ion-badge> }
+              @if (esAdmin) {
+                <ion-button slot="end" size="small" fill="clear" [color]="t.activo ? 'danger' : 'success'" (click)="cambiarEstadoTipo(t)">
+                  {{ t.activo ? 'Desactivar' : 'Reactivar' }}
+                </ion-button>
+              }
+            </ion-item>
+          }
+        </ion-list>
+        @if (esAdmin) {
+          <ion-note class="nota">Para renombrar un tipo, edita su nombre y sal del campo. Los estados de un activo son fijos: Operativo, Degradado, En mantenimiento, Fuera de servicio y Retirado.</ion-note>
+        }
+      }
+    }
+  </div>
+</ion-content>

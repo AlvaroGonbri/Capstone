@@ -4,18 +4,13 @@
   <div class="contenido-limitado">
     <div class="intro">
       <h2>Controladores ambientales</h2>
-      <p>Configura los rangos de temperatura de cada Arduino conectado.</p>
+      <p>Última lectura de cada dispositivo y los umbrales de la zona donde está instalado.</p>
     </div>
-    @if (soloConsulta) {
-      <ion-note color="medium">El perfil Auditor tiene acceso solo de consulta.</ion-note>
-    }
-
-    @if (mensaje(); as texto) {
-      <ion-note class="mensaje" role="status">{{ texto }}</ion-note>
-    }
 
     @if (cargando()) {
       <ion-spinner name="crescent"></ion-spinner>
+    } @else if (error(); as mensaje) {
+      <ion-note class="mensaje" color="danger" role="alert">{{ mensaje }}</ion-note>
     } @else {
       <div class="rejilla-arduinos">
         @for (arduino of arduinos(); track arduino.id) {
@@ -33,56 +28,34 @@
             </ion-card-header>
             <ion-card-content>
               <p class="lectura">
-                Última temperatura:
-                <strong>{{ arduino.temperatura }} °C</strong>
+                Última lectura:
+                <strong>{{ arduino.temperatura }} °C · {{ arduino.humedad }} %</strong>
               </p>
               <p class="ubicacion">
                 Sitio {{ arduino.sitio }} · rack {{ arduino.rack }} ·
                 {{ arduino.ultimaLectura | date: 'dd/MM/yyyy HH:mm' }}
               </p>
 
-              <h3>Parámetros de temperatura</h3>
-              <ion-item>
-                <ion-label position="stacked">Temperatura mínima (°C)</ion-label>
-                <ion-input
-                  type="number"
-                  step="0.1"
-                  [value]="arduino.temperaturaMinima"
-                  [readonly]="soloConsulta"
-                  (ionInput)="actualizarParametro(arduino, 'temperaturaMinima', $any($event.detail).value)"
-                ></ion-input>
+              <h3>Umbrales de la zona</h3>
+              <ion-item lines="none">
+                <ion-label>Temperatura</ion-label>
+                <ion-note slot="end">
+                  {{ rango(arduino.umbrales?.temperaturaMinima ?? null, arduino.umbrales?.temperaturaMaxima ?? null, '°C') }}
+                </ion-note>
               </ion-item>
-              <ion-item>
-                <ion-label position="stacked">Inicio de advertencia (°C)</ion-label>
-                <ion-input
-                  type="number"
-                  step="0.1"
-                  [value]="arduino.temperaturaAdvertencia"
-                  [readonly]="soloConsulta"
-                  (ionInput)="actualizarParametro(arduino, 'temperaturaAdvertencia', $any($event.detail).value)"
-                ></ion-input>
+              <ion-item lines="none">
+                <ion-label>Humedad</ion-label>
+                <ion-note slot="end">
+                  {{ rango(arduino.umbrales?.humedadMinima ?? null, arduino.umbrales?.humedadMaxima ?? null, '%') }}
+                </ion-note>
               </ion-item>
-              <ion-item>
-                <ion-label position="stacked">Inicio de estado crítico (°C)</ion-label>
-                <ion-input
-                  type="number"
-                  step="0.1"
-                  [value]="arduino.temperaturaCritica"
-                  [readonly]="soloConsulta"
-                  (ionInput)="actualizarParametro(arduino, 'temperaturaCritica', $any($event.detail).value)"
-                ></ion-input>
-              </ion-item>
-              @if (!soloConsulta) {
-              <ion-button expand="block" [disabled]="guardando() === arduino.id" (click)="guardar(arduino)">
-                @if (guardando() === arduino.id) {
-                  <ion-spinner name="crescent"></ion-spinner>
-                } @else {
-                  Guardar parámetros
-                }
+              <ion-button fill="clear" size="small" routerLink="/monitoreo" fragment="umbrales">
+                Ver o cambiar umbrales por zona
               </ion-button>
-              }
             </ion-card-content>
           </ion-card>
+        } @empty {
+          <p class="mensaje">No hay controladores con lecturas registradas.</p>
         }
       </div>
     }

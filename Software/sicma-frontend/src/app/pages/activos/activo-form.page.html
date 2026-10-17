@@ -1,0 +1,80 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="editando() ? '/activos/' + id() : '/activos'" text="Volver"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ editando() ? 'Editar activo' : 'Nuevo activo' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="contenido-limitado ion-padding-vertical">
+    @if (cargando()) {
+      <ion-spinner name="crescent"></ion-spinner>
+    } @else {
+      <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+        <ion-list lines="full">
+          <ion-item>
+            <ion-input label="Código *" labelPlacement="stacked" formControlName="codigo"
+              helperText="Único. Si coincide con el nombre del host en Zabbix, se muestra su estado en vivo."></ion-input>
+          </ion-item>
+          <ion-item><ion-input label="Nombre *" labelPlacement="stacked" formControlName="nombre"></ion-input></ion-item>
+          <ion-item>
+            <ion-select label="Tipo" labelPlacement="stacked" interface="popover" formControlName="tipo">
+              <ion-select-option [value]="null">Sin tipo</ion-select-option>
+              @for (t of tipos(); track t) { <ion-select-option [value]="t">{{ t }}</ion-select-option> }
+            </ion-select>
+          </ion-item>
+          <ion-item><ion-input label="Marca" labelPlacement="stacked" formControlName="marca"></ion-input></ion-item>
+          <ion-item><ion-input label="Modelo" labelPlacement="stacked" formControlName="modelo"></ion-input></ion-item>
+          <ion-item><ion-input label="Número de serie *" labelPlacement="stacked" formControlName="numero_serie"></ion-input></ion-item>
+          <ion-item>
+            <ion-select label="Ubicación *" labelPlacement="stacked" interface="popover" formControlName="ubicacion">
+              @for (u of ubicaciones(); track u.id) { <ion-select-option [value]="u.id">{{ u.nombre }}</ion-select-option> }
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-select label="Responsable" labelPlacement="stacked" interface="popover" formControlName="responsable">
+              <ion-select-option [value]="null">Sin responsable</ion-select-option>
+              @for (u of usuarios(); track u.id) {
+                <ion-select-option [value]="u.id">{{ u.nombre }}{{ u.email ? ' · ' + u.email : ' · sin correo' }}</ion-select-option>
+              }
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-select label="Estado" labelPlacement="stacked" interface="popover" formControlName="estado">
+              @for (e of estados; track e.valor) {
+                @if (editando() || e.valor !== 'Retirado') {
+                  <ion-select-option [value]="e.valor">{{ e.etiqueta }}</ion-select-option>
+                }
+              }
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-select label="Criticidad" labelPlacement="stacked" interface="popover" formControlName="criticidad">
+              @for (c of criticidades; track c) { <ion-select-option [value]="c">{{ c }}</ion-select-option> }
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-textarea label="Observaciones" labelPlacement="stacked" [autoGrow]="true" formControlName="observaciones"></ion-textarea>
+          </ion-item>
+        </ion-list>
+
+        <ion-note class="ion-padding-horizontal">
+          El responsable recibe por correo las alertas de Zabbix de este activo. Para dar de baja un activo, cambia su estado a
+          "Retirado": nunca se elimina y su historial se conserva.
+        </ion-note>
+
+        @if (error(); as mensaje) {
+          <ion-text color="danger"><p class="ion-padding-horizontal" role="alert">{{ mensaje }}</p></ion-text>
+        }
+
+        <div class="ion-padding">
+          <ion-button type="submit" expand="block" [disabled]="guardando()">
+            @if (guardando()) { <ion-spinner name="crescent"></ion-spinner> } @else { {{ editando() ? 'Guardar cambios' : 'Registrar activo' }} }
+          </ion-button>
+        </div>
+      </form>
+    }
+  </div>
+</ion-content>

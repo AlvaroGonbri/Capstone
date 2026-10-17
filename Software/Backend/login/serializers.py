@@ -12,14 +12,20 @@ from rest_framework_simplejwt.serializers import (
     TokenRefreshSerializer,
 )
 
-from .models import UserSessionSettings
+from .models import PasswordPolicy, UserSessionSettings
+from .passwords import (
+    PasswordExpired,
+    mark_password_changed,
+    password_expires_at,
+    password_is_expired,
+)
 
 
 User = get_user_model()
 
 ROLE_NAMES = {
     'administrador': 'administrador',
-    'administradorprivilegiado': 'administrador',
+    'administradorprivilegiado': 'administradorprivilegiado',
     'jefatura': 'jefatura',
     'tecnico': 'tecnico',
     'tecnicos': 'tecnico',
@@ -59,6 +65,9 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         if user:
             attrs[self.username_field] = user.get_username()
         data = super().validate(attrs)
+        # Se revisa después de validar la clave, para no revelar el estado de cuentas ajenas.
+        if password_is_expired(self.user):
+            raise PasswordExpired()
         UserSessionSettings.objects.update_or_create(
             user=self.user,
             defaults={'last_activity_at': timezone.now()},
@@ -78,6 +87,8 @@ class InactivityAwareTokenRefreshSerializer(TokenRefreshSerializer):
             timeout = timedelta(minutes=session_settings.inactivity_timeout_minutes)
             if elapsed > timeout:
                 raise AuthenticationFailed('La sesión expiró por inactividad.')
+        if password_is_expired(user):
+            raise PasswordExpired()
         data = super().validate(attrs)
         session_settings.last_activity_at = timezone.now()
         session_settings.save(update_fields=['last_activity_at'])
@@ -99,6 +110,55 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return value
 
 
+class PasswordChangeSerializer(serializers.Serializer):
+    """Cambio de contraseña con la clave actual; sirve también cuando ya expiró."""
+
+    username = serializers.CharField()
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate(self, attrs):
+        login = attrs['username'].strip()
+        user = (
+            User.objects.filter(email__iexact=login, is_active=True).first()
+            or User.objects.filter(username=login, is_active=True).first()
+        )
+        if user is None or not user.check_password(attrs['current_password']):
+            raise serializers.ValidationError(
+                {'detail': 'El usuario o la contraseña actual no son correctos.'}
+            )
+        if attrs['new_password'] == attrs['current_password']:
+            raise serializers.ValidationError(
+                {'new_password': 'La nueva contraseña debe ser distinta de la actual.'}
+            )
+        try:
+            password_validation.validate_password(attrs['new_password'], user)
+        except ValidationError as exc:
+            raise serializers.ValidationError({'new_password': exc.messages}) from exc
+        attrs['user'] = user
+        return attrs
+
+    def save(self):
+        user = self.validated_data['user']
+        user.set_password(self.validated_data['new_password'])
+        user.save(update_fields=['password'])
+        mark_password_changed(user)
+        return user
+
+
+class PasswordPolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PasswordPolicy
+        fields = ('max_age_days',)
+
+    def validate_max_age_days(self, value):
+        if not 0 <= value <= 365:
+            raise serializers.ValidationError(
+                'La vigencia debe estar entre 0 (sin expiración) y 365 días.'
+            )
+        return value
+
+
 class SessionTimeoutSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSessionSettings
@@ -114,12 +174,14 @@ class SessionTimeoutSerializer(serializers.ModelSerializer):
 
 class ManagedUserSerializer(serializers.ModelSerializer):
     role = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(write_only=True, required=False, allow_blank=True)
     rol = serializers.SerializerMethodField()
     inactivity_timeout_minutes = serializers.IntegerField(
         required=False,
         min_value=1,
         max_value=120,
     )
+    password_never_expires = serializers.BooleanField(required=False)
 
     class Meta:
         model = User
@@ -133,9 +195,9 @@ class ManagedUserSerializer(serializers.ModelSerializer):
             'rol',
             'role',
             'inactivity_timeout_minutes',
+            'password_never_expires',
             'password',
         )
-        extra_kwargs = {'password': {'write_only': True, 'required': False}}
 
     def get_rol(self, user):
         try:
@@ -145,7 +207,14 @@ class ManagedUserSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['inactivity_timeout_minutes'] = get_inactivity_timeout_minutes(instance)
+        session_settings = UserSessionSettings.objects.get_or_create(user=instance)[0]
+        policy = self.context.get('password_policy') or PasswordPolicy.get_solo()
+        expires_at = password_expires_at(instance, policy)
+        data['inactivity_timeout_minutes'] = session_settings.inactivity_timeout_minutes
+        data['password_never_expires'] = session_settings.password_never_expires
+        data['password_changed_at'] = session_settings.password_changed_at
+        data['password_expires_at'] = expires_at
+        data['password_expired'] = expires_at is not None and timezone.now() >= expires_at
         return data
 
     def validate_role(self, value):
@@ -167,19 +236,25 @@ class ManagedUserSerializer(serializers.ModelSerializer):
         role = validated_data.pop('role')
         password = validated_data.pop('password', None)
         timeout = validated_data.pop('inactivity_timeout_minutes', 15)
+        never_expires = validated_data.pop('password_never_expires', False)
         user = User(**validated_data)
         if not password:
             raise serializers.ValidationError({'password': 'La contraseña es obligatoria.'})
         user.set_password(password)
         user.save()
         self._assign_role(user, role)
-        UserSessionSettings.objects.create(user=user, inactivity_timeout_minutes=timeout)
+        UserSessionSettings.objects.create(
+            user=user,
+            inactivity_timeout_minutes=timeout,
+            password_never_expires=never_expires,
+        )
         return user
 
     def update(self, user, validated_data):
         role = validated_data.pop('role', None)
         password = validated_data.pop('password', None)
         timeout = validated_data.pop('inactivity_timeout_minutes', None)
+        never_expires = validated_data.pop('password_never_expires', None)
         for field, value in validated_data.items():
             setattr(user, field, value)
         if password:
@@ -190,7 +265,11 @@ class ManagedUserSerializer(serializers.ModelSerializer):
         settings, _ = UserSessionSettings.objects.get_or_create(user=user)
         if timeout is not None:
             settings.inactivity_timeout_minutes = timeout
-            settings.save(update_fields=['inactivity_timeout_minutes'])
+        if never_expires is not None:
+            settings.password_never_expires = never_expires
+        if password:
+            settings.password_changed_at = timezone.now()
+        settings.save()
         return user
 
     def _assign_role(self, user, role):

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { rolGuard } from './core/guards/rol.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'panel' },
@@ -24,6 +25,12 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'cambiar-clave',
+    title: 'Cambiar contraseña · SICMA',
+    loadComponent: () =>
+      import('./pages/cambiar-clave/cambiar-clave.page').then((m) => m.CambiarClavePage),
+  },
+  {
     path: 'usuarios',
     title: 'Usuarios · SICMA',
     canActivate: [authGuard, adminGuard],
@@ -40,6 +47,24 @@ export const routes: Routes = [
     title: 'Activos · SICMA',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/activos/activos.page').then((m) => m.ActivosPage),
+  },
+  {
+    path: 'activos/nuevo',
+    title: 'Nuevo activo · SICMA',
+    canActivate: [authGuard, rolGuard('administrador', 'administradorprivilegiado', 'tecnico')],
+    loadComponent: () => import('./pages/activos/activo-form.page').then((m) => m.ActivoFormPage),
+  },
+  {
+    path: 'activos/:id/editar',
+    title: 'Editar activo · SICMA',
+    canActivate: [authGuard, rolGuard('administrador', 'administradorprivilegiado', 'tecnico')],
+    loadComponent: () => import('./pages/activos/activo-form.page').then((m) => m.ActivoFormPage),
+  },
+  {
+    path: 'catalogos',
+    title: 'Catálogos · SICMA',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/catalogos/catalogos.page').then((m) => m.CatalogosPage),
   },
   {
     path: 'activos/:id',

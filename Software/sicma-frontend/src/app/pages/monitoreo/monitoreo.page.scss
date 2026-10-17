@@ -98,3 +98,75 @@
     text-align: right;
   }
 }
+
+.rango-sensor {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.74rem;
+}
+
+.umbrales-zona {
+  margin-top: 24px;
+
+  h2 {
+    margin: 0;
+    padding: 0 16px;
+    font-size: 1.1rem;
+  }
+
+  > ion-note {
+    display: block;
+    padding: 4px 16px 8px;
+    font-size: 0.78rem;
+  }
+}
+
+.campos-umbral {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+
+.mensaje-umbral {
+  display: block;
+  margin: 4px 0 8px;
+  font-size: 0.8rem;
+}
+
+.alertas-abiertas {
+  margin: 0 16px 16px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--sicma-critico);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--sicma-critico) 10%, transparent);
+
+  h2 {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+    color: var(--sicma-critico);
+  }
+
+  .alerta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 0;
+    font-size: 0.85rem;
+
+    span {
+      font-size: 0.76rem;
+      opacity: 0.8;
+    }
+  }
+
+  ion-note {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.72rem;
+  }
+}
+
+.correos-zona {
+  margin-top: 12px;
+}

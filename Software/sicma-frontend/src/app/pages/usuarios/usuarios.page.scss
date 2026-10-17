@@ -6,3 +6,9 @@ form {
 form h2 {
   margin-top: 0;
 }
+
+form.politica {
+  margin: 1rem 0 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--ion-color-step-150, rgba(0, 0, 0, 0.12));
+}

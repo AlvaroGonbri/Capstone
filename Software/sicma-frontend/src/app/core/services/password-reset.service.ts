@@ -24,4 +24,12 @@ export class PasswordResetService {
       { uid, token, new_password: newPassword },
     );
   }
+
+  /** Cambio con la clave actual; funciona aunque la contraseña ya haya expirado. */
+  cambiar(username: string, currentPassword: string, newPassword: string): Observable<PasswordResetResponse> {
+    return this.http.post<PasswordResetResponse>(
+      `${environment.apiUrl}/auth/password-change/`,
+      { username: username.trim(), current_password: currentPassword, new_password: newPassword },
+    );
+  }
 }

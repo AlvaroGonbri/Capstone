@@ -16,9 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from infraestructura.views import ZabbixWebhookView
 from mediciones.views import (
+    SensorClaveView,
     SensorDetailView,
     SensorListView,
+    UbicacionDetailView,
     UbicacionListView,
     UmbralListView,
 )
@@ -29,6 +32,12 @@ urlpatterns = [
     path('api/mediciones/', include('mediciones.urls')),
     path('api/sensores/', SensorListView.as_view(), name='sensor_list'),
     path('api/sensores/<int:pk>/', SensorDetailView.as_view(), name='sensor_detail'),
+    path('api/sensores/<int:pk>/clave/', SensorClaveView.as_view(), name='sensor_clave'),
     path('api/ubicaciones/', UbicacionListView.as_view(), name='ubicacion_list'),
+    path('api/ubicaciones/<int:pk>/', UbicacionDetailView.as_view(), name='ubicacion_detail'),
+    path('api/activos/', include('inventario.urls')),
     path('api/umbrales/', UmbralListView.as_view(), name='umbral_list'),
+    path('api/infraestructura/', include('infraestructura.urls')),
+    path('api/alertas/', include('alertas.urls')),
+    path('api/integraciones/zabbix/webhook/', ZabbixWebhookView.as_view(), name='zabbix_webhook'),
 ]

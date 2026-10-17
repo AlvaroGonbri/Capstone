@@ -4,13 +4,20 @@
       <ion-back-button defaultHref="/activos" text="Activos"></ion-back-button>
     </ion-buttons>
     <ion-title>Ficha de activo</ion-title>
+    @if (puedeEditar && activo()) {
+      <ion-buttons slot="end">
+        <ion-button [routerLink]="['/activos', id(), 'editar']">Editar</ion-button>
+      </ion-buttons>
+    }
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
   <div class="contenido-limitado ion-padding-vertical">
-    @if (!cargando() && !activo()) {
-      <p class="vacio">No se encontro el activo solicitado.</p>
+    @if (cargando()) {
+      <ion-card><ion-card-content><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></ion-card-content></ion-card>
+    } @else if (!activo()) {
+      <p class="vacio">No se encontró el activo solicitado.</p>
     } @else if (activo(); as a) {
       <ion-card>
         <ion-card-header>
@@ -21,35 +28,119 @@
           <ion-list lines="full">
             <ion-item>
               <ion-label>Estado</ion-label>
-              <ion-badge slot="end">{{ a.estado }}</ion-badge>
+              <ion-badge slot="end" [color]="colorEstado(a.estado)">{{ etiquetaEstado(a.estado) }}</ion-badge>
             </ion-item>
-            <ion-item>
-              <ion-label>Tipo</ion-label>
-              <ion-note slot="end">{{ a.tipo }}</ion-note>
-            </ion-item>
-            <ion-item>
-              <ion-label>Marca y modelo</ion-label>
-              <ion-note slot="end">{{ a.marca }} {{ a.modelo }}</ion-note>
-            </ion-item>
-            <ion-item>
-              <ion-label>Numero de serie</ion-label>
-              <ion-note slot="end">{{ a.numeroSerie }}</ion-note>
-            </ion-item>
-            <ion-item>
-              <ion-label>Ubicacion</ion-label>
-              <ion-note slot="end">
-                Sitio {{ a.sitio }} · rack {{ a.rack }} · U{{ a.unidadRack }}
-              </ion-note>
-            </ion-item>
+            <ion-item><ion-label>Tipo</ion-label><ion-note slot="end">{{ a.tipo || '—' }}</ion-note></ion-item>
+            <ion-item><ion-label>Marca / modelo</ion-label><ion-note slot="end">{{ a.marca || '—' }} / {{ a.modelo || '—' }}</ion-note></ion-item>
+            <ion-item><ion-label>Número de serie</ion-label><ion-note slot="end">{{ a.numero_serie }}</ion-note></ion-item>
+            <ion-item><ion-label>Criticidad</ion-label><ion-note slot="end">{{ a.criticidad }}</ion-note></ion-item>
+            <ion-item><ion-label>Ubicación</ion-label><ion-note slot="end">{{ a.ubicacion_nombre }}</ion-note></ion-item>
             <ion-item>
               <ion-label>Responsable</ion-label>
-              <ion-note slot="end">{{ a.responsable }}</ion-note>
+              <ion-note slot="end">{{ a.responsable_nombre || 'Sin asignar' }}{{ a.responsable_email ? ' · ' + a.responsable_email : '' }}</ion-note>
             </ion-item>
-            <ion-item>
-              <ion-label>Adquisicion</ion-label>
-              <ion-note slot="end">{{ a.fechaAdquisicion | date: 'dd/MM/yyyy' }}</ion-note>
-            </ion-item>
+            <ion-item><ion-label>Alta</ion-label><ion-note slot="end">{{ a.fecha_alta | date: 'dd/MM/yyyy HH:mm' }}</ion-note></ion-item>
+            @if (a.observaciones) {
+              <ion-item><ion-label class="ion-text-wrap"><h3>Observaciones</h3><p>{{ a.observaciones }}</p></ion-label></ion-item>
+            }
           </ion-list>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Monitoreo en Zabbix</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="ion-no-padding">
+          @if (host() === undefined) {
+            <ion-item><ion-label><ion-skeleton-text animated style="width: 50%"></ion-skeleton-text></ion-label></ion-item>
+          } @else if (host(); as h) {
+            <ion-list lines="full">
+              <ion-item>
+                <ion-label>Estado en vivo</ion-label>
+                <ion-badge slot="end" [color]="colorZabbix(h)">{{ h.estado }}</ion-badge>
+              </ion-item>
+              <ion-item><ion-label>Interfaz</ion-label><ion-note slot="end">{{ h.direccion }}:{{ h.puerto ?? '—' }}</ion-note></ion-item>
+              <ion-item><ion-label>Grupo Zabbix</ion-label><ion-note slot="end">{{ (h.grupo ?? []).join(', ') }}</ion-note></ion-item>
+              <ion-item><ion-label>Problemas activos</ion-label><ion-note slot="end">{{ h.problemasActivos ?? 0 }}</ion-note></ion-item>
+              @if (h.mysqlGrupoOnline !== null && h.mysqlGrupoOnline !== undefined) {
+                <ion-item>
+                  <ion-label>Group Replication</ion-label>
+                  <ion-note slot="end">{{ h.mysqlGrupoOnline ? 'Online' : 'Offline' }} · {{ h.mysqlEsPrimario ? 'Primario' : 'Secundario' }}</ion-note>
+                </ion-item>
+              }
+            </ion-list>
+
+            <h3 class="ion-padding-horizontal">Historial de eventos</h3>
+            <ion-segment [value]="dias()" (ionChange)="cambiarPeriodo($event.detail.value)">
+              @for (p of periodos; track p) {
+                <ion-segment-button [value]="p"><ion-label>{{ p }} días</ion-label></ion-segment-button>
+              }
+            </ion-segment>
+            @if (cargandoEventos()) {
+              <ion-item><ion-label><ion-skeleton-text animated style="width: 80%"></ion-skeleton-text></ion-label></ion-item>
+            } @else if (errorEventos()) {
+              <p class="vacio">{{ errorEventos() }}</p>
+            } @else if (eventos().length === 0) {
+              <p class="vacio">Sin eventos en los últimos {{ dias() }} días.</p>
+            } @else {
+              <ion-list lines="full">
+                @for (e of eventos(); track e.evento_id) {
+                  <ion-item>
+                    <ion-label class="ion-text-wrap">
+                      <h3>{{ e.problema }}</h3>
+                      <p>
+                        {{ e.inicio | date: 'dd/MM/yyyy HH:mm' }}
+                        @if (e.fin) { → {{ e.fin | date: 'dd/MM/yyyy HH:mm' }} }
+                        · {{ duracion(e.duracion_segundos) }}
+                        @if (e.reconocido) { · reconocido }
+                      </p>
+                    </ion-label>
+                    <div slot="end" class="ion-text-end">
+                      <ion-badge [color]="colorSeveridad(e.severidad_num)">{{ e.severidad }}</ion-badge>
+                      <br />
+                      <ion-note [color]="e.estado === 'activo' ? 'danger' : 'success'">{{ e.estado }}</ion-note>
+                    </div>
+                  </ion-item>
+                }
+              </ion-list>
+            }
+          } @else {
+            <p class="vacio">
+              @if (zabbixDisponible()) {
+                Este activo no está monitoreado: no hay un host en Zabbix con el código «{{ a.codigo }}».
+              } @else {
+                Sin conexión con Zabbix en este momento.
+              }
+            </p>
+          }
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Historial de cambios</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="ion-no-padding">
+          @if (cambios().length === 0) {
+            <p class="vacio">Sin cambios registrados.</p>
+          } @else {
+            <ion-list lines="full">
+              @for (c of cambios(); track c.id) {
+                <ion-item>
+                  <ion-label class="ion-text-wrap">
+                    <h3>{{ campo(c.campo_modificado) }}</h3>
+                    @if (c.campo_modificado === 'alta') {
+                      <p>{{ c.valor_nuevo }}</p>
+                    } @else {
+                      <p>{{ valor(c.valor_anterior) }} → {{ valor(c.valor_nuevo) }}</p>
+                    }
+                    <p>{{ c.usuario_nombre }} · {{ c.fecha_hora | date: 'dd/MM/yyyy HH:mm' }}</p>
+                  </ion-label>
+                </ion-item>
+              }
+            </ion-list>
+          }
         </ion-card-content>
       </ion-card>
 
@@ -58,11 +149,11 @@
           <ion-card-title>Intervenciones de este activo</ion-card-title>
         </ion-card-header>
         <ion-card-content class="ion-no-padding">
-          @if (historial().length === 0) {
+          @if (intervenciones().length === 0) {
             <p class="vacio">Sin intervenciones registradas.</p>
           } @else {
             <ion-list lines="full">
-              @for (i of historial(); track i.id) {
+              @for (i of intervenciones(); track i.id) {
                 <ion-item>
                   <ion-label>
                     <h3>{{ i.folio }} · {{ i.tipo }}</h3>

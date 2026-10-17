@@ -13,12 +13,25 @@
       <ion-note>actualizado {{ actualizadoEn() | date: 'HH:mm:ss' }}</ion-note>
     </div>
 
-    @if (umbrales(); as u) {
-      <ion-note class="umbrales">
-        Umbrales: advertencia sobre {{ u.temperaturaAdvertencia }} °C, critico sobre
-        {{ u.temperaturaCritica }} °C, humedad entre {{ u.humedadMinima }} % y
-        {{ u.humedadMaxima }} %.
-      </ion-note>
+    <ion-note class="umbrales">
+      Cada sensor se evalúa con los umbrales de su zona; fuera del rango se marca como crítico.
+    </ion-note>
+
+    @if (alertas().length > 0) {
+      <section class="alertas-abiertas" role="alert">
+        <h2>Alertas abiertas ({{ alertas().length }})</h2>
+        @for (alerta of alertas(); track alerta.id) {
+          <div class="alerta">
+            <strong>{{ alerta.condicion }}</strong>
+            <span>
+              {{ alerta.sensor_codigo }} · desde {{ alerta.fecha_apertura | date: 'dd/MM HH:mm' }}
+              · {{ alerta.contador_ocurrencias }} {{ alerta.contador_ocurrencias === 1 ? 'lectura' : 'lecturas' }} fuera de rango
+              @if (alerta.fecha_ultima_ocurrencia) { · última {{ alerta.fecha_ultima_ocurrencia | date: 'HH:mm' }} }
+            </span>
+          </div>
+        }
+        <ion-note>Se cierran solas cuando las lecturas vuelven al rango.</ion-note>
+      </section>
     }
 
     @if (cargando()) {
@@ -43,13 +56,13 @@
             <ion-card-content>
               <div class="lecturas">
                 <div>
-                  <p class="etiqueta-menor" [class.lectura-critica]="temperaturaCritica(sensor)">
+                  <p class="etiqueta-menor" [class.lectura-critica]="fueraDeRango(sensor, 'temperatura')">
                     Temperatura
                   </p>
                   <p class="dato-grande">{{ sensor.temperatura }}<span class="unidad">°C</span></p>
                 </div>
                 <div>
-                  <p class="etiqueta-menor" [class.lectura-critica]="sensor.humedad < 35 || sensor.humedad > 60">
+                  <p class="etiqueta-menor" [class.lectura-critica]="fueraDeRango(sensor, 'humedad')">
                     Humedad
                   </p>
                   <p class="dato-grande">{{ sensor.humedad }}<span class="unidad">%</span></p>
@@ -58,10 +71,19 @@
 
               @if (sensor.nivel !== 'normal') {
                 <div class="detalle-alerta" role="alert">
-                  <strong>{{ sensor.nivel === 'critico' ? 'ESTADO CRÍTICO' : 'ADVERTENCIA' }}</strong>
-                  <span>{{ motivoAlerta(sensor) }}</span>
+                  <strong>FUERA DE RANGO</strong>
+                  <span>{{ sensor.motivos.join(' y ') }}</span>
                 </div>
               }
+
+              <ion-note class="rango-sensor">
+                @if (sensor.umbrales) {
+                  Rango: {{ rango(sensor.umbrales.temperaturaMinima, sensor.umbrales.temperaturaMaxima, '°C') }} ·
+                  {{ rango(sensor.umbrales.humedadMinima, sensor.umbrales.humedadMaxima, '%') }}
+                } @else {
+                  Zona sin umbrales definidos: la lectura no se evalúa.
+                }
+              </ion-note>
 
               <svg
                 class="linea"
@@ -91,5 +113,65 @@
         }
       </div>
     }
+
+    <section id="umbrales" class="umbrales-zona">
+      <h2>Umbrales por zona</h2>
+      <ion-note>
+        Rango permitido de temperatura y humedad en cada zona. Cada cambio queda guardado como una nueva versión.
+        @if (!puedeEditarUmbrales()) { Solo los administradores pueden modificarlos. }
+      </ion-note>
+
+      <div class="rejilla-tarjetas">
+        @for (zona of zonas(); track zona.ubicacionId) {
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>{{ zona.nombre }}</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              @if (puedeEditarUmbrales()) {
+                <div class="campos-umbral">
+                  <ion-input label="Temp. mínima (°C)" labelPlacement="stacked" type="number" step="0.1"
+                    [value]="zona.temperaturaMinima" (ionInput)="editarValor(zona, 'temperaturaMinima', $any($event.detail).value)"></ion-input>
+                  <ion-input label="Temp. máxima (°C)" labelPlacement="stacked" type="number" step="0.1"
+                    [value]="zona.temperaturaMaxima" (ionInput)="editarValor(zona, 'temperaturaMaxima', $any($event.detail).value)"></ion-input>
+                  <ion-input label="Humedad mínima (%)" labelPlacement="stacked" type="number" step="0.1"
+                    [value]="zona.humedadMinima" (ionInput)="editarValor(zona, 'humedadMinima', $any($event.detail).value)"></ion-input>
+                  <ion-input label="Humedad máxima (%)" labelPlacement="stacked" type="number" step="0.1"
+                    [value]="zona.humedadMaxima" (ionInput)="editarValor(zona, 'humedadMaxima', $any($event.detail).value)"></ion-input>
+                </div>
+                @if (mensajeZona(); as m) {
+                  @if (m.ubicacionId === zona.ubicacionId) {
+                    <ion-note [color]="m.error ? 'danger' : 'success'" role="status" class="mensaje-umbral">{{ m.texto }}</ion-note>
+                  }
+                }
+                <ion-button size="small" [disabled]="guardandoZona() === zona.ubicacionId" (click)="guardarZona(zona)">
+                  @if (guardandoZona() === zona.ubicacionId) { <ion-spinner name="crescent"></ion-spinner> } @else { Guardar umbrales }
+                </ion-button>
+
+                <ion-textarea
+                  class="correos-zona"
+                  label="Responsables de alerta (correos)"
+                  labelPlacement="stacked"
+                  [autoGrow]="true"
+                  placeholder="nombre@empresa.cl, otro@empresa.cl"
+                  helperText="Reciben un correo cuando se abre una alerta en esta zona."
+                  [value]="zona.correos.join(', ')"
+                  (ionChange)="editarCorreos(zona, $any($event.detail).value)"
+                ></ion-textarea>
+                <ion-button size="small" fill="outline" [disabled]="guardandoZona() === zona.ubicacionId" (click)="guardarResponsables(zona)">
+                  Guardar responsables
+                </ion-button>
+              } @else {
+                <p>Temperatura: {{ rango(zona.temperaturaMinima, zona.temperaturaMaxima, '°C') }}</p>
+                <p>Humedad: {{ rango(zona.humedadMinima, zona.humedadMaxima, '%') }}</p>
+                <p>Responsables de alerta: {{ zona.correos.length ? zona.correos.join(', ') : 'sin definir' }}</p>
+              }
+            </ion-card-content>
+          </ion-card>
+        } @empty {
+          <p class="umbrales">No hay zonas registradas.</p>
+        }
+      </div>
+    </section>
   </div>
 </ion-content>

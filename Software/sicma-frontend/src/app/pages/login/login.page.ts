@@ -62,8 +62,14 @@ export class LoginPage {
         const destino = this.ruta.snapshot.queryParamMap.get('volverA') ?? '/panel';
         void this.router.navigateByUrl(destino);
       },
-      error: (e: Error) => {
+      error: (e: Error & { codigo?: string }) => {
         this.cargando.set(false);
+        if (e.codigo === 'password_expired') {
+          void this.router.navigate(['/cambiar-clave'], {
+            queryParams: { usuario: identificador.trim(), motivo: 'expirada' },
+          });
+          return;
+        }
         this.error.set(e.message || 'No fue posible iniciar sesion.');
       },
     });

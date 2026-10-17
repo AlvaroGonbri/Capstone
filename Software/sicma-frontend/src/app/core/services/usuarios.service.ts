@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { RolGestion, UsuarioGestion } from '../models';
+import { PoliticaContrasenas, RolGestion, UsuarioGestion } from '../models';
 
 export interface DatosUsuario {
   username: string;
@@ -13,12 +13,14 @@ export interface DatosUsuario {
   role: RolGestion;
   is_active: boolean;
   inactivity_timeout_minutes: number;
+  password_never_expires: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
 export class UsuariosService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiUrl}/auth/users/`;
+  private readonly urlPolitica = `${environment.apiUrl}/auth/password-policy/`;
 
   listar(): Observable<UsuarioGestion[]> {
     return this.http.get<UsuarioGestion[]>(this.url);
@@ -30,5 +32,13 @@ export class UsuariosService {
 
   actualizar(id: number, datos: Partial<DatosUsuario>): Observable<UsuarioGestion> {
     return this.http.patch<UsuarioGestion>(`${this.url}${id}/`, datos);
+  }
+
+  obtenerPolitica(): Observable<PoliticaContrasenas> {
+    return this.http.get<PoliticaContrasenas>(this.urlPolitica);
+  }
+
+  actualizarPolitica(politica: PoliticaContrasenas): Observable<PoliticaContrasenas> {
+    return this.http.patch<PoliticaContrasenas>(this.urlPolitica, politica);
   }
 }

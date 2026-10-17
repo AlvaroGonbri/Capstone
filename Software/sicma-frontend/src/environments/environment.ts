@@ -11,4 +11,6 @@ export const environment = {
   usarDatosSimulados: false,
   /** Periodo de refresco del panel de monitoreo, en milisegundos. */
   refrescoMonitoreoMs: 30_000,
+  /** Refresco del estado de los servidores desde Zabbix (RF-INF-01: cada 1 minuto). */
+  refrescoInfraestructuraMs: 60_000,
 };

@@ -6,7 +6,7 @@ export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const rol = auth.usuario()?.rol;
-  return rol === 'administrador'
+  return rol === 'administrador' || rol === 'administradorprivilegiado'
     ? true
     : router.createUrlTree(['/panel']);
 };

@@ -7,4 +7,5 @@ export const environment = {
    */
   usarDatosSimulados: true,
   refrescoMonitoreoMs: 10_000,
+  refrescoInfraestructuraMs: 60_000,
 };

@@ -9,3 +9,55 @@
 ion-badge {
   text-transform: capitalize;
 }
+
+.alertas-infra {
+  margin: 8px 16px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--ion-color-danger);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ion-color-danger) 8%, transparent);
+
+  h2 {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+  }
+
+  .alerta {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.85rem;
+
+    span {
+      display: flex;
+      flex-direction: column;
+    }
+
+    small {
+      opacity: 0.75;
+    }
+  }
+}
+
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+  gap: 4px 16px;
+  padding: 0 16px 8px;
+}
+
+.sin-inventariar {
+  margin-top: 24px;
+
+  h2 {
+    margin: 0;
+    padding: 0 16px 4px;
+    font-size: 0.95rem;
+  }
+}
+
+ion-item ion-badge {
+  vertical-align: middle;
+}

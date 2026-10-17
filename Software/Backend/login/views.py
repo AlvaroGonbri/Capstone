@@ -12,9 +12,12 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .models import UserSessionSettings
+from .models import PasswordPolicy, UserSessionSettings
+from .passwords import mark_password_changed
 from .permissions import AdministratorPermission
 from .serializers import (
+    PasswordChangeSerializer,
+    PasswordPolicySerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     ManagedUserSerializer,
@@ -99,7 +102,36 @@ class PasswordResetConfirmView(APIView):
 
         user.set_password(serializer.validated_data['new_password'])
         user.save(update_fields=['password'])
+        mark_password_changed(user)
         return Response({'detail': 'La contraseña fue actualizada correctamente.'})
+
+
+class PasswordChangeView(APIView):
+    """Cambio de contraseña con la clave actual. No exige sesión: se usa cuando la clave expiró."""
+    authentication_classes = []
+    permission_classes = []
+    throttle_scope = 'login'
+
+    def post(self, request, format=None):
+        serializer = PasswordChangeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'detail': 'La contraseña fue actualizada correctamente.'})
+
+
+class PasswordPolicyView(APIView):
+    """Vigencia máxima global de las contraseñas (0 = sin expiración)."""
+    permission_classes = [AdministratorPermission]
+
+    def get(self, request, format=None):
+        return Response(PasswordPolicySerializer(PasswordPolicy.get_solo()).data)
+
+    def patch(self, request, format=None):
+        serializer = PasswordPolicySerializer(PasswordPolicy.get_solo(), data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
 
 class ExampleView(APIView):
     permission_classes = [IsAuthenticated]
@@ -159,7 +191,8 @@ class ManagedUserListView(APIView):
 
     def get(self, request, format=None):
         users = User.objects.select_related('session_settings').prefetch_related('groups').order_by('id')
-        return Response(ManagedUserSerializer(users, many=True).data)
+        context = {'password_policy': PasswordPolicy.get_solo()}
+        return Response(ManagedUserSerializer(users, many=True, context=context).data)
 
     def post(self, request, format=None):
         serializer = ManagedUserSerializer(data=request.data)

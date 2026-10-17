@@ -3,10 +3,10 @@ import {
   Activo,
   EstadoSensor,
   Intervencion,
-  NivelAmbiental,
   Umbrales,
   Usuario,
 } from '../models';
+import { evaluarLectura } from '../services/umbrales.util';
 
 /**
  * Datos de demostracion para trabajar el frontend sin el API.
@@ -30,25 +30,11 @@ function haceDias(dias: number): string {
 
 /** Umbrales operativos para entrada de aire en racks de un datacenter. */
 export const UMBRALES: Umbrales = {
-  temperaturaAdvertencia: 24,
-  temperaturaCritica: 27,
+  temperaturaMinima: 18,
+  temperaturaMaxima: 27,
   humedadMinima: 35,
   humedadMaxima: 60,
 };
-
-export function nivelPorLectura(temperatura: number, humedad: number): NivelAmbiental {
-  if (
-    temperatura >= UMBRALES.temperaturaCritica ||
-    humedad < UMBRALES.humedadMinima ||
-    humedad > UMBRALES.humedadMaxima
-  ) {
-    return 'critico';
-  }
-  if (temperatura >= UMBRALES.temperaturaAdvertencia) {
-    return 'advertencia';
-  }
-  return 'normal';
-}
 
 export const USUARIOS_DEMO: Array<Usuario & { clave: string }> = [
   { id: 1, nombre: 'Fidel Rodriguez', correo: 'admin@sicma.cl', rol: 'administrador', inactivityTimeoutMinutes: 15, clave: 'sicma2026' },
@@ -95,9 +81,10 @@ function construirSensor(
     rack,
     temperatura,
     humedad,
-    nivel: nivelPorLectura(temperatura, humedad),
+    ...evaluarLectura(temperatura, humedad, UMBRALES),
     actualizadoEn: haceMinutos(minutos),
     historial: serieTemperatura(temperatura - 0.9),
+    umbrales: UMBRALES,
   };
 }
 

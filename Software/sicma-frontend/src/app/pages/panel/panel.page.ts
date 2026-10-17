@@ -18,9 +18,9 @@ import {
 import { addIcons } from 'ionicons';
 import { alertCircleOutline, arrowForwardOutline, thermometerOutline } from 'ionicons/icons';
 import { forkJoin } from 'rxjs';
-import { Acceso, Activo, EstadoSensor, Intervencion } from '../../core/models';
+import { Acceso, ActivoInventario, EstadoSensor, Intervencion } from '../../core/models';
 import { AccesosService } from '../../core/services/accesos.service';
-import { ActivosService } from '../../core/services/activos.service';
+import { InventarioService } from '../../core/services/inventario.service';
 import { IntervencionesService } from '../../core/services/intervenciones.service';
 import { MonitoreoService } from '../../core/services/monitoreo.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
@@ -50,13 +50,14 @@ import { ColorNivelPipe } from '../../shared/nivel.pipe';
   styleUrl: './panel.page.scss',
 })
 export class PanelPage {
-  private readonly activosService = inject(ActivosService);
+  private readonly inventarioService = inject(InventarioService);
   private readonly monitoreoService = inject(MonitoreoService);
   private readonly accesosService = inject(AccesosService);
   private readonly intervencionesService = inject(IntervencionesService);
 
   protected readonly cargando = signal(true);
-  private readonly activos = signal<Activo[]>([]);
+  /** Inventario sin los retirados (RF-ACT). */
+  private readonly activos = signal<ActivoInventario[]>([]);
   private readonly sensores = signal<EstadoSensor[]>([]);
   private readonly accesos = signal<Acceso[]>([]);
   private readonly intervenciones = signal<Intervencion[]>([]);
@@ -68,8 +69,8 @@ export class PanelPage {
     );
     return {
       activosTotales: this.activos().length,
-      activosOperativos: this.activos().filter((a) => a.estado === 'operativo').length,
-      activosEnFalla: this.activos().filter((a) => a.estado === 'en falla').length,
+      activosOperativos: this.activos().filter((a) => a.estado === 'Operativo').length,
+      activosEnFalla: this.activos().filter((a) => a.estado === 'Degradado' || a.estado === 'Fuera_de_servicio').length,
       sensoresEnAlerta: this.sensores().filter((s) => s.nivel !== 'normal').length,
       accesosHoy: accesosHoy.length,
       accesosDenegadosHoy: accesosHoy.filter((a) => a.resultado === 'denegado').length,
@@ -91,7 +92,7 @@ export class PanelPage {
     addIcons({ alertCircleOutline, thermometerOutline, arrowForwardOutline });
 
     forkJoin({
-      activos: this.activosService.listar(),
+      activos: this.inventarioService.listar(),
       sensores: this.monitoreoService.estadoSensores(),
       accesos: this.accesosService.listar(),
       intervenciones: this.intervencionesService.listar(),

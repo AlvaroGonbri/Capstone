@@ -1,28 +1,63 @@
-<app-encabezado titulo="Activos"></app-encabezado>
+<app-encabezado titulo="Activos">
+  @if (puedeEditar) {
+    <ion-buttons slot="end" acciones>
+      <ion-button routerLink="/activos/nuevo">Nuevo activo</ion-button>
+    </ion-buttons>
+  }
+</app-encabezado>
 
 <ion-content>
   <div class="contenido-limitado">
     <ion-searchbar
-      placeholder="Codigo, nombre, rack o serie"
+      placeholder="Código, nombre, serie, marca, ubicación o responsable"
       [debounce]="200"
-      (ionInput)="cambiarBusqueda($any($event.target).value)"
+      (ionInput)="busqueda.set($any($event.target).value ?? '')"
     ></ion-searchbar>
 
-    <ion-segment
-      [value]="filtro()"
-      scrollable
-      (ionChange)="cambiarFiltro($any($event.detail).value)"
-    >
+    <div class="filtros">
+      <ion-select label="Tipo" labelPlacement="stacked" interface="popover" [value]="filtroTipo()"
+        (ionChange)="filtroTipo.set($event.detail.value)">
+        <ion-select-option value="">Todos</ion-select-option>
+        @for (t of tipos(); track t.id) { <ion-select-option [value]="t.nombre">{{ t.nombre }}</ion-select-option> }
+      </ion-select>
+      <ion-select label="Ubicación" labelPlacement="stacked" interface="popover" [value]="filtroUbicacion()"
+        (ionChange)="filtroUbicacion.set($event.detail.value)">
+        <ion-select-option [value]="null">Todas</ion-select-option>
+        @for (u of ubicaciones(); track u.id) { <ion-select-option [value]="u.id">{{ nombreUbicacion(u) }}</ion-select-option> }
+      </ion-select>
+      <ion-toggle [checked]="incluirRetirados()" (ionChange)="cambiarIncluirRetirados($event.detail.checked)">
+        Incluir retirados
+      </ion-toggle>
+    </div>
+
+    <ion-segment [value]="filtroEstado()" scrollable (ionChange)="filtroEstado.set($any($event.detail).value)">
       <ion-segment-button value="todos"><ion-label>Todos</ion-label></ion-segment-button>
-      <ion-segment-button value="operativo"><ion-label>Operativos</ion-label></ion-segment-button>
-      <ion-segment-button value="en mantencion"><ion-label>Mantencion</ion-label></ion-segment-button>
-      <ion-segment-button value="en falla"><ion-label>En falla</ion-label></ion-segment-button>
-      <ion-segment-button value="de baja"><ion-label>De baja</ion-label></ion-segment-button>
+      @for (e of estados; track e.valor) {
+        <ion-segment-button [value]="e.valor"><ion-label>{{ e.etiqueta }}</ion-label></ion-segment-button>
+      }
+      @if (incluirRetirados()) {
+        <ion-segment-button value="Retirado"><ion-label>Retirados</ion-label></ion-segment-button>
+      }
     </ion-segment>
+
+    @if (alertas().length > 0) {
+      <section class="alertas-infra" role="alert">
+        <h2>Alertas de infraestructura abiertas ({{ alertas().length }})</h2>
+        @for (alerta of alertas(); track alerta.id) {
+          <div class="alerta">
+            <ion-badge [color]="colorSeveridad(alerta.severidad)">{{ alerta.severidad }}</ion-badge>
+            <span>
+              <strong>{{ alerta.condicion }}</strong>
+              <small>desde {{ alerta.fecha_apertura | date: 'dd/MM HH:mm' }} · evento Zabbix {{ alerta.evento_zabbix }}</small>
+            </span>
+          </div>
+        }
+      </section>
+    }
 
     @if (cargando()) {
       <ion-list>
-        @for (i of [1, 2, 3, 4, 5]; track i) {
+        @for (i of [1, 2, 3, 4]; track i) {
           <ion-item>
             <ion-label>
               <ion-skeleton-text animated style="width: 40%"></ion-skeleton-text>
@@ -31,24 +66,71 @@
           </ion-item>
         }
       </ion-list>
-    } @else if (filtrados().length === 0) {
-      <p class="vacio">Ningun activo coincide con la busqueda.</p>
+    } @else if (error(); as mensaje) {
+      <p class="vacio">{{ mensaje }}</p>
     } @else {
-      <ion-note class="conteo">{{ filtrados().length }} activos</ion-note>
-      <ion-list lines="full">
-        @for (activo of filtrados(); track activo.id) {
-          <ion-item [routerLink]="['/activos', activo.id]" button detail="true">
-            <ion-label>
-              <h3>{{ activo.nombre }}</h3>
-              <p>{{ activo.codigo }} · {{ activo.marca }} {{ activo.modelo }}</p>
-              <p>Sitio {{ activo.sitio }} · rack {{ activo.rack }} · U{{ activo.unidadRack }}</p>
-            </ion-label>
-            <ion-badge slot="end" [color]="colorEstado(activo.estado)">
-              {{ activo.estado }}
-            </ion-badge>
-          </ion-item>
+      <ion-note class="conteo">
+        {{ filtrados().length }} de {{ activos().length }} activos
+        @if (zabbixDisponible()) {
+          · Zabbix actualizado a las {{ actualizadoEn() | date: 'HH:mm:ss' }} (cada {{ refrescoSegundos }} s)
         }
-      </ion-list>
+      </ion-note>
+      @if (!zabbixDisponible()) {
+        <ion-note class="conteo" color="warning" role="status">
+          Sin conexión con Zabbix: se muestra el inventario sin el estado en vivo.
+        </ion-note>
+      }
+
+      @if (activos().length === 0) {
+        <p class="vacio">
+          El inventario está vacío.
+          @if (puedeEditar && sinInventariar().length > 0) { Puedes registrar los equipos que ya monitorea Zabbix (abajo). }
+        </p>
+      } @else if (filtrados().length === 0) {
+        <p class="vacio">Ningún activo coincide con la búsqueda.</p>
+      } @else {
+        <ion-list lines="full">
+          @for (activo of filtrados(); track activo.id) {
+            <ion-item [routerLink]="['/activos', activo.id]" button detail="true">
+              <ion-label>
+                <h3>{{ activo.nombre }}</h3>
+                <p>{{ activo.codigo }} · {{ activo.tipo || 'Sin tipo' }} · {{ activo.ubicacion_nombre }}</p>
+                <p>
+                  Responsable: {{ activo.responsable_nombre || 'sin asignar' }} · Criticidad {{ activo.criticidad }}
+                  @if (host(activo); as h) {
+                    · Zabbix: <ion-badge [color]="colorZabbix(h)">{{ h.estado }}</ion-badge>
+                    @if (h.problemasActivos) { {{ h.problemasActivos }} problema(s) }
+                  }
+                </p>
+              </ion-label>
+              <ion-badge slot="end" [color]="colorEstado(activo.estado)">{{ etiquetaEstado(activo.estado) }}</ion-badge>
+            </ion-item>
+          }
+        </ion-list>
+      }
+
+      @if (sinInventariar().length > 0) {
+        <section class="sin-inventariar">
+          <h2>Monitoreados por Zabbix sin inventariar ({{ sinInventariar().length }})</h2>
+          <ion-list lines="full">
+            @for (host of sinInventariar(); track host.id) {
+              <ion-item>
+                <ion-label>
+                  <h3>{{ host.nombre }}</h3>
+                  <p>{{ host.codigo }} · {{ host.direccion }} · {{ (host.grupo ?? []).join(', ') }}</p>
+                </ion-label>
+                <ion-badge slot="end" [color]="colorZabbix(host)">{{ host.estado }}</ion-badge>
+                @if (puedeEditar) {
+                  <ion-button slot="end" size="small" fill="outline" routerLink="/activos/nuevo"
+                    [queryParams]="{ codigo: host.codigo, nombre: host.nombre }">
+                    Registrar
+                  </ion-button>
+                }
+              </ion-item>
+            }
+          </ion-list>
+        </section>
+      }
     }
   </div>
 </ion-content>

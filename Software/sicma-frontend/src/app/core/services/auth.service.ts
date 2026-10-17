@@ -4,7 +4,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, delay, map, of, switchMap, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { SesionIniciada, Usuario } from '../models';
+import { RolUsuario, SesionIniciada, Usuario } from '../models';
 import { USUARIOS_DEMO } from '../mock/datos-simulados';
 
 const CLAVE_ALMACENAMIENTO = 'sicma.sesion';
@@ -34,6 +34,12 @@ export class AuthService {
   readonly usuario = computed<Usuario | null>(() => this.sesion()?.usuario ?? null);
   readonly token = computed<string | null>(() => this.sesion()?.token ?? null);
   readonly autenticado = computed(() => this.sesion() !== null);
+
+  /** Solo para mostrar u ocultar acciones: el API vuelve a verificar el rol (RNF-SEG-08). */
+  tieneRol(...roles: RolUsuario[]): boolean {
+    const rol = this.usuario()?.rol;
+    return rol !== undefined && roles.includes(rol);
+  }
 
   iniciarControlInactividad(): void {
     for (const evento of EVENTOS_ACTIVIDAD) {
@@ -88,9 +94,11 @@ export class AuthService {
             ),
         ),
         tap((s) => this.guardar(s)),
-        catchError((error: { error?: { detail?: string } }) =>
-          throwError(
-            () => new Error(error.error?.detail ?? 'No fue posible iniciar sesión.'),
+        catchError((error: { error?: { detail?: string; code?: string } }) =>
+          throwError(() =>
+            Object.assign(new Error(error.error?.detail ?? 'No fue posible iniciar sesión.'), {
+              codigo: error.error?.code,
+            }),
           ),
         ),
       );

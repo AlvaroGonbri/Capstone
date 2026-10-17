@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
+# Lee variables del entorno y, si no están, del archivo .env junto a manage.py.
+from decouple import config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0o&&1h)*6%3i)3fnewe4e6870*48bhydre$ijs$_#p!r(t!jly'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -42,6 +45,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'infraestructura',
+    'alertas',
+    'inventario',
 ]
 
 MIDDLEWARE = [
@@ -81,11 +87,11 @@ WSGI_APPLICATION = 'backendsicma.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "sicma",
-        "USER": "sicma_app",
-        "PASSWORD": "***Duoc.2026+++",
-        "HOST": "192.168.100.95",
-        "PORT": "6446",
+        "NAME": config('DB_NAME', default='sicma'),
+        "USER": config('DB_USER', default='sicma_app'),
+        "PASSWORD": config('DB_PASSWORD'),
+        "HOST": config('DB_HOST', default='192.168.100.95'),
+        "PORT": config('DB_PORT', default='6446'),
     }
 }
 
@@ -160,13 +166,24 @@ STATIC_URL = 'static/'
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-import os
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_TIMEOUT = 15
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default=None)
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default=None)
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 PASSWORD_RESET_CONFIRM_URL = 'http://localhost:4200/recuperar/confirmar'
+
+# Las fechas se guardan en UTC y se muestran en esta zona horaria (RN-08).
+SICMA_ZONA_HORARIA = 'America/Santiago'
+# Los correos de alerta se envían en un hilo para no demorar la ingesta del sensor.
+ALERTAS_CORREO_ASINCRONO = True
+
+
+# Zabbix (solo desde variables de entorno; nunca en el código ni en el frontend)
+
+ZABBIX_URL = config('ZABBIX_URL', default='')
+ZABBIX_TOKEN = config('ZABBIX_TOKEN', default='')
+ZABBIX_WEBHOOK_SECRET = config('ZABBIX_WEBHOOK_SECRET', default='')

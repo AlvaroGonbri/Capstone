@@ -4,7 +4,12 @@ export type Sitio = 'A' | 'B';
 
 // ---------------------------------------------------------------- Usuarios
 
-export type RolUsuario = 'administrador' | 'tecnico' | 'jefatura' | 'auditor';
+export type RolUsuario =
+  | 'administrador'
+  | 'administradorprivilegiado'
+  | 'tecnico'
+  | 'jefatura'
+  | 'auditor';
 
 export interface Usuario {
   id: number;
@@ -26,6 +31,16 @@ export interface UsuarioGestion {
   is_active: boolean;
   rol: string | null;
   inactivity_timeout_minutes: number;
+  password_never_expires: boolean;
+  password_changed_at: string;
+  /** null si la contraseña no expira (cuenta exenta o política en 0). */
+  password_expires_at: string | null;
+  password_expired: boolean;
+}
+
+/** Política global de contraseñas. max_age_days = 0 significa sin expiración. */
+export interface PoliticaContrasenas {
+  max_age_days: number;
 }
 
 export interface SesionIniciada {
@@ -34,7 +49,75 @@ export interface SesionIniciada {
   refreshToken: string;
 }
 
-// ----------------------------------------------------------------- Activos
+// ------------------------------------------------- Inventario y catálogos
+
+/** Estados del ciclo de vida de un activo (enum de la tabla activo). 'Retirado' = dado de baja. */
+export type EstadoInventario = 'Operativo' | 'Degradado' | 'En_mantenimiento' | 'Fuera_de_servicio' | 'Retirado';
+export type Criticidad = 'Baja' | 'Media' | 'Alta' | 'Critica';
+
+/** Activo del inventario de SICMA (RF-ACT). */
+export interface ActivoInventario {
+  id: number;
+  codigo: string;
+  nombre: string;
+  tipo: string | null;
+  marca: string | null;
+  modelo: string | null;
+  numero_serie: string;
+  estado: EstadoInventario;
+  criticidad: Criticidad;
+  ubicacion: number;
+  ubicacion_nombre: string;
+  responsable: number | null;
+  responsable_nombre: string | null;
+  responsable_email: string | null;
+  fecha_alta: string;
+  observaciones: string | null;
+}
+
+export interface HistorialActivo {
+  id: number;
+  /** 'alta' o el nombre del campo modificado. */
+  campo_modificado: string;
+  valor_anterior: string | null;
+  valor_nuevo: string | null;
+  usuario_nombre: string;
+  fecha_hora: string;
+}
+
+export interface TipoActivoCatalogo {
+  id: number;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface UbicacionCatalogo {
+  id: number;
+  sala: string;
+  zona: string | null;
+  rack: string | null;
+  posicion: string | null;
+  ubicacion_padre_id: number | null;
+  activa: boolean;
+}
+
+export interface SensorCatalogo {
+  id: number;
+  codigo: string;
+  tipo: string;
+  estado: 'Activo' | 'Inactivo';
+  intervalo_esperado_segundos: number;
+  ubicacion: UbicacionCatalogo;
+  ultima_medicion: { temperatura: string | null; humedad: string | null; fecha_hora_medicion: string } | null;
+}
+
+export interface UsuarioResumen {
+  id: number;
+  nombre: string;
+  email: string | null;
+}
+
+// ------------------------------------------------- Equipos en Zabbix
 
 export type TipoActivo =
   | 'servidor'
@@ -47,21 +130,45 @@ export type TipoActivo =
 
 export type EstadoActivo = 'operativo' | 'en mantencion' | 'en falla' | 'de baja';
 
+/** Host monitoreado por Zabbix (/api/infraestructura/activos/). Se cruza con el inventario por código. */
 export interface Activo {
   id: number;
   codigo: string;
   nombre: string;
   tipo: TipoActivo;
-  marca: string;
-  modelo: string;
-  numeroSerie: string;
-  sitio: Sitio;
-  rack: string;
-  unidadRack: number;
   estado: EstadoActivo;
-  responsable: string;
-  fechaAdquisicion: string;
+  grupo?: string[];
+  direccion?: string;
+  puerto?: number | null;
+  mantenimiento?: boolean;
+  problemasActivos?: number;
+  mysqlGrupoOnline?: boolean | null;
+  mysqlEsPrimario?: boolean | null;
+  ultimoError?: string | null;
+  /** Campos heredados del catálogo de activos local, no enviados por Zabbix. */
+  marca?: string;
+  modelo?: string;
+  numeroSerie?: string;
+  sitio?: Sitio;
+  rack?: string;
+  unidadRack?: number;
+  responsable?: string;
+  fechaAdquisicion?: string;
   ultimaIntervencion?: string;
+}
+
+/** Problema registrado por Zabbix en un servidor (RF-INF-03). */
+export interface EventoTecnico {
+  evento_id: string;
+  problema: string;
+  severidad: string;
+  /** 0 = no clasificado … 5 = desastre. */
+  severidad_num: number;
+  inicio: string;
+  fin: string | null;
+  estado: 'activo' | 'resuelto';
+  duracion_segundos: number | null;
+  reconocido: boolean;
 }
 
 // -------------------------------------------------- Monitoreo ambiental
@@ -87,13 +194,42 @@ export interface EstadoSensor {
   actualizadoEn: string;
   /** Ultimas lecturas de temperatura, de la mas antigua a la mas reciente. */
   historial: number[];
+  /** Umbrales vigentes de la zona del sensor; null si la zona no tiene ninguno definido. */
+  umbrales: Umbrales | null;
+  /** Por qué la lectura está fuera de rango (vacío si está normal). */
+  motivos: string[];
 }
 
+/** Rango permitido por variable (RF-AMB-03). null = no definido para esa variable. */
 export interface Umbrales {
-  temperaturaAdvertencia: number;
-  temperaturaCritica: number;
-  humedadMinima: number;
-  humedadMaxima: number;
+  temperaturaMinima: number | null;
+  temperaturaMaxima: number | null;
+  humedadMinima: number | null;
+  humedadMaxima: number | null;
+}
+
+/** Umbrales vigentes de una zona (ubicación) del datacenter. */
+export interface UmbralZona extends Umbrales {
+  ubicacionId: number;
+  nombre: string;
+  /** Responsables de alerta de la zona: reciben el correo (RF-CAT-05 / RF-AMB-05). */
+  correos: string[];
+}
+
+/** Alerta generada por SICMA (RF-AMB-04). */
+export interface Alerta {
+  id: number;
+  origen: 'IoT' | 'Biometria' | 'Zabbix';
+  condicion: string;
+  severidad: 'Informativa' | 'Advertencia' | 'Alta' | 'Critica';
+  estado: 'Nueva' | 'Reconocida' | 'Cerrada';
+  fecha_apertura: string;
+  contador_ocurrencias: number;
+  fecha_ultima_ocurrencia: string | null;
+  sensor_codigo: string | null;
+  ubicacion: number | null;
+  /** event_id de Zabbix, solo en alertas de origen Zabbix (RF-INF-02). */
+  evento_zabbix: string | null;
 }
 
 // --------------------------------------------------------------- Arduinos
@@ -107,9 +243,9 @@ export interface Arduino {
   estado: 'conectado' | 'desconectado';
   ultimaLectura: string;
   temperatura: number;
-  temperaturaMinima: number;
-  temperaturaAdvertencia: number;
-  temperaturaCritica: number;
+  humedad: number;
+  /** Umbrales de la zona donde está instalado (se definen en Monitoreo). */
+  umbrales: Umbrales | null;
 }
 
 // ----------------------------------------------------------------- Accesos

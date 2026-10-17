@@ -1,11 +1,16 @@
 import {
+  a as a2,
+  o as o5,
+  s as s3
+} from "./chunk-USDKPCJH.js";
+import {
   o as o6
-} from "./chunk-SEXJLOP3.js";
+} from "./chunk-GOI2QLQD.js";
 import {
   e as e3,
   r as r6,
   t as t3
-} from "./chunk-5NF7IPLD.js";
+} from "./chunk-CUZQXKOJ.js";
 import {
   a as a3,
   e as e2,
@@ -18,20 +23,27 @@ import {
   r as r5,
   u as u2,
   v as v3
-} from "./chunk-ZM7MIES4.js";
+} from "./chunk-VFROZMPA.js";
 import {
   e as e4
-} from "./chunk-4SKD3W26.js";
+} from "./chunk-4ZZNPFDI.js";
 import {
-  NG_VALUE_ACCESSOR,
-  NgControl
-} from "./chunk-WOFHYMQZ.js";
+  ActivatedRoute,
+  ChildrenOutletContexts,
+  NavigationCancel,
+  NavigationError,
+  NavigationStart,
+  PRIMARY_OUTLET,
+  Router,
+  RouterLink,
+  UrlSerializer
+} from "./chunk-YKF5VVHZ.js";
 import {
   l as l2
-} from "./chunk-5RJUIJFF.js";
+} from "./chunk-5TVZMULO.js";
 import {
   o as o4
-} from "./chunk-6WULW4BY.js";
+} from "./chunk-M2JG4N2N.js";
 import {
   D,
   L,
@@ -44,7 +56,11 @@ import {
   s as s2,
   t as t2,
   v as v2
-} from "./chunk-7H6F3GR6.js";
+} from "./chunk-TFZFE33C.js";
+import {
+  d as d2,
+  o as o2
+} from "./chunk-QZZGJWSY.js";
 import {
   T,
   b,
@@ -65,21 +81,7 @@ import {
   v,
   w,
   y
-} from "./chunk-GQRW365M.js";
-import {
-  h as h2,
-  i,
-  n as n3
-} from "./chunk-T5SBZOKS.js";
-import {
-  a as a2,
-  o as o5,
-  s as s3
-} from "./chunk-TPSE3BOI.js";
-import {
-  d as d2,
-  o as o2
-} from "./chunk-FBOO75ZN.js";
+} from "./chunk-XR35ZB3M.js";
 import {
   A,
   J,
@@ -100,28 +102,26 @@ import {
   qt,
   s,
   z
-} from "./chunk-45K2QPHS.js";
+} from "./chunk-XMO3TU6J.js";
 import {
-  ActivatedRoute,
-  ChildrenOutletContexts,
-  NavigationCancel,
-  NavigationError,
-  NavigationStart,
-  PRIMARY_OUTLET,
-  Router,
-  RouterLink,
-  UrlSerializer
-} from "./chunk-NSLWLSUF.js";
-import "./chunk-SXBGMFC2.js";
+  h as h2,
+  i,
+  n as n3
+} from "./chunk-PNKOG7RF.js";
+import {
+  NG_VALUE_ACCESSOR,
+  NgControl
+} from "./chunk-2J2GXPGR.js";
+import "./chunk-ENYWT53Q.js";
+import "./chunk-IZZPYABU.js";
 import {
   CommonModule,
   Location,
   LocationStrategy,
   NgIf,
   NgTemplateOutlet
-} from "./chunk-V4XPUXC4.js";
-import "./chunk-RV5T6HV7.js";
-import "./chunk-NYOI5KQG.js";
+} from "./chunk-7EWW43GC.js";
+import "./chunk-777EF7JL.js";
 import {
   APP_INITIALIZER,
   ApplicationRef,
@@ -184,7 +184,7 @@ import {
   ɵɵrestoreView,
   ɵɵtemplate,
   ɵɵviewQuery
-} from "./chunk-HYA4RRBG.js";
+} from "./chunk-A3BAO7J5.js";
 import {
   BehaviorSubject,
   Subject,
@@ -195,7 +195,7 @@ import {
   fromEvent,
   of,
   switchMap
-} from "./chunk-YB2C65QT.js";
+} from "./chunk-H7EHEJJU.js";
 import {
   __async,
   __objRest,
@@ -3818,7 +3818,7 @@ var w6 = Jn(class extends A {
       const t19 = () => {
         this.gestureOrAnimationInProgress = true, this.swipeHandler && this.swipeHandler.onStart();
       };
-      this.gesture = (yield import("./p-CWuIRJQN-52J5UOJB.js")).createSwipeBackGesture(this.el, (() => !this.gestureOrAnimationInProgress && !!this.swipeHandler && this.swipeHandler.canStart()), (() => t19()), ((t20) => this.ani?.progressStep(t20)), ((t20, i13, s23) => {
+      this.gesture = (yield import("./p-CWuIRJQN-UUYJUFDK.js")).createSwipeBackGesture(this.el, (() => !this.gestureOrAnimationInProgress && !!this.swipeHandler && this.swipeHandler.canStart()), (() => t19()), ((t20) => this.ani?.progressStep(t20)), ((t20, i13, s23) => {
         if (this.ani) {
           this.ani.onFinish((() => {
             this.gestureOrAnimationInProgress = false, this.swipeHandler && this.swipeHandler.onEnd(t20);
@@ -6411,12 +6411,12 @@ var d9 = Jn(class extends A {
   componentDidLoad() {
     this.rIC((() => __async(this, null, function* () {
       const e14 = d4(window, "hybrid");
-      if (n.getBoolean("_testing") || import("./p-BQyuFxYc-IU4VNMEO.js").then(((e15) => e15.startTapClick(n))), n.getBoolean("statusTap", e14) && import("./p-BT9-hMMz-YCBTCAIW.js").then(((e15) => e15.startStatusTap())), n.getBoolean("inputShims", u9())) {
+      if (n.getBoolean("_testing") || import("./p-BQyuFxYc-VAZ3GT7O.js").then(((e15) => e15.startTapClick(n))), n.getBoolean("statusTap", e14) && import("./p-BT9-hMMz-MYKIEN5P.js").then(((e15) => e15.startStatusTap())), n.getBoolean("inputShims", u9())) {
         const e15 = d4(window, "ios") ? "ios" : "android";
-        import("./p-C-NbvXu4-2RRVRGFH.js").then(((t20) => t20.startInputShims(n, e15)));
+        import("./p-C-NbvXu4-AW55G5LW.js").then(((t20) => t20.startInputShims(n, e15)));
       }
-      const t19 = yield import("./p-BWoa-cki-JCYQJLYG.js"), i13 = e14 || o5();
-      n.getBoolean("hardwareBackButton", i13) ? t19.startHardwareBackButton() : (o5() && a("[ion-app] - experimentalCloseWatcher was set to `true`, but hardwareBackButton was set to `false`. Both config options must be `true` for the Close Watcher API to be used."), t19.blockHardwareBackButton()), "undefined" != typeof window && import("./p-D7-vHX0A-K4NG6GNB.js").then(((e15) => e15.startKeyboardAssist(window))), import("./p-BmVRXR1y-O4RAKTU2.js").then(((e15) => this.focusVisible = e15.startFocusVisible()));
+      const t19 = yield import("./p-BWoa-cki-Q6EARXU2.js"), i13 = e14 || o5();
+      n.getBoolean("hardwareBackButton", i13) ? t19.startHardwareBackButton() : (o5() && a("[ion-app] - experimentalCloseWatcher was set to `true`, but hardwareBackButton was set to `false`. Both config options must be `true` for the Close Watcher API to be used."), t19.blockHardwareBackButton()), "undefined" != typeof window && import("./p-D7-vHX0A-3EW4V262.js").then(((e15) => e15.startKeyboardAssist(window))), import("./p-BmVRXR1y-Y24ADDCD.js").then(((e15) => this.focusVisible = e15.startFocusVisible()));
     })));
   }
   disconnectedCallback() {
@@ -10388,7 +10388,7 @@ var g11 = Jn(class extends A {
       const { el: t19 } = this;
       this.item = t19.querySelector("ion-item"), this.contentEl = l4(t19), this.mutationObserver = r20(t19, "ion-item-option", (() => __async(this, null, function* () {
         yield this.updateOptions();
-      }))), yield this.updateOptions(), this.gesture = (yield import("./p-D0YpjgON-EGMPH7U7.js")).createGesture({ el: t19, gestureName: "item-swipe", gesturePriority: 100, threshold: 5, canStart: (t20) => this.canStart(t20), onStart: () => this.onStart(), onMove: (t20) => this.onMove(t20), onEnd: (t20) => this.onEnd(t20) }), this.disabledChanged();
+      }))), yield this.updateOptions(), this.gesture = (yield import("./p-D0YpjgON-GNT5YJBH.js")).createGesture({ el: t19, gestureName: "item-swipe", gesturePriority: 100, threshold: 5, canStart: (t20) => this.canStart(t20), onStart: () => this.onStart(), onMove: (t20) => this.onMove(t20), onEnd: (t20) => this.onEnd(t20) }), this.disabledChanged();
     });
   }
   disconnectedCallback() {
@@ -11098,7 +11098,7 @@ var S5 = Jn(class extends A {
     return __async(this, null, function* () {
       "undefined" != typeof customElements && null != customElements && (yield customElements.whenDefined("ion-menu")), void 0 === this.type && (this.type = n.get("menuType", "overlay"));
       const t19 = void 0 !== this.contentId ? document.getElementById(this.contentId) : null;
-      null !== t19 ? (this.el.contains(t19) && d(`[ion-menu] - The "contentId" should refer to the main view's ion-content, not the ion-content inside of the ion-menu.`), this.contentEl = t19, t19.classList.add("menu-content"), this.typeChanged(this.type, void 0), this.sideChanged(), p5._register(this), this.menuChanged(), this.gesture = (yield import("./p-D0YpjgON-EGMPH7U7.js")).createGesture({ el: document, gestureName: "menu-swipe", gesturePriority: 30, threshold: 10, blurOnStart: true, canStart: (t20) => this.canStart(t20), onWillStart: () => this.onWillStart(), onStart: () => this.onStart(), onMove: (t20) => this.onMove(t20), onEnd: (t20) => this.onEnd(t20) }), this.updateState()) : d('[ion-menu] - Must have a "content" element to listen for drag events on.');
+      null !== t19 ? (this.el.contains(t19) && d(`[ion-menu] - The "contentId" should refer to the main view's ion-content, not the ion-content inside of the ion-menu.`), this.contentEl = t19, t19.classList.add("menu-content"), this.typeChanged(this.type, void 0), this.sideChanged(), p5._register(this), this.menuChanged(), this.gesture = (yield import("./p-D0YpjgON-GNT5YJBH.js")).createGesture({ el: document, gestureName: "menu-swipe", gesturePriority: 30, threshold: 10, blurOnStart: true, canStart: (t20) => this.canStart(t20), onWillStart: () => this.onWillStart(), onStart: () => this.onStart(), onMove: (t20) => this.onMove(t20), onEnd: (t20) => this.onEnd(t20) }), this.updateState()) : d('[ion-menu] - Must have a "content" element to listen for drag events on.');
     });
   }
   componentWillLoad() {
@@ -12617,7 +12617,7 @@ var D4 = Jn(class extends A {
           } else this.state = 2, m23(i13, o20, a20);
         }));
       }, this.scrollEl.addEventListener("scroll", this.scrollListenerCallback);
-      const { createGesture: h25 } = yield import("./p-D0YpjgON-EGMPH7U7.js");
+      const { createGesture: h25 } = yield import("./p-D0YpjgON-GNT5YJBH.js");
       this.scrollEl && (this.gesture = h25({ el: this.scrollEl, gestureName: "refresher", gesturePriority: 31, direction: "y", threshold: 5, onStart: () => {
         this.pointerDown = true, this.didRefresh || u16(this.elementToTransform, "0px"), 0 === n22 && (n22 = 0.16 * this.scrollEl.clientHeight);
       }, onMove: (e15) => {
@@ -12634,7 +12634,7 @@ var D4 = Jn(class extends A {
       null !== t19 && null !== o20 && J((() => {
         t19.style.setProperty("animation", "none"), i13.style.setProperty("animation-delay", "-655ms"), o20.style.setProperty("animation-delay", "-655ms");
       }));
-      const { createGesture: h25 } = yield import("./p-D0YpjgON-EGMPH7U7.js");
+      const { createGesture: h25 } = yield import("./p-D0YpjgON-GNT5YJBH.js");
       this.scrollEl && (this.gesture = h25({ el: this.scrollEl, gestureName: "refresher", gesturePriority: 31, direction: "y", threshold: 5, canStart: () => 8 !== this.state && 32 !== this.state && 0 === this.scrollEl.scrollTop, onStart: (e15) => {
         this.progress = 0, e15.data = { animation: void 0, didStart: false, cancelled: false };
       }, onMove: (r37) => {
@@ -12684,7 +12684,7 @@ var D4 = Jn(class extends A {
         const r36 = f2(e14);
         if (this.scrollEl = yield a3(r36 ?? e14), this.backgroundContentEl = yield e14.getBackgroundElement(), this.contentFullscreen = e14.fullscreen, yield h17(this.el, P(this))) this.setupNativeRefresher(e14);
         else {
-          const { createGesture: r37 } = yield import("./p-D0YpjgON-EGMPH7U7.js");
+          const { createGesture: r37 } = yield import("./p-D0YpjgON-GNT5YJBH.js");
           if (!e14.isConnected) return;
           this.gesture = r37({ el: e14, gestureName: "refresher", gesturePriority: 31, direction: "y", threshold: 20, passive: false, canStart: () => this.canStart(), onStart: () => this.onStart(), onMove: (e15) => this.onMove(e15), onEnd: () => this.onEnd() }), this.disabledChanged();
         }
@@ -13077,7 +13077,7 @@ var u18 = Jn(class extends A {
   connectedCallback() {
     return __async(this, null, function* () {
       const t19 = l4(this.el);
-      t19 && (this.scrollEl = yield a3(t19)), this.gesture = (yield import("./p-D0YpjgON-EGMPH7U7.js")).createGesture({ el: this.el, gestureName: "reorder", gesturePriority: 110, threshold: 0, direction: "y", passive: false, canStart: (t20) => this.canStart(t20), onStart: (t20) => this.onStart(t20), onMove: (t20) => this.onMove(t20), onEnd: () => this.onEnd() }), this.disabledChanged();
+      t19 && (this.scrollEl = yield a3(t19)), this.gesture = (yield import("./p-D0YpjgON-GNT5YJBH.js")).createGesture({ el: this.el, gestureName: "reorder", gesturePriority: 110, threshold: 0, direction: "y", passive: false, canStart: (t20) => this.canStart(t20), onStart: (t20) => this.onStart(t20), onMove: (t20) => this.onMove(t20), onEnd: () => this.onEnd() }), this.disabledChanged();
     });
   }
   disconnectedCallback() {
@@ -15939,7 +15939,7 @@ var y8 = Jn(class extends A {
   }
   componentDidLoad() {
     return __async(this, null, function* () {
-      this.didLoad = true, this.rootChanged(), this.gesture = (yield import("./p-CWuIRJQN-52J5UOJB.js")).createSwipeBackGesture(this.el, this.canStart.bind(this), this.onStart.bind(this), this.onMove.bind(this), this.onEnd.bind(this)), this.swipeGestureChanged();
+      this.didLoad = true, this.rootChanged(), this.gesture = (yield import("./p-CWuIRJQN-UUYJUFDK.js")).createSwipeBackGesture(this.el, this.canStart.bind(this), this.onStart.bind(this), this.onMove.bind(this), this.onEnd.bind(this)), this.swipeGestureChanged();
     });
   }
   connectedCallback() {
@@ -18633,7 +18633,7 @@ var x12 = Jn(class extends A {
   constructor(e14) {
     super(), false !== e14 && this.__registerHost(), this.__attachShadow(), this.ionChange = Qt(this, "ionChange", 7), this.ionInput = Qt(this, "ionInput", 7), this.ionFocus = Qt(this, "ionFocus", 7), this.ionBlur = Qt(this, "ionBlur", 7), this.ionKnobMoveStart = Qt(this, "ionKnobMoveStart", 7), this.ionKnobMoveEnd = Qt(this, "ionKnobMoveEnd", 7), this.rangeId = "ion-r-" + K5++, this.didLoad = false, this.noUpdate = false, this.hasFocus = false, this.inheritedAttributes = {}, this.contentEl = null, this.initialContentScrollY = true, this.focusFromPointer = false, this.ratioA = 0, this.ratioB = 0, this.name = this.rangeId, this.dualKnobs = false, this.min = 0, this.max = 100, this.pin = false, this.pinFormatter = (e15) => Math.round(e15), this.snaps = false, this.step = 1, this.ticks = true, this.disabled = false, this.value = 0, this.compareValues = (e15, t19) => "object" == typeof e15 && "object" == typeof t19 ? e15.lower !== t19.lower || e15.upper !== t19.upper : e15 !== t19, this.clampBounds = (e15) => v(this.min, e15, this.max), this.ensureValueInBounds = (e15) => this.dualKnobs ? { lower: this.clampBounds(e15.lower), upper: this.clampBounds(e15.upper) } : this.clampBounds(e15), this.labelPlacement = "start", this.setupGesture = () => __async(this, null, function* () {
       const e15 = this.rangeSlider;
-      e15 && (this.gesture = (yield import("./p-D0YpjgON-EGMPH7U7.js")).createGesture({ el: e15, gestureName: "range", gesturePriority: 100, threshold: 10, onStart: () => this.onStart(), onMove: (e16) => this.onMove(e16), onEnd: (e16) => this.onEnd(e16) }), this.gesture.enable(!this.disabled));
+      e15 && (this.gesture = (yield import("./p-D0YpjgON-GNT5YJBH.js")).createGesture({ el: e15, gestureName: "range", gesturePriority: 100, threshold: 10, onStart: () => this.onStart(), onMove: (e16) => this.onMove(e16), onEnd: (e16) => this.onEnd(e16) }), this.gesture.enable(!this.disabled));
     }), this.setupActivatedObserver = () => {
       const e15 = this.el.shadowRoot.querySelector(".range-knob-handle-a"), t19 = this.el.shadowRoot.querySelector(".range-knob-handle-b"), a20 = () => {
         this.activatedKnob = e15?.classList.contains("ion-activated") ? "A" : t19?.classList.contains("ion-activated") ? "B" : void 0;
@@ -19251,7 +19251,7 @@ var u22 = Jn(class extends A {
     return __async(this, null, function* () {
       this.segmentViewEl = this.getSegmentView(), this.setCheckedClasses(), m((() => {
         this.scrollActiveButtonIntoView(false);
-      })), this.gesture = (yield import("./p-D0YpjgON-EGMPH7U7.js")).createGesture({ el: this.el, gestureName: "segment", gesturePriority: 100, threshold: 0, passive: false, onStart: (t19) => this.onStart(t19), onMove: (t19) => this.onMove(t19), onEnd: (t19) => this.onEnd(t19) }), this.gestureChanged(), this.disabled && this.disabledChanged(), this.updateSegmentView(false);
+      })), this.gesture = (yield import("./p-D0YpjgON-GNT5YJBH.js")).createGesture({ el: this.el, gestureName: "segment", gesturePriority: 100, threshold: 0, passive: false, onStart: (t19) => this.onStart(t19), onMove: (t19) => this.onMove(t19), onEnd: (t19) => this.onEnd(t19) }), this.gestureChanged(), this.disabled && this.disabledChanged(), this.updateSegmentView(false);
     });
   }
   onStart(t19) {
@@ -20360,7 +20360,7 @@ var y12 = Jn(class extends A {
   constructor(t19) {
     super(), false !== t19 && this.__registerHost(), this.__attachShadow(), this.ionChange = Qt(this, "ionChange", 7), this.ionFocus = Qt(this, "ionFocus", 7), this.ionBlur = Qt(this, "ionBlur", 7), this.inputId = "ion-tg-" + z12++, this.inputLabelId = this.inputId + "-lbl", this.helperTextId = this.inputId + "-helper-text", this.errorTextId = this.inputId + "-error-text", this.lastDrag = 0, this.inheritedAttributes = {}, this.didLoad = false, this.activated = false, this.isInvalid = false, this.name = this.inputId, this.checked = false, this.disabled = false, this.value = "on", this.enableOnOffLabels = n.get("toggleOnOffLabels"), this.labelPlacement = "start", this.required = false, this.setupGesture = () => __async(this, null, function* () {
       const { toggleTrack: t20 } = this;
-      t20 && (this.gesture = (yield import("./p-D0YpjgON-EGMPH7U7.js")).createGesture({ el: t20, gestureName: "toggle", gesturePriority: 100, threshold: 5, passive: false, onStart: () => this.onStart(), onMove: (t21) => this.onMove(t21), onEnd: (t21) => this.onEnd(t21) }), this.disabledChanged());
+      t20 && (this.gesture = (yield import("./p-D0YpjgON-GNT5YJBH.js")).createGesture({ el: t20, gestureName: "toggle", gesturePriority: 100, threshold: 5, passive: false, onStart: () => this.onStart(), onMove: (t21) => this.onMove(t21), onEnd: (t21) => this.onEnd(t21) }), this.disabledChanged());
     }), this.onKeyDown = (t20) => {
       " " === t20.key && (t20.preventDefault(), this.disabled || this.toggleChecked());
     }, this.onClick = (t20) => {

@@ -55,6 +55,8 @@ class Ubicacion(models.Model):
         blank=True,
         related_name='ubicaciones_hijas',
     )
+    # Columna agregada por inventario/0001 (RF-CAT-01, RN-02: baja lógica, nunca se elimina).
+    activa = models.BooleanField(default=True)
 
     class Meta:
         managed = False
