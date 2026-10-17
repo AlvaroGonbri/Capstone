@@ -18,6 +18,7 @@ Autor de todas las versiones: Fidel Rodríguez. Este archivo se actualiza con ca
 | SICMA-CPR Casos de prueba | SICMA_CPR_v1.0.docx | 1.0 | 2026-10-17 |
 | SICMA-PRY Plan del proyecto | SICMA_PRY_v1.0.docx | 1.0 | 2026-10-17 |
 | SICMA-RCF Resolución de conflictos | SICMA_RCF_v1.0.docx | 1.0 | 2026-10-17 |
+| SICMA-STK Stakeholders | SICMA_STK_v1.0.docx | 1.0 | 2026-10-17 |
 
 ## Decisiones de negocio que generaron cambios
 
@@ -116,3 +117,9 @@ Autor de todas las versiones: Fidel Rodríguez. Este archivo se actualiza con ca
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 2026-10-17 | Primera versión, vigente desde su creación, con portada, tabla de contenido y referencias. Define tipos de conflicto, roles, procedimiento por cuatro niveles, criterios de decisión, registro y plantilla. Los plazos y acuerdos de trabajo quedan propuestos hasta confirmarlos el equipo (D-01). |
+
+## SICMA-STK · Stakeholders
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 1.0 | 2026-10-17 | Primera versión, vigente desde su creación, con portada, tabla de contenido y referencias. Registra 16 stakeholders, su matriz de poder e interés, el análisis por stakeholder y el plan de comunicación. Se construyó desde los documentos del proyecto, porque no existe una planilla de interesados previa. Las valoraciones quedan por confirmar (D-01). |
