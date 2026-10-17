@@ -2,7 +2,7 @@
 
 Autor de todas las versiones: Fidel Rodríguez. Este archivo se actualiza con cada versión nueva. En la carpeta solo se guarda la última versión de cada documento; las anteriores van a la subcarpeta `_para_borrar`.
 
-Última actualización: 2026-10-10.
+Última actualización: 2026-10-17.
 
 ## Versiones vigentes
 
@@ -16,6 +16,7 @@ Autor de todas las versiones: Fidel Rodríguez. Este archivo se actualiza con ca
 | SICMA-MCK Mockups | SICMA_MCK_v0.2.docx | 0.2 | 2026-10-10 |
 | SICMA-PLP Plan de pruebas | SICMA_PLP_v0.3.docx | 0.3 | 2026-10-10 |
 | SICMA-CPR Casos de prueba | SICMA_CPR_v0.3.docx | 0.3 | 2026-10-10 |
+| SICMA-PRY Plan del proyecto | SICMA_PRY_v0.2.docx | 0.2 | 2026-10-17 |
 
 ## Decisiones de negocio que generaron cambios
 
@@ -26,6 +27,7 @@ Autor de todas las versiones: Fidel Rodríguez. Este archivo se actualiza con ca
 | 2026-10-10 | Las pruebas las hace Claudio Varas como responsable, pero en la práctica los tres. Se siguen la carta Gantt y el plan de trabajo de la Fase 1 (pruebas continuas de la S6 a la S16, semana actual S11). | PLP 0.2 |
 | 2026-10-10 | Corrección: la semana en curso es la S9, porque la S1 empieza el 10 de agosto (coincide con Notion). Se rehace el calendario de pruebas en tres ciclos. | PLP 0.3 |
 | 2026-10-10 | Las validaciones de rango y unicidad de la base (RI-09 y D-32) las hace el backend, sin CHECK ni únicos en la base. | BDD 0.3 |
+| 2026-10-17 | Las fechas oficiales de las fases son las de la carta Gantt de la Fase 1 (Fase 1 S1 a S4, Fase 2 S5 a S15, Fase 3 S16 a S18); 15 horas semanales por integrante (810 horas); se priorizan los 25 Must y los Should son opcionales; el costo-beneficio queda cualitativo. Notion se alinea a la carta Gantt. | PRY 0.2 |
 
 ## SICMA-REQ · Requerimientos
 
@@ -90,3 +92,10 @@ Autor de todas las versiones: Fidel Rodríguez. Este archivo se actualiza con ca
 | 0.1 | 2026-10-10 | Primera parte: 58 casos de identidad y acceso (25), catálogos (17) y activos (16), con trazabilidad a RF, RNF, CU y reglas de integridad. Agrega D-49 a D-52. Las partes siguientes cubren ambiente, infraestructura, acceso físico, intervenciones, BI, móvil y no funcionales. |
 | 0.2 | 2026-10-10 | Segunda parte: 54 casos nuevos de monitoreo ambiental y alertas (26), infraestructura con Zabbix (11) y control de acceso físico (17). Total 112 casos. Incluye los casos de RI-09 validada por el backend. Agrega D-53 a D-59. Por ahora solo se diseñan los casos; los resultados se registran cuando las pruebas se ejecuten. |
 | 0.3 | 2026-10-10 | Tercera parte: 87 casos nuevos. Intervenciones (29), inteligencia de negocio (10), plataformas web y móvil (11), rendimiento y carga (7), recuperación del clúster (6), seguridad transversal (10), usabilidad y estándares (6), calidad (4), despliegue (3) y aceptación (1). Total 199 casos, con todos los RF y RNF cubiertos. Agrega D-60 a D-65 y la referencia a D-02, D-04, D-05, D-09, D-11, D-12, D-22, D-24 y D-42. Resultados siguen para la fase de ejecución. |
+
+## SICMA-PRY · Plan del proyecto
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 0.1 | 2026-10-17 | Primera versión, escrita desde cero con la guía de la Fase 1, Notion, SICMA-REQ v0.4, SICMA-PLP v0.3, SICMA-CPR v0.3 y el estado real del código al 10 de octubre. No usa las actas de reunión. |
+| 0.2 | 2026-10-17 | Decisiones del equipo: la carta Gantt es la fuente oficial de las fechas de las fases (D-01), 15 horas por integrante (D-03), se priorizan los 25 Must y los Should son opcionales (D-07), el costo-beneficio queda cualitativo (D-02). Agrega la priorización de los Must pendientes y los pendientes D-12 a D-14. |
