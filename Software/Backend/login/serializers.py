@@ -12,6 +12,7 @@ from rest_framework_simplejwt.serializers import (
     TokenRefreshSerializer,
 )
 
+from .authentication import CLAIM_SOLO_LECTURA
 from .models import PasswordPolicy, UserSessionSettings
 from .passwords import (
     PasswordExpired,
@@ -53,6 +54,10 @@ def get_inactivity_timeout_minutes(user):
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    # 'movil': la app móvil recibe tokens de solo lectura (RF-PLT-02). El claim viaja en el
+    # refresh token, así que también lo heredan los access tokens renovados.
+    canal = serializers.ChoiceField(choices=('web', 'movil'), required=False, default='web')
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -60,6 +65,15 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
+        canal = attrs.pop('canal', 'web')
+        data = self._validar_credenciales(attrs)
+        if canal == 'movil':
+            refresh = self.get_token(self.user)
+            refresh[CLAIM_SOLO_LECTURA] = True
+            data['refresh'], data['access'] = str(refresh), str(refresh.access_token)
+        return data
+
+    def _validar_credenciales(self, attrs):
         login = attrs.get(self.username_field, '').strip()
         user = User.objects.filter(email__iexact=login, is_active=True).first()
         if user:

@@ -8,11 +8,12 @@ from rest_framework.views import APIView
 
 from login.permissions import ACTIVO_EDIT_ROLES, ADMIN_ROLES, READ_ROLES, RolePermission
 
-from .models import Activo, TipoActivo
+from .models import ESTADO_RETIRADO, Activo, EstadoActivo, TipoActivo
 from .serializers import (
     ActivoFilterSerializer,
     ActivoReadSerializer,
     ActivoWriteSerializer,
+    EstadoActivoSerializer,
     HistorialActivoSerializer,
     TipoActivoSerializer,
     nombre_usuario,
@@ -54,7 +55,7 @@ class ActivoListView(ActivoPermisosMixin, APIView):
         if datos.get('estado'):
             activos = activos.filter(estado=datos['estado'])
         elif not datos['incluir_retirados']:
-            activos = activos.exclude(estado='Retirado')
+            activos = activos.exclude(estado=ESTADO_RETIRADO)
         return Response(ActivoReadSerializer(activos.order_by('codigo'), many=True).data)
 
     def post(self, request, format=None):
@@ -101,7 +102,9 @@ class ResponsablesPosiblesView(APIView):
         ])
 
 
-class TipoActivoPermisosMixin:
+class CatalogoPermisosMixin:
+    """Consultan todos los roles; mantiene el catálogo el Administrador."""
+
     permission_classes = [RolePermission]
 
     @property
@@ -109,7 +112,7 @@ class TipoActivoPermisosMixin:
         return READ_ROLES if self.request.method == 'GET' else ADMIN_ROLES
 
 
-class TipoActivoListView(TipoActivoPermisosMixin, APIView):
+class TipoActivoListView(CatalogoPermisosMixin, APIView):
     """GET: catálogo de tipos (?todos=1 incluye desactivados). POST: alta (RF-CAT-03)."""
 
     def get(self, request, format=None):
@@ -124,7 +127,7 @@ class TipoActivoListView(TipoActivoPermisosMixin, APIView):
         return Response(TipoActivoSerializer(serializer.save()).data, status=status.HTTP_201_CREATED)
 
 
-class TipoActivoDetailView(TipoActivoPermisosMixin, APIView):
+class TipoActivoDetailView(CatalogoPermisosMixin, APIView):
     """PATCH: renombra o desactiva un tipo. Al renombrar, los activos de ese tipo se actualizan."""
 
     def patch(self, request, pk, format=None):
@@ -137,3 +140,28 @@ class TipoActivoDetailView(TipoActivoPermisosMixin, APIView):
             if tipo.nombre != nombre_anterior:
                 Activo.objects.filter(tipo=nombre_anterior).update(tipo=tipo.nombre)
         return Response(TipoActivoSerializer(tipo).data)
+
+
+class EstadoActivoListView(CatalogoPermisosMixin, APIView):
+    """GET: catálogo de estados (?todos=1 incluye desactivados). POST: alta (RF-CAT-03)."""
+
+    def get(self, request, format=None):
+        estados = EstadoActivo.objects.all()
+        if request.query_params.get('todos') != '1':
+            estados = estados.filter(activo=True)
+        return Response(EstadoActivoSerializer(estados, many=True).data)
+
+    def post(self, request, format=None):
+        serializer = EstadoActivoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(EstadoActivoSerializer(serializer.save()).data, status=status.HTTP_201_CREATED)
+
+
+class EstadoActivoDetailView(CatalogoPermisosMixin, APIView):
+    """PATCH: cambia etiqueta, color, orden o vigencia. Los estados de sistema no se desactivan."""
+
+    def patch(self, request, pk, format=None):
+        estado = get_object_or_404(EstadoActivo, pk=pk)
+        serializer = EstadoActivoSerializer(estado, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(EstadoActivoSerializer(serializer.save()).data)

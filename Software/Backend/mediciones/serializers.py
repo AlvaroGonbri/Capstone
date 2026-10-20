@@ -35,13 +35,13 @@ class UbicacionWriteSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if self.instance and self.instance.activa and attrs.get('activa') is False:
             # RN-02: no se deja huérfano lo que sigue en uso.
-            from inventario.models import Activo
+            from inventario.models import ESTADO_RETIRADO, Activo
 
             ubicacion = self.instance
             en_uso = []
             if ubicacion.sensores.filter(estado='Activo').exists():
                 en_uso.append('sensores activos')
-            if Activo.objects.filter(ubicacion=ubicacion).exclude(estado='Retirado').exists():
+            if Activo.objects.filter(ubicacion=ubicacion).exclude(estado=ESTADO_RETIRADO).exists():
                 en_uso.append('activos sin retirar')
             if ubicacion.ubicaciones_hijas.filter(activa=True).exists():
                 en_uso.append('ubicaciones hijas activas')

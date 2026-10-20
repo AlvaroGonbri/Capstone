@@ -102,10 +102,10 @@
               @for (trabajo of trabajosAbiertos(); track trabajo.id) {
                 <ion-item routerLink="/intervenciones" button detail="true">
                   <ion-label>
-                    <h3>{{ trabajo.folio }} · {{ trabajo.activoCodigo }}</h3>
-                    <p>{{ trabajo.descripcion }}</p>
+                    <h3>{{ tituloIntervencion(trabajo) }}</h3>
+                    <p>{{ trabajo.impacto_esperado || trabajo.objetivo }}</p>
                   </ion-label>
-                  <ion-note slot="end">{{ trabajo.estado }}</ion-note>
+                  <ion-note slot="end">{{ etiquetaIntervencion(trabajo.estado) }}</ion-note>
                 </ion-item>
               }
             </ion-list>

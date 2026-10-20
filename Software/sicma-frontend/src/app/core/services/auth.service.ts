@@ -35,10 +35,18 @@ export class AuthService {
   readonly token = computed<string | null>(() => this.sesion()?.token ?? null);
   readonly autenticado = computed(() => this.sesion() !== null);
 
+  /** App móvil (RF-PLT-02): solo consulta. El backend lo impone con tokens de solo lectura. */
+  readonly soloConsulta = environment.soloConsulta;
+
   /** Solo para mostrar u ocultar acciones: el API vuelve a verificar el rol (RNF-SEG-08). */
   tieneRol(...roles: RolUsuario[]): boolean {
     const rol = this.usuario()?.rol;
     return rol !== undefined && roles.includes(rol);
+  }
+
+  /** Si el usuario puede hacer cambios: tiene el rol y no está en la app móvil de consulta. */
+  puedeModificar(...roles: RolUsuario[]): boolean {
+    return !this.soloConsulta && this.tieneRol(...roles);
   }
 
   iniciarControlInactividad(): void {
@@ -78,6 +86,7 @@ export class AuthService {
       .post<RespuestaToken>(`${environment.apiUrl}/auth/token/`, {
         username: identificador.trim(),
         password: clave,
+        canal: environment.soloConsulta ? 'movil' : 'web',
       })
       .pipe(
         switchMap((tokens) =>

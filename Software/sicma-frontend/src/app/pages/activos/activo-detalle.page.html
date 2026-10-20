@@ -133,7 +133,7 @@
                     @if (c.campo_modificado === 'alta') {
                       <p>{{ c.valor_nuevo }}</p>
                     } @else {
-                      <p>{{ valor(c.valor_anterior) }} → {{ valor(c.valor_nuevo) }}</p>
+                      <p>{{ valor(c.campo_modificado, c.valor_anterior) }} → {{ valor(c.campo_modificado, c.valor_nuevo) }}</p>
                     }
                     <p>{{ c.usuario_nombre }} · {{ c.fecha_hora | date: 'dd/MM/yyyy HH:mm' }}</p>
                   </ion-label>
@@ -154,13 +154,16 @@
           } @else {
             <ion-list lines="full">
               @for (i of intervenciones(); track i.id) {
-                <ion-item>
+                <ion-item routerLink="/intervenciones" button detail="true">
                   <ion-label>
-                    <h3>{{ i.folio }} · {{ i.tipo }}</h3>
-                    <p>{{ i.descripcion }}</p>
-                    <p>{{ i.tecnico }} · {{ i.iniciadaEn | date: 'dd/MM/yyyy' }}</p>
+                    <h3>{{ tituloIntervencion(i) }}</h3>
+                    <p>{{ i.impacto_esperado || i.objetivo }}</p>
+                    <p>
+                      {{ i.responsable_nombre || 'sin técnico' }} ·
+                      {{ i.fecha_inicio ? (i.fecha_inicio | date: 'dd/MM/yyyy HH:mm') : 'sin fecha' }}
+                    </p>
                   </ion-label>
-                  <ion-note slot="end">{{ i.estado }}</ion-note>
+                  <ion-note slot="end">{{ etiquetaIntervencion(i.estado) }}</ion-note>
                 </ion-item>
               }
             </ion-list>

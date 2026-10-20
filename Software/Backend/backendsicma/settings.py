@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 from pathlib import Path
 
 # Lee variables del entorno y, si no están, del archivo .env junto a manage.py.
-from decouple import config
+from decouple import Csv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,9 +26,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ["localhost","127.0.0.1","192.168.100.102"]
+# Al publicar por Cloudflare Tunnel se agrega el dominio, p. ej. api.sicma.cl (en el .env).
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,192.168.100.102', cast=Csv())
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
+
+# Detrás de Cloudflare el HTTPS termina en el proxy: Django lo reconoce por X-Forwarded-Proto.
+if config('DETRAS_DE_PROXY_HTTPS', default=False, cast=bool):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
@@ -48,6 +54,7 @@ INSTALLED_APPS = [
     'infraestructura',
     'alertas',
     'inventario',
+    'intervenciones',
 ]
 
 MIDDLEWARE = [
@@ -97,7 +104,8 @@ DATABASES = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # JWT con soporte de tokens de solo lectura para la app móvil (RF-PLT-02).
+        'login.authentication.SicmaJWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -117,9 +125,9 @@ CORS_ALLOWED_ORIGINS = [
     'http://192.168.100.102:4200',
     'http://192.168.100.102:8100',
     'http://localhost',
-    'https://localhost',
-    'capacitor://localhost',
-]
+    'https://localhost',  # app Android (Capacitor)
+    'capacitor://localhost',  # app iOS (Capacitor)
+] + config('CORS_ORIGENES_EXTRA', default='', cast=Csv())  # p. ej. https://app.sicma.cl
 
 
 # Password validation
@@ -187,3 +195,12 @@ ALERTAS_CORREO_ASINCRONO = True
 ZABBIX_URL = config('ZABBIX_URL', default='')
 ZABBIX_TOKEN = config('ZABBIX_TOKEN', default='')
 ZABBIX_WEBHOOK_SECRET = config('ZABBIX_WEBHOOK_SECRET', default='')
+
+
+# Intervenciones: Power Automate (licencia gratuita, sin conectores HTTP) se comunica con SICMA
+# por correo. Cuenta Outlook del flujo: único remitente aceptado y destino de los correos AGENDAR.
+INTERVENCIONES_CORREO_FLUJO = config('INTERVENCIONES_CORREO_FLUJO', default='')
+# Secreto que el flujo incluye en el campo "token" del JSON de cada correo.
+INTERVENCIONES_TOKEN = config('INTERVENCIONES_TOKEN', default='')
+# El buzón de SICMA (EMAIL_HOST_USER) se lee por IMAP con la misma contraseña de aplicación.
+INTERVENCIONES_IMAP_HOST = config('INTERVENCIONES_IMAP_HOST', default='imap.gmail.com')

@@ -1,0 +1,1 @@
+import{f as e}from"./chunk-5NGKR3G2.js";import{a as o,i as t}from"./chunk-YTDOMVNS.js";var c=class r{listar(){return o(e)}static \u0275fac=function(a){return new(a||r)};static \u0275prov=t({token:r,factory:r.\u0275fac,providedIn:"root"})};export{c as a};

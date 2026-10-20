@@ -2,7 +2,6 @@ import {
   Acceso,
   Activo,
   EstadoSensor,
-  Intervencion,
   Umbrales,
   Usuario,
 } from '../models';
@@ -108,11 +107,3 @@ export const ACCESOS: Acceso[] = [
   { id: 8, persona: 'Fidel Rodriguez', rol: 'Desarrollo e integracion', metodo: 'biometrico', movimiento: 'salida', puerta: 'Puerta principal', sitio: 'A', resultado: 'autorizado', registradoEn: haceMinutos(1420) },
 ];
 
-export const INTERVENCIONES: Intervencion[] = [
-  { id: 1, folio: 'INT-0031', activoId: 11, activoCodigo: 'ACT-0011', tipo: 'correctiva', descripcion: 'Disco 3 del arreglo marca falla. Se solicita repuesto al proveedor.', tecnico: 'Alvaro Gonzalez', estado: 'en curso', iniciadaEn: haceDias(1) },
-  { id: 2, folio: 'INT-0030', activoId: 5, activoCodigo: 'ACT-0005', tipo: 'preventiva', descripcion: 'Cambio programado de banco de baterias del SAI.', tecnico: 'Alvaro Gonzalez', estado: 'en curso', iniciadaEn: haceDias(2) },
-  { id: 3, folio: 'INT-0029', activoId: 7, activoCodigo: 'ACT-0007', tipo: 'instalacion', descripcion: 'Montaje del nodo sensor en pasillo frio y calibracion inicial.', tecnico: 'Fidel Rodriguez', estado: 'cerrada', iniciadaEn: haceDias(9), cerradaEn: haceDias(9) },
-  { id: 4, folio: 'INT-0028', activoId: 1, activoCodigo: 'ACT-0001', tipo: 'preventiva', descripcion: 'Limpieza de ventiladores y actualizacion de firmware.', tecnico: 'Alvaro Gonzalez', estado: 'cerrada', iniciadaEn: haceDias(14), cerradaEn: haceDias(14) },
-  { id: 5, folio: 'INT-0027', activoId: 13, activoCodigo: 'ACT-0013', tipo: 'retiro', descripcion: 'Baja del servidor y borrado seguro de discos.', tecnico: 'Claudio Varas', estado: 'cerrada', iniciadaEn: haceDias(120), cerradaEn: haceDias(119) },
-  { id: 6, folio: 'INT-0032', activoId: 4, activoCodigo: 'ACT-0004', tipo: 'preventiva', descripcion: 'Revision de estado del arreglo y prueba de restauracion.', tecnico: 'Fidel Rodriguez', estado: 'planificada', iniciadaEn: haceDias(-3) },
-];

@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from mediciones.models import Ubicacion
 
-from .models import CRITICIDADES, ESTADOS_ACTIVO, Activo, HistorialActivo, TipoActivo
+from .models import CRITICIDADES, Activo, EstadoActivo, HistorialActivo, TipoActivo
 
 
 User = get_user_model()
@@ -41,6 +41,45 @@ class TipoActivoSerializer(serializers.ModelSerializer):
         fields = ('id', 'nombre', 'activo')
 
 
+# Colores de Ionic que acepta un estado (se usan en las insignias del frontend).
+COLORES_ESTADO = ('primary', 'secondary', 'tertiary', 'success', 'warning', 'danger', 'medium', 'dark')
+
+
+class EstadoActivoSerializer(serializers.ModelSerializer):
+    """Estados de activo (RF-CAT-03). El nombre es la clave que guarda cada activo y su historial,
+    por eso no cambia después del alta; lo que se muestra es la etiqueta."""
+
+    color = serializers.ChoiceField(choices=COLORES_ESTADO, required=False)
+    etiqueta = serializers.CharField(max_length=100, required=False, allow_blank=True)
+
+    class Meta:
+        model = EstadoActivo
+        fields = ('id', 'nombre', 'etiqueta', 'color', 'activo', 'es_sistema', 'orden')
+        read_only_fields = ('es_sistema',)
+
+    def validate_nombre(self, nombre):
+        nombre = nombre.strip()
+        if self.instance and nombre != self.instance.nombre:
+            raise serializers.ValidationError('El nombre de un estado no se puede cambiar; edita su etiqueta.')
+        return nombre
+
+    def validate_activo(self, activo):
+        estado = self.instance
+        if estado and not activo and estado.activo:
+            if estado.es_sistema:
+                raise serializers.ValidationError('Este estado lo usa el sistema y no se puede desactivar.')
+            if Activo.objects.filter(estado=estado.nombre).exists():
+                raise serializers.ValidationError('Hay activos en este estado; cámbialos antes de desactivarlo.')
+        return activo
+
+    def validate(self, datos):
+        if not self.instance and not datos.get('etiqueta'):
+            datos['etiqueta'] = datos['nombre'].replace('_', ' ')
+        if 'etiqueta' in datos and not datos['etiqueta'].strip():
+            raise serializers.ValidationError({'etiqueta': 'La etiqueta no puede quedar vacía.'})
+        return datos
+
+
 class ActivoReadSerializer(serializers.ModelSerializer):
     ubicacion_nombre = serializers.SerializerMethodField()
     responsable_nombre = serializers.SerializerMethodField()
@@ -67,7 +106,7 @@ class ActivoReadSerializer(serializers.ModelSerializer):
 class ActivoWriteSerializer(serializers.ModelSerializer):
     """Alta y edición de activos (RF-ACT-01, RF-ACT-04). Dar de baja = estado 'Retirado' (RN-02)."""
 
-    estado = serializers.ChoiceField(choices=ESTADOS_ACTIVO, required=False)
+    estado = serializers.CharField(max_length=50, required=False)
     criticidad = serializers.ChoiceField(choices=CRITICIDADES, required=False)
     ubicacion = serializers.PrimaryKeyRelatedField(queryset=Ubicacion.objects.all())
     responsable = serializers.PrimaryKeyRelatedField(
@@ -90,6 +129,13 @@ class ActivoWriteSerializer(serializers.ModelSerializer):
         if not TipoActivo.objects.filter(nombre=tipo, activo=True).exists():
             raise serializers.ValidationError('El tipo no existe en el catálogo o está desactivado.')
         return tipo
+
+    def validate_estado(self, estado):
+        if self.instance and estado == self.instance.estado:
+            return estado  # un estado que luego se desactivó se puede conservar
+        if not EstadoActivo.objects.filter(nombre=estado, activo=True).exists():
+            raise serializers.ValidationError('El estado no existe en el catálogo o está desactivado.')
+        return estado
 
     def validate_ubicacion(self, ubicacion):
         cambia = not self.instance or self.instance.ubicacion_id != ubicacion.pk
@@ -142,5 +188,5 @@ class ActivoFilterSerializer(serializers.Serializer):
     q = serializers.CharField(required=False, allow_blank=True, max_length=100)
     tipo = serializers.CharField(required=False, max_length=100)
     ubicacion = serializers.IntegerField(required=False, min_value=1)
-    estado = serializers.ChoiceField(choices=ESTADOS_ACTIVO, required=False)
+    estado = serializers.CharField(required=False, max_length=50)
     incluir_retirados = serializers.BooleanField(required=False, default=False)

@@ -5,8 +5,8 @@ import { AuthService } from '../services/auth.service';
 export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  const rol = auth.usuario()?.rol;
-  return rol === 'administrador' || rol === 'administradorprivilegiado'
+  // La gestión de usuarios no está disponible en la app móvil (solo consulta).
+  return auth.puedeModificar('administrador', 'administradorprivilegiado')
     ? true
     : router.createUrlTree(['/panel']);
 };

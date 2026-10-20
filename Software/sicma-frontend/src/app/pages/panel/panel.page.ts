@@ -21,7 +21,12 @@ import { forkJoin } from 'rxjs';
 import { Acceso, ActivoInventario, EstadoSensor, Intervencion } from '../../core/models';
 import { AccesosService } from '../../core/services/accesos.service';
 import { InventarioService } from '../../core/services/inventario.service';
-import { IntervencionesService } from '../../core/services/intervenciones.service';
+import {
+  ESTADOS_CERRADOS,
+  IntervencionesService,
+  etiquetaEstadoIntervencion,
+  tituloIntervencion,
+} from '../../core/services/intervenciones.service';
 import { MonitoreoService } from '../../core/services/monitoreo.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
 import { ColorNivelPipe } from '../../shared/nivel.pipe';
@@ -74,7 +79,7 @@ export class PanelPage {
       sensoresEnAlerta: this.sensores().filter((s) => s.nivel !== 'normal').length,
       accesosHoy: accesosHoy.length,
       accesosDenegadosHoy: accesosHoy.filter((a) => a.resultado === 'denegado').length,
-      intervencionesAbiertas: this.intervenciones().filter((i) => i.estado !== 'cerrada').length,
+      intervencionesAbiertas: this.trabajosAbiertos().length,
     };
   });
 
@@ -85,8 +90,10 @@ export class PanelPage {
   );
 
   protected readonly trabajosAbiertos = computed(() =>
-    this.intervenciones().filter((i) => i.estado !== 'cerrada'),
+    this.intervenciones().filter((i) => !ESTADOS_CERRADOS.includes(i.estado)),
   );
+  protected readonly etiquetaIntervencion = etiquetaEstadoIntervencion;
+  protected readonly tituloIntervencion = tituloIntervencion;
 
   constructor() {
     addIcons({ alertCircleOutline, thermometerOutline, arrowForwardOutline });

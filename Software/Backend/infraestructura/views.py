@@ -1,4 +1,3 @@
-from collections import Counter
 from collections.abc import Callable
 import hmac
 import time
@@ -6,6 +5,7 @@ from typing import Any
 
 from django.conf import settings
 from django.core.cache import cache
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,7 +15,16 @@ import requests
 from alertas.zabbix import registrar_evento_zabbix
 from login.permissions import READ_ROLES, RolePermission
 
+from .models import EstadoInfraestructura
 from .serializers import EventoZabbixSerializer
+from .sincronizacion import (
+    ANTIGUEDAD_MAXIMA,
+    INTERVALO_SEGUNDOS,
+    consultar_activos,
+    consultar_estado,
+    foto_vigente,
+    marcar_webhook,
+)
 from .zabbix_client import ZabbixClient, ZabbixError
 
 
@@ -25,8 +34,15 @@ CACHE_ESTADO = 'infraestructura:estado'
 CACHE_HOSTS = 'infraestructura:hosts'
 
 
-def _consultar(clave_cache: str, funcion: Callable[[ZabbixClient], Any]) -> Response:
-    """Devuelve los datos en caché o consulta Zabbix; 503 si Zabbix no responde."""
+def _consultar(clave_cache: str, funcion: Callable[[ZabbixClient], Any], foto: str | None = None) -> Response:
+    """Devuelve la foto de la sincronización periódica, los datos en caché o consulta Zabbix.
+
+    503 si hay que consultar Zabbix y no responde.
+    """
+    if foto:
+        datos = foto_vigente(foto)
+        if datos is not None:
+            return Response(datos)
     datos = cache.get(clave_cache)
     if datos is not None:
         return Response(datos)
@@ -47,10 +63,7 @@ class InfraestructuraEstadoView(APIView):
     allowed_roles = READ_ROLES
 
     def get(self, request, format=None):
-        return _consultar(CACHE_ESTADO, lambda cliente: {
-            'cluster': cliente.estado_cluster('Cluster'),
-            'problemas': cliente.problemas(min_severidad=2),
-        })
+        return _consultar(CACHE_ESTADO, consultar_estado, foto='estado')
 
 
 class InfraestructuraHostsView(APIView):
@@ -59,7 +72,7 @@ class InfraestructuraHostsView(APIView):
     allowed_roles = READ_ROLES
 
     def get(self, request, format=None):
-        return _consultar(CACHE_HOSTS, lambda cliente: cliente.hosts())
+        return _consultar(CACHE_HOSTS, lambda cliente: cliente.hosts(), foto='hosts')
 
 
 class InfraestructuraEventosHostView(APIView):
@@ -93,82 +106,24 @@ class ActivosZabbixView(APIView):
     allowed_roles = READ_ROLES
 
     def get(self, request, format=None):
-        return _consultar(CACHE_ACTIVOS, self._consultar_activos)
+        return _consultar(CACHE_ACTIVOS, lambda cliente: consultar_activos(cliente)[0], foto='activos')
 
-    def _consultar_activos(self, cliente: ZabbixClient) -> list[dict[str, Any]]:
-        grupos = cliente.obtener_grupos(['Cluster', 'Hypervisores'])
-        groupids = [str(grupo['groupid']) for grupo in grupos]
-        if not groupids:
-            return []
 
-        hosts = cliente.obtener_hosts(groupids)
-        hostids = [str(host['hostid']) for host in hosts]
-        items = cliente.obtener_items_mysql(hostids)
-        problemas = cliente.obtener_problemas(hostids)
+class SincronizacionView(APIView):
+    """GET: resultado de la última consulta periódica a Zabbix (RF-INF-01)."""
+    permission_classes = [RolePermission]
+    allowed_roles = READ_ROLES
 
-        problemas_por_host = self._problemas_por_host(cliente, problemas)
-        items_por_host: dict[str, dict[str, dict[str, Any]]] = {}
-        for item in items:
-            items_por_host.setdefault(str(item['hostid']), {})[item['key_']] = item
-
-        return [
-            self._serializar_host(host, items_por_host, problemas_por_host)
-            for host in hosts
-        ]
-
-    @staticmethod
-    def _problemas_por_host(
-        cliente: ZabbixClient,
-        problemas: list[dict[str, Any]],
-    ) -> Counter[str]:
-        eventids = [str(problema['eventid']) for problema in problemas]
-        eventos = cliente.obtener_eventos_con_hosts(eventids)
-        host_por_evento = {
-            str(evento['eventid']): str(evento['hosts'][0]['hostid'])
-            for evento in eventos
-            if evento.get('hosts')
-        }
-        return Counter(
-            host_por_evento[str(problema['eventid'])]
-            for problema in problemas
-            if str(problema['eventid']) in host_por_evento
-        )
-
-    @staticmethod
-    def _serializar_host(
-        host: dict[str, Any],
-        items_por_host: dict[str, dict[str, dict[str, Any]]],
-        problemas_por_host: Counter[str],
-    ) -> dict[str, Any]:
-        hostid = str(host['hostid'])
-        interfaces = host.get('interfaces') or []
-        interfaz = interfaces[0] if interfaces else {}
-        grupos = [grupo['name'] for grupo in host.get('groups', [])]
-        items = items_por_host.get(hostid, {})
-        online = items.get('mysql.gr.online', {}).get('lastvalue')
-        primary = items.get('mysql.gr.primary', {}).get('lastvalue')
-        disponible = host.get('status') == '0' and (
-            host.get('available') in (None, '0', '1') or host.get('available') == '1'
-        )
-        if host.get('maintenance_status') == '1':
-            estado = 'en mantencion'
-        else:
-            estado = 'operativo' if disponible and online != '0' else 'en falla'
-        return {
-            'id': int(hostid),
-            'codigo': host.get('host') or hostid,
-            'nombre': host.get('name') or host.get('host') or hostid,
-            'tipo': 'servidor',
-            'grupo': grupos,
-            'estado': estado,
-            'direccion': interfaz.get('ip') or interfaz.get('dns') or 'Sin interfaz',
-            'puerto': int(interfaz['port']) if str(interfaz.get('port', '')).isdigit() else None,
-            'mantenimiento': host.get('maintenance_status') == '1',
-            'problemasActivos': problemas_por_host[hostid],
-            'mysqlGrupoOnline': online == '1' if online is not None else None,
-            'mysqlEsPrimario': primary == '1' if primary is not None else None,
-            'ultimoError': host.get('error') or interfaz.get('error') or None,
-        }
+    def get(self, request, format=None):
+        foto = EstadoInfraestructura.objects.filter(pk=1).first()
+        ultima = foto.ultima_exitosa if foto else None
+        return Response({
+            'intervalo_segundos': INTERVALO_SEGUNDOS,
+            'ultimo_intento': foto.ultimo_intento if foto else None,
+            'ultima_exitosa': ultima,
+            'al_dia': bool(ultima) and timezone.now() - ultima <= ANTIGUEDAD_MAXIMA,
+            'error': (foto.error or None) if foto else None,
+        })
 
 
 class ZabbixWebhookView(APIView):
@@ -208,7 +163,9 @@ class ZabbixWebhookView(APIView):
             severidad=datos['severity'],
             estado=datos['status'],
         )
-        cache.delete_many([CACHE_ESTADO, CACHE_ACTIVOS])  # el próximo GET trae datos frescos
+        # El próximo GET trae datos frescos: se descarta la caché y la foto periódica queda vieja.
+        cache.delete_many([CACHE_ESTADO, CACHE_ACTIVOS, CACHE_HOSTS])
+        marcar_webhook()
         return Response(
             {
                 'detail': 'Webhook recibido.',

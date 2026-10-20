@@ -9,7 +9,7 @@ from alertas.models import Alerta, HostProblemaZabbix, Notificacion
 from mediciones.models import Sensor, Ubicacion
 from mediciones.tests import TablasNoGestionadasTestCase, cliente_con_rol
 
-from .models import Activo, HistorialActivo, TipoActivo
+from .models import Activo, EstadoActivo, HistorialActivo, TipoActivo
 
 
 User = get_user_model()
@@ -121,6 +121,53 @@ class CatalogosTests(InventarioTestCase):
         self.assertNotIn('Servidor físico', [t['nombre'] for t in self.auditor.get('/api/activos/tipos/').json()])
         # Un activo puede conservar un tipo que luego se desactivó.
         self.assertEqual(self.tecnico.patch(f'/api/activos/{activo["id"]}/', {'marca': 'HP'}, format='json').status_code, 200)
+
+    def test_estados_iniciales_y_alta_de_un_estado_nuevo(self):
+        estados = self.auditor.get('/api/activos/estados/').json()
+        self.assertEqual([e['nombre'] for e in estados], ['Operativo', 'Degradado', 'En_mantenimiento', 'Fuera_de_servicio', 'Retirado'])
+        self.assertEqual({e['nombre'] for e in estados if e['es_sistema']}, {'Operativo', 'Retirado'})
+
+        datos = {'nombre': 'En_prestamo', 'color': 'secondary', 'orden': 35}
+        self.assertEqual(self.tecnico.post('/api/activos/estados/', datos, format='json').status_code, 403)
+        creado = self.admin.post('/api/activos/estados/', datos, format='json')
+        self.assertEqual(creado.status_code, 201)
+        self.assertEqual((creado.json()['etiqueta'], creado.json()['es_sistema']), ('En prestamo', False))
+        self.assertEqual(self.admin.post('/api/activos/estados/', {**datos, 'color': 'rosado'}, format='json').status_code, 400)
+
+        activo = self.alta(estado='En_prestamo').json()
+        self.assertEqual(activo['estado'], 'En_prestamo')
+        self.assertEqual([a['codigo'] for a in self.auditor.get('/api/activos/', {'estado': 'En_prestamo'}).json()], ['mysql01'])
+
+    def test_rechaza_estado_fuera_del_catalogo_o_desactivado(self):
+        self.assertIn('estado', self.alta(estado='Perdido').json())
+        EstadoActivo.objects.filter(nombre='Degradado').update(activo=False)
+        self.assertIn('estado', self.alta(estado='Degradado').json())
+
+    def test_estados_de_sistema_no_se_desactivan_ni_se_renombran(self):
+        retirado = EstadoActivo.objects.get(nombre='Retirado')
+        url = f'/api/activos/estados/{retirado.id}/'
+
+        self.assertIn('activo', self.admin.patch(url, {'activo': False}, format='json').json())
+        self.assertIn('nombre', self.admin.patch(url, {'nombre': 'Baja'}, format='json').json())
+        respuesta = self.admin.patch(url, {'etiqueta': 'Dado de baja', 'color': 'dark'}, format='json')
+        self.assertEqual((respuesta.status_code, respuesta.json()['etiqueta']), (200, 'Dado de baja'))
+        self.assertEqual(self.admin.patch(url, {'es_sistema': False}, format='json').json()['es_sistema'], True)
+
+    def test_no_se_desactiva_un_estado_en_uso_y_el_activo_lo_conserva(self):
+        activo = self.alta(estado='Degradado').json()
+        degradado = EstadoActivo.objects.get(nombre='Degradado')
+        url = f'/api/activos/estados/{degradado.id}/'
+
+        self.assertIn('activos en este estado', self.admin.patch(url, {'activo': False}, format='json').json()['activo'][0])
+
+        Activo.objects.filter(pk=activo['id']).update(estado='Operativo')
+        self.assertEqual(self.admin.patch(url, {'activo': False}, format='json').status_code, 200)
+        self.assertNotIn('Degradado', [e['nombre'] for e in self.auditor.get('/api/activos/estados/').json()])
+        self.assertIn('Degradado', [e['nombre'] for e in self.admin.get('/api/activos/estados/', {'todos': '1'}).json()])
+
+        # Un activo que ya estaba en un estado desactivado lo puede conservar al editarse.
+        Activo.objects.filter(pk=activo['id']).update(estado='Degradado')
+        self.assertEqual(self.tecnico.patch(f'/api/activos/{activo["id"]}/', {'estado': 'Degradado', 'marca': 'HP'}, format='json').status_code, 200)
 
     def test_ubicaciones_alta_edicion_y_baja_logica(self):
         creada = self.admin.post('/api/ubicaciones/', {'sala': 'Sala B', 'zona': 'Pasillo frío'}, format='json')

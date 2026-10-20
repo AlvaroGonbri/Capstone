@@ -51,8 +51,8 @@ export interface SesionIniciada {
 
 // ------------------------------------------------- Inventario y catálogos
 
-/** Estados del ciclo de vida de un activo (enum de la tabla activo). 'Retirado' = dado de baja. */
-export type EstadoInventario = 'Operativo' | 'Degradado' | 'En_mantenimiento' | 'Fuera_de_servicio' | 'Retirado';
+/** Nombre de un estado del catálogo de estados de activo (RF-CAT-03). 'Retirado' = dado de baja. */
+export type EstadoInventario = string;
 export type Criticidad = 'Baja' | 'Media' | 'Alta' | 'Critica';
 
 /** Activo del inventario de SICMA (RF-ACT). */
@@ -89,6 +89,17 @@ export interface TipoActivoCatalogo {
   id: number;
   nombre: string;
   activo: boolean;
+}
+
+/** Estado de activo del catálogo. Los de sistema (Operativo, Retirado) no se desactivan. */
+export interface EstadoActivoCatalogo {
+  id: number;
+  nombre: string;
+  etiqueta: string;
+  color: string;
+  activo: boolean;
+  es_sistema: boolean;
+  orden: number;
 }
 
 export interface UbicacionCatalogo {
@@ -268,20 +279,55 @@ export interface Acceso {
 
 // ---------------------------------------------------------- Intervenciones
 
-export type TipoIntervencion = 'preventiva' | 'correctiva' | 'instalacion' | 'retiro';
-export type EstadoIntervencion = 'planificada' | 'en curso' | 'cerrada';
+/** Ciclo de vida de una intervención (tabla intervencion). */
+export type EstadoIntervencion =
+  | 'Pendiente'
+  | 'CambiosSolicitados'
+  | 'Aprobada'
+  | 'Rechazada'
+  | 'EnEjecucion'
+  | 'Ejecutada'
+  | 'Fallida'
+  | 'Cancelada';
 
+export interface DecisionIntervencion {
+  decision: 'Aprobada' | 'Rechazada';
+  decisor_correo: string | null;
+  decisor_nombre: string | null;
+  observacion: string | null;
+  fecha_hora: string;
+}
+
+/** Intervención solicitada por Forms, aprobada en Teams y ejecutada en SICMA (RF-INT). */
 export interface Intervencion {
   id: number;
-  folio: string;
-  activoId: number;
-  activoCodigo: string;
-  tipo: TipoIntervencion;
-  descripcion: string;
-  tecnico: string;
+  objetivo: string;
+  descripcion: string | null;
+  /** Servicios afectados que indicó el solicitante. */
+  impacto_esperado: string | null;
+  plan_reversa: string | null;
+  rack: string | null;
+  solicitante_nombre: string | null;
+  solicitante_correo: string | null;
   estado: EstadoIntervencion;
-  iniciadaEn: string;
-  cerradaEn?: string;
+  fecha_solicitud: string | null;
+  fecha_inicio: string | null;
+  fecha_termino: string | null;
+  fecha_cierre: string | null;
+  observacion_cierre: string | null;
+  responsable: number | null;
+  responsable_nombre: string | null;
+  activos: Array<{ id: number; codigo: string; nombre: string }>;
+  decisiones: DecisionIntervencion[];
+  /** SICMA ya pidió al flujo de Power Automate crear la cita en Outlook. */
+  agenda_enviada: boolean;
+}
+
+export interface TecnicoAsignable {
+  id: number;
+  nombre: string;
+  email: string | null;
+  rol: RolUsuario;
 }
 
 // ------------------------------------------------------------------ Panel
@@ -294,4 +340,14 @@ export interface ResumenPanel {
   accesosHoy: number;
   accesosDenegadosHoy: number;
   intervencionesAbiertas: number;
+}
+
+/** Estado de la consulta periódica a Zabbix que hace el backend (RF-INF-01). */
+export interface SincronizacionZabbix {
+  intervalo_segundos: number;
+  ultimo_intento: string | null;
+  ultima_exitosa: string | null;
+  /** false si la última consulta exitosa tiene más de 3 intervalos: el proceso no corre o Zabbix falla. */
+  al_dia: boolean;
+  error: string | null;
 }

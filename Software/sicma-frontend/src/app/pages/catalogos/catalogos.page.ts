@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   IonBadge,
@@ -21,13 +21,13 @@ import {
   IonText,
 } from '@ionic/angular';
 import { Observable } from 'rxjs';
-import { SensorCatalogo, TipoActivoCatalogo, UbicacionCatalogo } from '../../core/models';
+import { EstadoActivoCatalogo, SensorCatalogo, TipoActivoCatalogo, UbicacionCatalogo } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
 import { CatalogosService, nombreUbicacion } from '../../core/services/catalogos.service';
-import { InventarioService, mensajeErrorApi } from '../../core/services/inventario.service';
+import { COLORES_ESTADO, InventarioService, mensajeErrorApi } from '../../core/services/inventario.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
 
-type Pestana = 'ubicaciones' | 'sensores' | 'tipos';
+type Pestana = 'ubicaciones' | 'sensores' | 'tipos' | 'estados';
 
 @Component({
   selector: 'app-catalogos',
@@ -62,7 +62,7 @@ export class CatalogosPage {
   private readonly inventario = inject(InventarioService);
 
   /** RF-CAT: el Administrador mantiene los catálogos; los demás roles consultan. */
-  protected readonly esAdmin = inject(AuthService).tieneRol('administrador', 'administradorprivilegiado');
+  protected readonly esAdmin = inject(AuthService).puedeModificar('administrador', 'administradorprivilegiado');
   protected readonly pestana = signal<Pestana>('ubicaciones');
   protected readonly mensaje = signal<{ texto: string; error: boolean } | null>(null);
   protected readonly nombreUbicacion = nombreUbicacion;
@@ -70,6 +70,11 @@ export class CatalogosPage {
   protected readonly ubicaciones = signal<UbicacionCatalogo[]>([]);
   protected readonly sensores = signal<SensorCatalogo[]>([]);
   protected readonly tipos = signal<TipoActivoCatalogo[]>([]);
+  /** Los no administradores solo ven los estados vigentes. */
+  protected readonly estados = computed(() =>
+    this.inventario.estadosCatalogo().filter((e) => this.esAdmin || e.activo),
+  );
+  protected readonly coloresEstado = COLORES_ESTADO;
 
   /** Clave del dispositivo recién creada o regenerada: se muestra una sola vez. */
   protected readonly claveNueva = signal<{ codigo: string; clave: string } | null>(null);
@@ -93,6 +98,12 @@ export class CatalogosPage {
 
   protected readonly formTipo = this.fb.nonNullable.group({
     nombre: ['', [Validators.required, Validators.maxLength(100)]],
+  });
+
+  protected readonly formEstado = this.fb.nonNullable.group({
+    nombre: ['', [Validators.required, Validators.maxLength(50), Validators.pattern(/^[A-Za-zÁÉÍÓÚÑáéíóúñ0-9_]+$/)]],
+    etiqueta: ['', [Validators.maxLength(100)]],
+    color: ['medium', [Validators.required]],
   });
 
   constructor() {
@@ -234,6 +245,40 @@ export class CatalogosPage {
     );
   }
 
+  // ------------------------------------------------------- Estados de activo
+
+  protected crearEstado(): void {
+    if (this.formEstado.invalid) {
+      this.formEstado.markAllAsTouched();
+      return;
+    }
+    const v = this.formEstado.getRawValue();
+    this.ejecutar(
+      this.inventario.crearEstado({ nombre: v.nombre.trim(), etiqueta: v.etiqueta.trim(), color: v.color }),
+      'Estado creado.',
+      () => this.formEstado.reset({ nombre: '', etiqueta: '', color: 'medium' }),
+    );
+  }
+
+  protected editarEstado(
+    e: EstadoActivoCatalogo,
+    cambios: Partial<Pick<EstadoActivoCatalogo, 'etiqueta' | 'color' | 'orden'>>,
+  ): void {
+    const [campo, valor] = Object.entries(cambios)[0] ?? [];
+    const limpio = typeof valor === 'string' ? valor.trim() : valor;
+    if (!campo || limpio === '' || limpio === null || limpio === e[campo as keyof EstadoActivoCatalogo]) {
+      return;
+    }
+    this.ejecutar(this.inventario.actualizarEstado(e.id, { [campo]: limpio }), 'Estado actualizado.');
+  }
+
+  protected cambiarVigenciaEstado(e: EstadoActivoCatalogo): void {
+    this.ejecutar(
+      this.inventario.actualizarEstado(e.id, { activo: !e.activo }),
+      e.activo ? 'Estado desactivado: ya no se ofrece al registrar o editar activos.' : 'Estado reactivado.',
+    );
+  }
+
   // ------------------------------------------------------------------ común
 
   private ejecutar(operacion: Observable<unknown>, exito: string, despues?: () => void): void {
@@ -253,5 +298,6 @@ export class CatalogosPage {
     this.catalogos.ubicaciones(this.esAdmin).subscribe((lista) => this.ubicaciones.set(lista));
     this.catalogos.sensores().subscribe((lista) => this.sensores.set(lista));
     this.inventario.tipos(this.esAdmin).subscribe((lista) => this.tipos.set(lista));
+    this.inventario.recargarEstados();
   }
 }

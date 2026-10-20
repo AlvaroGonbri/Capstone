@@ -32,11 +32,11 @@
 
     <ion-segment [value]="filtroEstado()" scrollable (ionChange)="filtroEstado.set($any($event.detail).value)">
       <ion-segment-button value="todos"><ion-label>Todos</ion-label></ion-segment-button>
-      @for (e of estados; track e.valor) {
-        <ion-segment-button [value]="e.valor"><ion-label>{{ e.etiqueta }}</ion-label></ion-segment-button>
+      @for (e of estados(); track e.id) {
+        <ion-segment-button [value]="e.nombre"><ion-label>{{ e.etiqueta }}</ion-label></ion-segment-button>
       }
       @if (incluirRetirados()) {
-        <ion-segment-button value="Retirado"><ion-label>Retirados</ion-label></ion-segment-button>
+        <ion-segment-button value="Retirado"><ion-label>{{ etiquetaEstado('Retirado') }}</ion-label></ion-segment-button>
       }
     </ion-segment>
 
@@ -72,9 +72,23 @@
       <ion-note class="conteo">
         {{ filtrados().length }} de {{ activos().length }} activos
         @if (zabbixDisponible()) {
-          · Zabbix actualizado a las {{ actualizadoEn() | date: 'HH:mm:ss' }} (cada {{ refrescoSegundos }} s)
+          @if (sincronizacion()?.ultima_exitosa; as ultima) {
+            · Zabbix consultado por SICMA a las {{ ultima | date: 'HH:mm:ss' }} (cada {{ sincronizacion()!.intervalo_segundos }} s)
+          } @else {
+            · Zabbix actualizado a las {{ actualizadoEn() | date: 'HH:mm:ss' }} (cada {{ refrescoSegundos }} s)
+          }
         }
       </ion-note>
+      @if (sincronizacion(); as s) {
+        @if (!s.al_dia) {
+          <ion-note class="conteo" color="warning" role="status">
+            La consulta periódica a Zabbix está atrasada
+            @if (s.ultima_exitosa) { (última exitosa: {{ s.ultima_exitosa | date: 'dd/MM HH:mm' }}) }
+            @if (s.error) { · {{ s.error }} }.
+            Revisa que el proceso <code>sincronizar_zabbix</code> esté corriendo.
+          </ion-note>
+        }
+      }
       @if (!zabbixDisponible()) {
         <ion-note class="conteo" color="warning" role="status">
           Sin conexión con Zabbix: se muestra el inventario sin el estado en vivo.

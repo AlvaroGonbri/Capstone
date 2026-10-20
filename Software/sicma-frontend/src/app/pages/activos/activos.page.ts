@@ -23,18 +23,14 @@ import {
   ActivoInventario,
   Alerta,
   EstadoInventario,
+  SincronizacionZabbix,
   TipoActivoCatalogo,
   UbicacionCatalogo,
 } from '../../core/models';
 import { ActivosService } from '../../core/services/activos.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CatalogosService, nombreUbicacion } from '../../core/services/catalogos.service';
-import {
-  ESTADOS_INVENTARIO,
-  InventarioService,
-  colorEstado,
-  etiquetaEstado,
-} from '../../core/services/inventario.service';
+import { ESTADO_RETIRADO, InventarioService } from '../../core/services/inventario.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
 import { environment } from '../../../environments/environment';
 
@@ -72,7 +68,7 @@ export class ActivosPage {
   private readonly destroyRef = inject(DestroyRef);
 
   /** RF-ACT-01: registran y editan Administrador y Técnico; el resto solo consulta. */
-  protected readonly puedeEditar = inject(AuthService).tieneRol('administrador', 'administradorprivilegiado', 'tecnico');
+  protected readonly puedeEditar = inject(AuthService).puedeModificar('administrador', 'administradorprivilegiado', 'tecnico');
 
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -91,10 +87,13 @@ export class ActivosPage {
   protected readonly incluirRetirados = signal(false);
 
   protected readonly actualizadoEn = signal<Date | null>(null);
+  protected readonly sincronizacion = signal<SincronizacionZabbix | null>(null);
   protected readonly refrescoSegundos = environment.refrescoInfraestructuraMs / 1000;
-  protected readonly estados = ESTADOS_INVENTARIO.filter((e) => e.valor !== 'Retirado');
-  protected readonly etiquetaEstado = etiquetaEstado;
-  protected readonly colorEstado = colorEstado;
+  protected readonly estados = computed(() =>
+    this.inventario.estadosSeleccionables().filter((e) => e.nombre !== ESTADO_RETIRADO),
+  );
+  protected readonly etiquetaEstado = (estado: EstadoInventario) => this.inventario.etiquetaEstado(estado);
+  protected readonly colorEstado = (estado: EstadoInventario) => this.inventario.colorEstado(estado);
   protected readonly nombreUbicacion = nombreUbicacion;
 
   /** Host de Zabbix por código en minúsculas: el activo se vincula si su código coincide. */
@@ -165,6 +164,10 @@ export class ActivosPage {
         this.actualizadoEn.set(new Date());
       },
       error: () => this.zabbixDisponible.set(false), // el inventario se sigue mostrando (CA-03)
+    });
+    this.zabbix.sincronizacion().subscribe({
+      next: (estado) => this.sincronizacion.set(estado),
+      error: () => this.sincronizacion.set(null),
     });
     this.zabbix.alertasAbiertas().subscribe({
       next: (alertas) => this.alertas.set(alertas),

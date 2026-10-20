@@ -76,8 +76,7 @@ export class MonitoreoPage {
 
   /** RF-AMB-03: solo el Administrador define los umbrales (matriz de permisos). */
   protected readonly puedeEditarUmbrales = computed(() => {
-    const rol = this.auth.usuario()?.rol;
-    return rol === 'administrador' || rol === 'administradorprivilegiado';
+    return this.auth.puedeModificar('administrador', 'administradorprivilegiado');
   });
   /** Copia editable de los umbrales de cada zona. */
   protected readonly zonas = signal<UmbralZona[]>([]);

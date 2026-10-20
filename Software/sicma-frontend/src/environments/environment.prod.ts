@@ -6,6 +6,7 @@ export const environment = {
    * Ponerlo en false apenas el API Django este publicado: no hay que tocar nada mas.
    */
   usarDatosSimulados: true,
+  soloConsulta: false,
   refrescoMonitoreoMs: 10_000,
   refrescoInfraestructuraMs: 60_000,
 };

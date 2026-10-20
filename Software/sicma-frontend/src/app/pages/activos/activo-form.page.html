@@ -43,10 +43,8 @@
           </ion-item>
           <ion-item>
             <ion-select label="Estado" labelPlacement="stacked" interface="popover" formControlName="estado">
-              @for (e of estados; track e.valor) {
-                @if (editando() || e.valor !== 'Retirado') {
-                  <ion-select-option [value]="e.valor">{{ e.etiqueta }}</ion-select-option>
-                }
+              @for (e of estados(); track e.id) {
+                <ion-select-option [value]="e.nombre">{{ e.etiqueta }}{{ e.activo ? '' : ' (desactivado)' }}</ion-select-option>
               }
             </ion-select>
           </ion-item>

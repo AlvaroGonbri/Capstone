@@ -5,6 +5,7 @@ from .views import (
     InfraestructuraEstadoView,
     InfraestructuraEventosHostView,
     InfraestructuraHostsView,
+    SincronizacionView,
 )
 
 
@@ -12,5 +13,6 @@ urlpatterns = [
     path('activos/', ActivosZabbixView.as_view(), name='infraestructura_activos'),
     path('estado/', InfraestructuraEstadoView.as_view(), name='infraestructura_estado'),
     path('hosts/', InfraestructuraHostsView.as_view(), name='infraestructura_hosts'),
+    path('sincronizacion/', SincronizacionView.as_view(), name='infraestructura_sincronizacion'),
     path('hosts/<int:hostid>/eventos/', InfraestructuraEventosHostView.as_view(), name='infraestructura_eventos_host'),
 ]

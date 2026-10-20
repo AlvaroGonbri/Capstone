@@ -123,3 +123,48 @@ class PermisosPorRolTests(TestCase):
         cliente.force_authenticate(User.objects.create_user(username='sinrol', password=CLAVE))
         self.assertEqual(cliente.get('/api/infraestructura/activos/').status_code, 403)
         self.assertEqual(cliente.get('/api/mediciones/').status_code, 403)
+
+
+@override_settings(REST_FRAMEWORK={
+    'DEFAULT_AUTHENTICATION_CLASSES': ['login.authentication.SicmaJWTAuthentication'],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
+})
+class AppMovilSoloLecturaTests(TestCase):
+    """RF-PLT-02: la app móvil solo consulta, aunque el usuario sea Administrador."""
+
+    def setUp(self):
+        crear_usuario('admin', rol='Administrador')
+
+    def tokens(self, canal=None):
+        datos = {'username': 'admin', 'password': CLAVE}
+        if canal:
+            datos['canal'] = canal
+        return APIClient().post('/api/auth/token/', datos, format='json').json()
+
+    def cliente(self, access):
+        cliente = APIClient()
+        cliente.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+        return cliente
+
+    def test_token_movil_consulta_pero_no_modifica(self):
+        movil = self.cliente(self.tokens('movil')['access'])
+
+        self.assertEqual(movil.get('/api/auth/users/').status_code, 200)
+        respuesta = movil.post('/api/auth/users/', {'username': 'x', 'role': 'Tecnico'}, format='json')
+        self.assertEqual(respuesta.status_code, 403)
+        self.assertIn('solo de consulta', respuesta.json()['detail'])
+        # Mantener la sesión sí está permitido.
+        self.assertEqual(movil.post('/api/auth/activity/').status_code, 204)
+
+    def test_la_restriccion_se_hereda_al_renovar_el_token(self):
+        refresh = self.tokens('movil')['refresh']
+        nuevo = APIClient().post('/api/auth/token/refresh/', {'refresh': refresh}, format='json').json()['access']
+        self.assertEqual(self.cliente(nuevo).patch('/api/auth/password-policy/', {'max_age_days': 10}, format='json').status_code, 403)
+
+    def test_token_web_puede_modificar(self):
+        web = self.cliente(self.tokens()['access'])
+        self.assertEqual(web.patch('/api/auth/password-policy/', {'max_age_days': 10}, format='json').status_code, 200)
+
+    def test_canal_desconocido_se_rechaza(self):
+        respuesta = APIClient().post('/api/auth/token/', {'username': 'admin', 'password': CLAVE, 'canal': 'otro'}, format='json')
+        self.assertEqual(respuesta.status_code, 400)

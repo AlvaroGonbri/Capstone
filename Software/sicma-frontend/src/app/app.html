@@ -14,10 +14,7 @@
         </div>
 
         <ion-list lines="none">
-          @if (
-            auth.usuario()?.rol === 'administrador' ||
-            auth.usuario()?.rol === 'administradorprivilegiado'
-          ) {
+          @if (auth.puedeModificar('administrador', 'administradorprivilegiado')) {
             <ion-menu-toggle autoHide="false">
               <ion-item
                 routerLink="/usuarios"

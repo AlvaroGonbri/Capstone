@@ -25,8 +25,12 @@ import {
 import { Activo, ActivoInventario, EventoTecnico, HistorialActivo, Intervencion } from '../../core/models';
 import { ActivosService } from '../../core/services/activos.service';
 import { AuthService } from '../../core/services/auth.service';
-import { IntervencionesService } from '../../core/services/intervenciones.service';
-import { InventarioService, colorEstado, etiquetaEstado } from '../../core/services/inventario.service';
+import {
+  IntervencionesService,
+  etiquetaEstadoIntervencion,
+  tituloIntervencion,
+} from '../../core/services/intervenciones.service';
+import { InventarioService } from '../../core/services/inventario.service';
 
 /** Nombre legible de cada campo del historial (RF-ACT-03). */
 const CAMPOS: Record<string, string> = {
@@ -78,14 +82,16 @@ export class ActivoDetallePage {
   private readonly inventario = inject(InventarioService);
   private readonly zabbix = inject(ActivosService);
   private readonly intervencionesService = inject(IntervencionesService);
-  protected readonly puedeEditar = inject(AuthService).tieneRol('administrador', 'administradorprivilegiado', 'tecnico');
+  protected readonly puedeEditar = inject(AuthService).puedeModificar('administrador', 'administradorprivilegiado', 'tecnico');
 
   protected readonly activo = signal<ActivoInventario | undefined>(undefined);
   protected readonly cargando = signal(true);
   protected readonly cambios = signal<HistorialActivo[]>([]);
   protected readonly intervenciones = signal<Intervencion[]>([]);
-  protected readonly etiquetaEstado = etiquetaEstado;
-  protected readonly colorEstado = colorEstado;
+  protected readonly etiquetaIntervencion = etiquetaEstadoIntervencion;
+  protected readonly tituloIntervencion = tituloIntervencion;
+  protected readonly etiquetaEstado = (estado: string) => this.inventario.etiquetaEstado(estado);
+  protected readonly colorEstado = (estado: string) => this.inventario.colorEstado(estado);
 
   /** Host de Zabbix con el mismo código (null = no monitoreado; undefined = aún consultando). */
   protected readonly host = signal<Activo | null | undefined>(undefined);
@@ -108,7 +114,7 @@ export class ActivoDetallePage {
         error: () => this.cargando.set(false),
       });
       this.inventario.historial(id).subscribe({ next: (lista) => this.cambios.set(lista), error: () => undefined });
-      this.intervencionesService.listarPorActivo(id).subscribe((lista) => this.intervenciones.set(lista));
+      this.intervencionesService.listarPorActivo(id).subscribe({ next: (lista) => this.intervenciones.set(lista), error: () => undefined });
     });
   }
 
@@ -116,8 +122,12 @@ export class ActivoDetallePage {
     return CAMPOS[nombre] ?? nombre;
   }
 
-  protected valor(texto: string | null): string {
-    return texto ? (etiquetaEstadoSiAplica(texto)) : '—';
+  /** El historial guarda el nombre del estado ('En_mantenimiento'); se muestra su etiqueta del catálogo. */
+  protected valor(campo: string, texto: string | null): string {
+    if (!texto) {
+      return '—';
+    }
+    return campo === 'estado' ? this.etiquetaEstado(texto) : texto;
   }
 
   protected cambiarPeriodo(valor: unknown): void {
@@ -187,9 +197,4 @@ export class ActivoDetallePage {
       },
     });
   }
-}
-
-/** Los estados se guardan como 'En_mantenimiento'; en el historial se muestran legibles. */
-function etiquetaEstadoSiAplica(texto: string): string {
-  return texto.includes('_') ? texto.replaceAll('_', ' ') : texto;
 }

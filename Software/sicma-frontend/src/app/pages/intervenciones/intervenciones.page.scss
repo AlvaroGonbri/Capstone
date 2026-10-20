@@ -1,13 +1,72 @@
 ion-badge {
-  text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .descripcion {
   white-space: normal;
 }
 
-ion-item-divider ion-label {
-  font-size: 0.76rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.nota {
+  display: block;
+  margin: 8px 16px;
+  font-size: 0.85rem;
+}
+
+.detalle {
+  margin: 0 0 12px;
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0 0 12px;
+
+  dt {
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+h4 {
+  margin: 16px 0 4px;
+  font-size: 0.95rem;
+}
+
+.rejilla-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 12px;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+
+  ion-input {
+    flex: 1 1 220px;
+  }
+}
+
+@media (max-width: 480px) {
+  .datos {
+    grid-template-columns: 1fr;
+
+    dd {
+      margin-bottom: 6px;
+    }
+  }
 }

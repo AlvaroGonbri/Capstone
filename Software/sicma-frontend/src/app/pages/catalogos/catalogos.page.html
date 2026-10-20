@@ -6,6 +6,7 @@
       <ion-segment-button value="ubicaciones"><ion-label>Ubicaciones y zonas</ion-label></ion-segment-button>
       <ion-segment-button value="sensores"><ion-label>Dispositivos IoT</ion-label></ion-segment-button>
       <ion-segment-button value="tipos"><ion-label>Tipos de activo</ion-label></ion-segment-button>
+      <ion-segment-button value="estados"><ion-label>Estados de activo</ion-label></ion-segment-button>
     </ion-segment>
 
     @if (!esAdmin) {
@@ -142,8 +143,52 @@
           }
         </ion-list>
         @if (esAdmin) {
-          <ion-note class="nota">Para renombrar un tipo, edita su nombre y sal del campo. Los estados de un activo son fijos: Operativo, Degradado, En mantenimiento, Fuera de servicio y Retirado.</ion-note>
+          <ion-note class="nota">Para renombrar un tipo, edita su nombre y sal del campo.</ion-note>
         }
+      }
+
+      @case ('estados') {
+        @if (esAdmin) {
+          <form class="fila-tipo" [formGroup]="formEstado" (ngSubmit)="crearEstado()">
+            <ion-input label="Nombre (clave) *" labelPlacement="stacked" formControlName="nombre" placeholder="En_prestamo"
+              helperText="Sin espacios; usa _ para separar." errorText="Solo letras, números y _."></ion-input>
+            <ion-input label="Etiqueta" labelPlacement="stacked" formControlName="etiqueta" placeholder="En préstamo"></ion-input>
+            <ion-select label="Color" labelPlacement="stacked" interface="popover" formControlName="color">
+              @for (c of coloresEstado; track c) { <ion-select-option [value]="c">{{ c }}</ion-select-option> }
+            </ion-select>
+            <ion-button type="submit" size="small">Agregar</ion-button>
+          </form>
+        }
+        <ion-list lines="full">
+          @for (e of estados(); track e.id) {
+            <ion-item>
+              <ion-badge slot="start" [color]="e.color">{{ e.etiqueta }}</ion-badge>
+              @if (esAdmin) {
+                <ion-input [value]="e.etiqueta" aria-label="Etiqueta del estado" (ionChange)="editarEstado(e, { etiqueta: $any($event.detail).value })"></ion-input>
+                <ion-select slot="end" aria-label="Color del estado" interface="popover" [value]="e.color"
+                  (ionChange)="editarEstado(e, { color: $any($event.detail).value })">
+                  @for (c of coloresEstado; track c) { <ion-select-option [value]="c">{{ c }}</ion-select-option> }
+                </ion-select>
+              } @else {
+                <ion-label>{{ e.etiqueta }}</ion-label>
+              }
+              <ion-note slot="end">{{ e.nombre }}</ion-note>
+              @if (e.es_sistema) { <ion-badge slot="end" color="light">sistema</ion-badge> }
+              @if (!e.activo) { <ion-badge slot="end" color="medium">desactivado</ion-badge> }
+              @if (esAdmin && !e.es_sistema) {
+                <ion-button slot="end" size="small" fill="clear" [color]="e.activo ? 'danger' : 'success'" (click)="cambiarVigenciaEstado(e)">
+                  {{ e.activo ? 'Desactivar' : 'Reactivar' }}
+                </ion-button>
+              }
+            </ion-item>
+          } @empty {
+            <p class="vacio">No hay estados registrados.</p>
+          }
+        </ion-list>
+        <ion-note class="nota">
+          "Operativo" (estado de alta) y "Retirado" (baja del activo) los usa el sistema: se puede cambiar su etiqueta y color,
+          pero no desactivarlos. Un estado con activos asignados no se puede desactivar.
+        </ion-note>
       }
     }
   </div>

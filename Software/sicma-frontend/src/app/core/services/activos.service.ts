@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Activo, Alerta, EventoTecnico } from '../models';
+import { Activo, Alerta, EventoTecnico, SincronizacionZabbix } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ActivosService {
@@ -19,6 +19,11 @@ export class ActivosService {
   /** Alertas abiertas registradas desde el webhook de Zabbix (RF-INF-02). */
   alertasAbiertas(): Observable<Alerta[]> {
     return this.http.get<Alerta[]>(`${environment.apiUrl}/alertas/`, { params: { origen: 'Zabbix' } });
+  }
+
+  /** Resultado de la última consulta periódica que hace el backend a Zabbix (RF-INF-01). */
+  sincronizacion(): Observable<SincronizacionZabbix> {
+    return this.http.get<SincronizacionZabbix>(`${environment.apiUrl}/infraestructura/sincronizacion/`);
   }
 
   /** Historial de problemas del servidor en Zabbix durante los últimos `dias`. */

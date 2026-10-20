@@ -1,10 +1,11 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Injectable, inject, signal } from '@angular/core';
+import { Observable, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   ActivoInventario,
   Criticidad,
+  EstadoActivoCatalogo,
   EstadoInventario,
   HistorialActivo,
   TipoActivoCatalogo,
@@ -33,11 +34,22 @@ export interface DatosActivo {
   observaciones: string | null;
 }
 
-/** Inventario de activos (RF-ACT) y catálogo de tipos (RF-CAT-03). */
+/** Estado de alta de un activo y estado de baja (RN-02); ambos son de sistema en el catálogo. */
+export const ESTADO_INICIAL = 'Operativo';
+export const ESTADO_RETIRADO = 'Retirado';
+
+/** Inventario de activos (RF-ACT) y catálogos de tipos y estados (RF-CAT-03). */
 @Injectable({ providedIn: 'root' })
 export class InventarioService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiUrl}/activos/`;
+
+  /** Catálogo de estados (incluye desactivados, para mostrar bien los activos que los conservan). */
+  readonly estadosCatalogo = signal<EstadoActivoCatalogo[]>([]);
+
+  constructor() {
+    this.recargarEstados();
+  }
 
   listar(filtros: FiltrosActivos = {}): Observable<ActivoInventario[]> {
     if (environment.usarDatosSimulados) {
@@ -85,29 +97,52 @@ export class InventarioService {
     return this.http.post<TipoActivoCatalogo>(`${this.url}tipos/`, { nombre });
   }
 
+  estados(): Observable<EstadoActivoCatalogo[]> {
+    if (environment.usarDatosSimulados) {
+      return of([]);
+    }
+    return this.http
+      .get<EstadoActivoCatalogo[]>(`${this.url}estados/`, { params: { todos: '1' } })
+      .pipe(tap((lista) => this.estadosCatalogo.set(lista)));
+  }
+
+  recargarEstados(): void {
+    this.estados().subscribe({ error: () => undefined });
+  }
+
+  crearEstado(datos: Pick<EstadoActivoCatalogo, 'nombre' | 'etiqueta' | 'color'>): Observable<EstadoActivoCatalogo> {
+    return this.http.post<EstadoActivoCatalogo>(`${this.url}estados/`, datos).pipe(tap(() => this.recargarEstados()));
+  }
+
+  actualizarEstado(
+    id: number,
+    datos: Partial<Pick<EstadoActivoCatalogo, 'etiqueta' | 'color' | 'activo' | 'orden'>>,
+  ): Observable<EstadoActivoCatalogo> {
+    return this.http.patch<EstadoActivoCatalogo>(`${this.url}estados/${id}/`, datos).pipe(tap(() => this.recargarEstados()));
+  }
+
+  /** Estados que se pueden elegir; `actual` se conserva aunque se haya desactivado. */
+  estadosSeleccionables(actual?: string | null): EstadoActivoCatalogo[] {
+    return this.estadosCatalogo().filter((e) => e.activo || e.nombre === actual);
+  }
+
+  etiquetaEstado(estado: EstadoInventario): string {
+    return this.estadosCatalogo().find((e) => e.nombre === estado)?.etiqueta ?? estado.replaceAll('_', ' ');
+  }
+
+  colorEstado(estado: EstadoInventario): string {
+    return this.estadosCatalogo().find((e) => e.nombre === estado)?.color ?? 'medium';
+  }
+
   actualizarTipo(id: number, datos: Partial<Pick<TipoActivoCatalogo, 'nombre' | 'activo'>>): Observable<TipoActivoCatalogo> {
     return this.http.patch<TipoActivoCatalogo>(`${this.url}tipos/${id}/`, datos);
   }
 }
 
-/** Etiquetas legibles de los estados y criticidades. */
-export const ESTADOS_INVENTARIO: Array<{ valor: EstadoInventario; etiqueta: string; color: string }> = [
-  { valor: 'Operativo', etiqueta: 'Operativo', color: 'success' },
-  { valor: 'Degradado', etiqueta: 'Degradado', color: 'warning' },
-  { valor: 'En_mantenimiento', etiqueta: 'En mantenimiento', color: 'tertiary' },
-  { valor: 'Fuera_de_servicio', etiqueta: 'Fuera de servicio', color: 'danger' },
-  { valor: 'Retirado', etiqueta: 'Retirado', color: 'medium' },
-];
-
 export const CRITICIDADES: Criticidad[] = ['Baja', 'Media', 'Alta', 'Critica'];
 
-export function etiquetaEstado(estado: EstadoInventario): string {
-  return ESTADOS_INVENTARIO.find((e) => e.valor === estado)?.etiqueta ?? estado;
-}
-
-export function colorEstado(estado: EstadoInventario): string {
-  return ESTADOS_INVENTARIO.find((e) => e.valor === estado)?.color ?? 'medium';
-}
+/** Colores de Ionic que acepta un estado (los mismos que valida el backend). */
+export const COLORES_ESTADO = ['primary', 'secondary', 'tertiary', 'success', 'warning', 'danger', 'medium', 'dark'];
 
 /** Primer mensaje de error de una respuesta 400 de DRF, con el nombre del campo. */
 export function mensajeErrorApi(respuesta: unknown, porDefecto: string): string {

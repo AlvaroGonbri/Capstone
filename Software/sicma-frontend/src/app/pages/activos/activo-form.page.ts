@@ -32,7 +32,8 @@ import { CatalogosService, nombreUbicacion } from '../../core/services/catalogos
 import {
   CRITICIDADES,
   DatosActivo,
-  ESTADOS_INVENTARIO,
+  ESTADO_INICIAL,
+  ESTADO_RETIRADO,
   InventarioService,
   mensajeErrorApi,
 } from '../../core/services/inventario.service';
@@ -78,7 +79,12 @@ export class ActivoFormPage {
   private readonly ubicacionesActivas = signal<UbicacionCatalogo[]>([]);
   protected readonly usuarios = signal<UsuarioResumen[]>([]);
 
-  protected readonly estados = ESTADOS_INVENTARIO;
+  /** Al editar se conserva el estado actual aunque luego se haya desactivado; en el alta no se ofrece la baja. */
+  protected readonly estados = computed(() =>
+    this.inventario
+      .estadosSeleccionables(this.original()?.estado)
+      .filter((e) => this.editando() || e.nombre !== ESTADO_RETIRADO),
+  );
   protected readonly criticidades = CRITICIDADES;
   protected readonly nombreUbicacion = nombreUbicacion;
 
@@ -104,7 +110,7 @@ export class ActivoFormPage {
     marca: this.fb.control<string | null>(null, [Validators.maxLength(100)]),
     modelo: this.fb.control<string | null>(null, [Validators.maxLength(100)]),
     numero_serie: this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(150)]),
-    estado: this.fb.nonNullable.control<EstadoInventario>('Operativo'),
+    estado: this.fb.nonNullable.control<EstadoInventario>(ESTADO_INICIAL),
     criticidad: this.fb.nonNullable.control<Criticidad>('Media'),
     ubicacion: this.fb.control<number | null>(null, [Validators.required]),
     responsable: this.fb.control<number | null>(null),

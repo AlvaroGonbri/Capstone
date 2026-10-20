@@ -39,5 +39,6 @@ urlpatterns = [
     path('api/umbrales/', UmbralListView.as_view(), name='umbral_list'),
     path('api/infraestructura/', include('infraestructura.urls')),
     path('api/alertas/', include('alertas.urls')),
+    path('api/intervenciones/', include('intervenciones.urls')),
     path('api/integraciones/zabbix/webhook/', ZabbixWebhookView.as_view(), name='zabbix_webhook'),
 ]
