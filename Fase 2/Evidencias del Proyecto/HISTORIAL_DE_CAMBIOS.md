@@ -19,6 +19,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | SICMA-PRY Plan del proyecto | SICMA_PRY_v1.0.docx | 1.0 | 2026-10-17 |
 | SICMA-RCF Resolución de conflictos | SICMA_RCF_v1.0.docx | 1.0 | 2026-10-17 |
 | SICMA-STK Stakeholders | SICMA_STK_v1.1.docx | 1.1 | 2026-10-17 |
+| SICMA-EAV Estado de Avance | SICMA_EAV_v1.0.docx | 1.0 | 2026-10-17 |
 
 ## Decisiones de negocio que generaron cambios
 
@@ -124,3 +125,10 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 |---|---|---|
 | 1.0 | 2026-10-17 | Primera versión, vigente desde su creación, con portada, tabla de contenido y referencias. Registra 16 stakeholders, su matriz de poder e interés, el análisis por stakeholder y el plan de comunicación. Se construyó desde los documentos del proyecto, porque no existe una planilla de interesados previa. Las valoraciones quedan por confirmar (D-01). |
 | 1.1 | 2026-10-17 | Se rehace el registro con los stakeholders del documento Gestión de stakeholders de la Fase 1 (versión 1.1 del 5 de octubre): 4 interesados reales y 7 roles del escenario. Se quitan las tecnologías, los proveedores, las instituciones y los departamentos que figuraban como stakeholders. Agrega el pendiente D-02: el documento de la Fase 1 asigna otras responsabilidades que SICMA-PRY. |
+
+## SICMA-EAV · Estado de Avance
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 0.1 | 2026-10-10 | Primer estado real del proyecto: código hecho contra requerimientos, Kanban y fechas. |
+| 1.0 | 2026-10-17 | Pasa a estado de avance vigente. Corte de la semana 10: incorpora el avance del 17 de octubre (activos, catálogos, alertas, Zabbix y cambio de contraseña), el avance de la documentación y el monitoreo contra SICMA-PRY v1.0. |
