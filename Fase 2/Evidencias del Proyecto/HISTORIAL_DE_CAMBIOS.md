@@ -16,10 +16,12 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | SICMA-MCK Mockups | SICMA_MCK_v1.0.docx | 1.0 | 2026-10-17 |
 | SICMA-PLP Plan de pruebas | SICMA_PLP_v1.0.docx | 1.0 | 2026-10-17 |
 | SICMA-CPR Casos de prueba | SICMA_CPR_v1.0.docx | 1.0 | 2026-10-17 |
-| SICMA-PRY Plan del proyecto | SICMA_PRY_v1.0.docx | 1.0 | 2026-10-17 |
+| SICMA-PRY Plan del proyecto | SICMA_PRY_v1.1.docx | 1.1 | 2026-10-24 |
 | SICMA-RCF Resolución de conflictos | SICMA_RCF_v1.0.docx | 1.0 | 2026-10-17 |
 | SICMA-STK Stakeholders | SICMA_STK_v1.1.docx | 1.1 | 2026-10-17 |
 | SICMA-EAV Estado de Avance | SICMA_EAV_v1.0.docx | 1.0 | 2026-10-17 |
+| SICMA-BMK Benchmarking y Estado del Arte | SICMA_BMK_v1.0.docx | 1.0 | 2026-10-24 |
+| SICMA-ESO Impacto Ético, Social y Sostenibilidad | SICMA_ESO_v1.0.docx | 1.0 | 2026-10-24 |
 
 ## Decisiones de negocio que generaron cambios
 
@@ -32,6 +34,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 2026-10-10 | Las validaciones de rango y unicidad de la base (RI-09 y D-32) las hace el backend, sin CHECK ni únicos en la base. | BDD 0.3 |
 | 2026-10-17 | Las fechas oficiales de las fases son las de la carta Gantt de la Fase 1 (Fase 1 S1 a S4, Fase 2 S5 a S15, Fase 3 S16 a S18); 15 horas semanales por integrante (810 horas); se priorizan los 25 Must y los Should son opcionales; el costo-beneficio queda cualitativo. Notion se alinea a la carta Gantt. | PRY 0.2 |
 | 2026-10-17 | Los documentos dejan de ser borradores: pasan a la versión 1.0 y al estado Vigente, con portada y las referencias entre documentos actualizadas a las versiones 1.0. | REQ, CUS, CLA, ACT, BDD, MCK, PLP, CPR y PRY 1.0 |
+| 2026-10-24 | Se agregan el benchmarking con el estado del arte y el análisis de impacto ético, social y de sostenibilidad. El plan del proyecto incorpora la matriz RACI y los indicadores de negocio. | BMK 1.0, ESO 1.0 y PRY 1.1 |
 
 ## SICMA-REQ · Requerimientos
 
@@ -112,6 +115,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.1 | 2026-10-17 | Primera versión, escrita desde cero con la guía de la Fase 1, Notion, SICMA-REQ v0.4, SICMA-PLP v0.3, SICMA-CPR v0.3 y el estado real del código al 10 de octubre. No usa las actas de reunión. |
 | 0.2 | 2026-10-17 | Decisiones del equipo: la carta Gantt es la fuente oficial de las fechas de las fases (D-01), 15 horas por integrante (D-03), se priorizan los 25 Must y los Should son opcionales (D-07), el costo-beneficio queda cualitativo (D-02). Agrega la priorización de los Must pendientes y los pendientes D-12 a D-14. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
+| 1.1 | 2026-10-24 | Se agrega la matriz RACI por área técnica y los indicadores de negocio (KN-01 a KN-07), con los pendientes D-15 y D-16. Se actualiza la lista de documentos del proyecto. |
 
 ## SICMA-RCF · Resolución de conflictos
 
@@ -132,3 +136,15 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 |---|---|---|
 | 0.1 | 2026-10-10 | Primer estado real del proyecto: código hecho contra requerimientos, Kanban y fechas. |
 | 1.0 | 2026-10-17 | Pasa a estado de avance vigente. Corte de la semana 10: incorpora el avance del 17 de octubre (activos, catálogos, alertas, Zabbix y cambio de contraseña), el avance de la documentación y el monitoreo contra SICMA-PRY v1.0. |
+
+## SICMA-BMK · Benchmarking y Estado del Arte
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 1.0 | 2026-10-24 | Primera versión: comparación de SICMA con soluciones equivalentes, propuesta de valor y revisión del estado del arte. |
+
+## SICMA-ESO · Impacto Ético, Social y Sostenibilidad
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 1.0 | 2026-10-24 | Primera versión: análisis del impacto ético, social y de sostenibilidad de SICMA, con riesgos, medidas e indicadores. |
