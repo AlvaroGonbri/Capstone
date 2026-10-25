@@ -133,6 +133,16 @@ class ActivoWriteSerializer(serializers.ModelSerializer):
     def validate_estado(self, estado):
         if self.instance and estado == self.instance.estado:
             return estado  # un estado que luego se desactivó se puede conservar
+        # Dar de baja (o reincorporar) un activo es una decisión de gestión: solo administradores.
+        from login.permissions import ADMIN_ROLES
+        from login.serializers import get_user_role
+        from rest_framework.exceptions import PermissionDenied
+
+        from .models import ESTADO_RETIRADO
+
+        actual = self.instance.estado if self.instance else None
+        if ESTADO_RETIRADO in (estado, actual) and get_user_role(self.context['request'].user) not in ADMIN_ROLES:
+            raise PermissionDenied('Solo un Administrador puede dar de baja o reincorporar un activo.')
         if not EstadoActivo.objects.filter(nombre=estado, activo=True).exists():
             raise serializers.ValidationError('El estado no existe en el catálogo o está desactivado.')
         return estado

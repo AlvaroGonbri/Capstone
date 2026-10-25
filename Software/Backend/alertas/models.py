@@ -93,3 +93,21 @@ class ReglaAlerta(models.Model):
     @staticmethod
     def condicion_zona(ubicacion_id):
         return f'ubicacion:{ubicacion_id}'
+
+
+class GestionAlerta(models.Model):
+    """Quién reconoció o cerró una alerta a mano, cuándo y con qué comentario (trazabilidad)."""
+
+    RECONOCER = 'Reconocida'
+    CERRAR = 'Cerrada'
+
+    # db_constraint=False: alerta.id es BIGINT UNSIGNED (script del equipo).
+    alerta = models.ForeignKey(Alerta, on_delete=models.CASCADE, db_constraint=False, related_name='gestiones')
+    accion = models.CharField(max_length=10)
+    comentario = models.CharField(max_length=255, blank=True, default='')
+    usuario = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, related_name='+')
+    fecha_hora = models.DateTimeField()
+
+    class Meta:
+        db_table = 'gestion_alerta'
+        ordering = ['-fecha_hora', '-id']

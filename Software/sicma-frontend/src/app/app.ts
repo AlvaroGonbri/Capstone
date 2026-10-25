@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import {
   IonApp,
@@ -22,6 +22,7 @@ import {
   cubeOutline,
   gridOutline,
   keyOutline,
+  idCardOutline,
   logOutOutline,
   peopleOutline,
   thermometerOutline,
@@ -63,15 +64,25 @@ export class App {
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  protected readonly menu: ItemMenu[] = [
+  private readonly opciones: ItemMenu[] = [
     { titulo: 'Panel', ruta: '/panel', icono: 'grid-outline' },
     { titulo: 'Activos', ruta: '/activos', icono: 'cube-outline' },
     { titulo: 'Monitoreo', ruta: '/monitoreo', icono: 'thermometer-outline' },
     { titulo: 'Arduinos', ruta: '/arduinos', icono: 'hardware-chip-outline' },
     { titulo: 'Catálogos', ruta: '/catalogos', icono: 'library-outline' },
     { titulo: 'Accesos', ruta: '/accesos', icono: 'key-outline' },
+    { titulo: 'Personal externo', ruta: '/personal', icono: 'id-card-outline' },
     { titulo: 'Intervenciones', ruta: '/intervenciones', icono: 'build-outline' },
   ];
+
+  /** El Departamento de contratistas solo ve su pantalla; el resto de los roles, todas. */
+  protected readonly menu = computed(() => {
+    if (this.auth.tieneRol('contratistas')) {
+      return this.opciones.filter((o) => o.ruta === '/personal');
+    }
+    // El Técnico no ve el registro de accesos (información sensible).
+    return this.auth.tieneRol('tecnico') ? this.opciones.filter((o) => o.ruta !== '/accesos') : this.opciones;
+  });
 
   constructor() {
     this.auth.iniciarControlInactividad();
@@ -81,6 +92,7 @@ export class App {
       thermometerOutline,
       hardwareChipOutline,
       keyOutline,
+      idCardOutline,
       buildOutline,
       logOutOutline,
       peopleOutline,

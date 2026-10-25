@@ -1,0 +1,172 @@
+<app-encabezado titulo="Personal externo"></app-encabezado>
+
+<ion-content>
+  <div class="contenido-limitado">
+    @if (mensaje(); as m) {
+      <ion-text [color]="m.error ? 'danger' : 'success'"><p class="nota" role="status">{{ m.texto }}</p></ion-text>
+    }
+
+    @if (puedeEditar) {
+      <ion-card>
+        <ion-card-header><ion-card-title>Registrar persona externa</ion-card-title></ion-card-header>
+        <ion-card-content>
+          <form class="rejilla-form" [formGroup]="formAlta" (ngSubmit)="registrar()">
+            <ion-input label="Nombre completo *" labelPlacement="stacked" formControlName="nombre"></ion-input>
+            <ion-input label="RUT *" labelPlacement="stacked" formControlName="rut" placeholder="12.345.678-5"></ion-input>
+            <ion-input label="Empresa *" labelPlacement="stacked" formControlName="empresa"></ion-input>
+            <div class="acciones"><ion-button type="submit" size="small">Registrar</ion-button></div>
+          </form>
+        </ion-card-content>
+      </ion-card>
+    }
+
+    <ion-searchbar
+      placeholder="Buscar por nombre, RUT, empresa o identificador"
+      [value]="busqueda()"
+      [debounce]="300"
+      (ionInput)="buscar($any($event.detail).value ?? '')"
+    ></ion-searchbar>
+
+    @if (cargando()) {
+      <ion-list>
+        @for (i of [1, 2, 3]; track i) {
+          <ion-item><ion-label><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></ion-label></ion-item>
+        }
+      </ion-list>
+    } @else if (personas().length === 0) {
+      <p class="vacio">{{ busqueda() ? 'Nadie coincide con la búsqueda.' : 'Aún no hay personal externo registrado.' }}</p>
+    } @else {
+      <ion-list lines="full">
+        @for (p of personas(); track p.id) {
+          <ion-item button detail="false" (click)="abrir(p)" [attr.aria-expanded]="seleccionada()?.id === p.id">
+            <ion-label>
+              <h3>{{ p.nombre }}</h3>
+              <p>RUT {{ p.rut || '—' }} · {{ p.empresa || 'sin empresa' }} · {{ p.identificador_biometrico_externo }}</p>
+            </ion-label>
+            <div slot="end" class="insignias">
+              <ion-badge [color]="p.estado === 'Activo' ? 'success' : 'medium'">{{ p.estado === 'Activo' ? 'Habilitada' : 'Deshabilitada' }}</ion-badge>
+              <ion-badge [color]="p.huella_registrada_en ? 'primary' : 'warning'">{{ p.huella_registrada_en ? 'Huella registrada' : 'Sin huella' }}</ion-badge>
+            </div>
+          </ion-item>
+
+          @if (seleccionada()?.id === p.id) {
+            @if (seleccionada(); as s) {
+              <ion-card class="detalle">
+                <ion-card-content>
+                  <dl class="datos">
+                    <dt>Identificador</dt><dd>{{ s.identificador_biometrico_externo }}</dd>
+                    <dt>Huella</dt>
+                    <dd>
+                      @if (s.huella_registrada_en) {
+                        Registrada el {{ s.huella_registrada_en | date: 'dd/MM/yyyy HH:mm' }} por {{ s.huella_registrada_por_nombre || '—' }}
+                      } @else { Sin registrar }
+                    </dd>
+                    <dt>Habilitación</dt><dd>{{ s.estado === 'Activo' ? 'Habilitada para trabajar en el datacenter' : 'Deshabilitada' }}</dd>
+                  </dl>
+
+                  <!-- Enrolamiento: el agente del lector captura la huella; aquí se ve el avance. -->
+                  @if (enrolamiento(); as e) {
+                    <div class="enrolamiento" [class.en-curso]="enCurso(e)" [class.fallido]="e.estado === 'Fallida'" role="status">
+                      @if (enCurso(e)) {
+                        @if (e.estado === 'Pendiente' || !e.indicacion) {
+                          <ion-spinner name="dots" aria-hidden="true"></ion-spinner>
+                          <p>
+                            <b>Preparando el lector «{{ e.punto_nombre }}»…</b><br>
+                            Todavía no apoyes el dedo: aquí se indicará cuándo hacerlo.
+                          </p>
+                        } @else {
+                          <div class="guia">
+                            <p class="paso">Muestra {{ e.muestra }} de {{ e.total_muestras }}</p>
+                            <p class="indicacion" aria-live="assertive">{{ e.indicacion }}</p>
+                            <div class="avance" aria-hidden="true">
+                              @for (n of pasos(e); track n) {
+                                <span [class.lista]="n <= muestrasListas(e)" [class.actual]="n === e.muestra && n > muestrasListas(e)"></span>
+                              }
+                            </div>
+                            <p class="ayuda">{{ s.nombre }} debe usar siempre el mismo dedo y levantarlo entre cada muestra.</p>
+                          </div>
+                        }
+                        @if (puedeEditar) {
+                          <ion-button size="small" fill="clear" color="medium" (click)="cancelarEnrolamiento(e)">Cancelar</ion-button>
+                        }
+                      } @else if (e.estado === 'Completada') {
+                        <p><b>Huella registrada</b> en «{{ e.punto_nombre }}» el {{ e.fecha_fin | date: 'dd/MM/yyyy HH:mm' }}.</p>
+                      } @else if (e.estado === 'Fallida') {
+                        <p><b>El enrolamiento falló:</b> {{ e.mensaje }}</p>
+                      } @else {
+                        <p>Último enrolamiento: {{ e.estado }}. {{ e.mensaje }}</p>
+                      }
+                    </div>
+                  }
+
+                  @if (puedeEditar) {
+                    @if (!enCurso(enrolamiento())) {
+                      <h4>{{ s.huella_registrada_en ? 'Volver a enrolar la huella' : 'Enrolar huella' }}</h4>
+                      <div class="fila">
+                        @if (puntos().length > 1) {
+                          <ion-select label="Lector" labelPlacement="stacked" interface="popover" [formControl]="puntoEnrolamiento">
+                            @for (pt of puntos(); track pt.id) { <ion-select-option [value]="pt.id">{{ pt.nombre }}</ion-select-option> }
+                          </ion-select>
+                        }
+                        <ion-button size="small" [disabled]="puntos().length === 0" (click)="enrolar(s)">Enrolar en el lector</ion-button>
+                      </div>
+                      @if (puntos().length === 0) {
+                        <ion-note>No hay lectores activos. El Administrador los registra en Accesos → Lectores.</ion-note>
+                      }
+                    }
+
+                    <h4>{{ s.estado === 'Activo' ? 'Deshabilitar' : 'Habilitar' }}</h4>
+                    <form class="fila" [formGroup]="formHabilitacion" (ngSubmit)="cambiarHabilitacion(s)">
+                      <ion-input
+                        [label]="s.estado === 'Activo' ? 'Motivo *' : 'Motivo (opcional)'"
+                        labelPlacement="stacked"
+                        formControlName="motivo"
+                        [placeholder]="s.estado === 'Activo' ? 'Cotizaciones vencidas' : 'Cotizaciones al día'"
+                      ></ion-input>
+                      <ion-button type="submit" size="small" [color]="s.estado === 'Activo' ? 'danger' : 'success'">
+                        {{ s.estado === 'Activo' ? 'Deshabilitar' : 'Habilitar' }}
+                      </ion-button>
+                    </form>
+
+                    <h4>Datos</h4>
+                    <form class="rejilla-form" [formGroup]="formEdicion" (ngSubmit)="guardarDatos(s)">
+                      <ion-input label="Nombre *" labelPlacement="stacked" formControlName="nombre"></ion-input>
+                      <ion-input label="RUT *" labelPlacement="stacked" formControlName="rut"></ion-input>
+                      <ion-input label="Empresa *" labelPlacement="stacked" formControlName="empresa"></ion-input>
+                      <div class="acciones"><ion-button type="submit" size="small" fill="outline">Guardar</ion-button></div>
+                    </form>
+
+                    <h4>Eliminar</h4>
+                    <div class="fila">
+                      <ion-note>Borra la ficha y la huella de los lectores. Los intentos de acceso quedan en el registro.</ion-note>
+                      <ion-button size="small" color="danger" fill="outline" (click)="eliminar(s)">Eliminar persona</ion-button>
+                    </div>
+                  }
+
+                  <h4>Historial de habilitación</h4>
+                  @if (historial().length === 0) {
+                    <p class="vacio-chico">Sin cambios registrados.</p>
+                  } @else {
+                    <ul class="historial">
+                      @for (h of historial(); track h.fecha_hora) {
+                        <li>
+                          <b>{{ h.habilitada ? 'Habilitada' : 'Deshabilitada' }}</b>
+                          el {{ h.fecha_hora | date: 'dd/MM/yyyy HH:mm' }} por {{ h.usuario_nombre || '—' }}
+                          @if (h.motivo) { · {{ h.motivo }} }
+                        </li>
+                      }
+                    </ul>
+                  }
+                </ion-card-content>
+              </ion-card>
+            }
+          }
+        }
+      </ion-list>
+    }
+    <ion-note class="nota">
+      La huella nunca sale del equipo del lector: SICMA guarda solo el identificador de cada persona. Una misma huella no puede
+      registrarse con dos identidades.
+    </ion-note>
+  </div>
+</ion-content>

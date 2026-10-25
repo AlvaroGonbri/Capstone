@@ -2,3 +2,15 @@
 .env
 .env.*
 !.env.example
+
+# Dependencias y artefactos generados (se reconstruyen con npm install / ng build)
+node_modules/
+dist/
+.angular/
+__pycache__/
+*.pyc
+.venv/
+
+# Archivos locales del SDK SecuGen y temporales de Office
+.sgfplib_config.ini
+~$*

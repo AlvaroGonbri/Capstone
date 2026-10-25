@@ -7,14 +7,16 @@ from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import override_settings
 from django.utils import timezone
+from rest_framework.test import APIClient
 
+from accesos.models import EventoAcceso, PermisoAcceso, PermisoDia, PersonaAutorizada, PuntoAcceso
 from alertas.models import Alerta, HostProblemaZabbix, Notificacion
 from inventario.models import Activo
 from mediciones.models import Ubicacion
 from mediciones.tests import TablasNoGestionadasTestCase, cliente_con_rol
 
 from .buzon import MensajeInvalido, extraer_json, leer_buzon, procesar_mensaje
-from .models import DecisionIntervencion, Intervencion, IntervencionActivo
+from .models import DecisionIntervencion, Intervencion, IntervencionActivo, IntervencionPersona
 
 
 User = get_user_model()
@@ -46,6 +48,7 @@ def correo_decision(decision='Approve', forms_id='R-1', **extra):
 class IntervencionesTestCase(TablasNoGestionadasTestCase):
     modelos = TablasNoGestionadasTestCase.modelos + (
         Activo, HostProblemaZabbix, Alerta, Notificacion, Intervencion, DecisionIntervencion, IntervencionActivo,
+        PersonaAutorizada, PuntoAcceso, PermisoAcceso, PermisoDia, EventoAcceso,
     )
 
     def setUp(self):
@@ -239,3 +242,149 @@ class CicloDeVidaTests(IntervencionesTestCase):
         tecnicos = [t['id'] for t in self.auditor.get('/api/intervenciones/tecnicos/').json()]
         self.assertIn(self.tecnico.id, tecnicos)
         self.assertNotIn(auditor.id, tecnicos)
+
+
+class PersonalExternoTests(IntervencionesTestCase):
+    def setUp(self):
+        super().setUp()
+        self.juan = PersonaAutorizada.objects.create(
+            nombre='Juan Pérez', identificador_biometrico_externo='EXT-00001', empresa='Clima Ltda.',
+            rut='12345678-5', huella_registrada_en=timezone.now(),
+        )
+        self.sin_huella = PersonaAutorizada.objects.create(nombre='Ana Soto', identificador_biometrico_externo='EXT-00002')
+        self.deshabilitado = PersonaAutorizada.objects.create(
+            nombre='Luis Mora', identificador_biometrico_externo='EXT-00003', estado='Inactivo', huella_registrada_en=timezone.now(),
+        )
+
+    def test_asignar_con_personal_externo_lo_muestra_y_lo_informa(self):
+        intervencion = self.aprobada()
+        respuesta = self.asignar(intervencion, personal_externo=[self.juan.id])
+        self.assertEqual(respuesta.status_code, 200)
+        personal = respuesta.json()['personal_externo']
+        self.assertEqual([(p['nombre'], p['empresa'], p['habilitada'], p['huella_registrada']) for p in personal],
+                         [('Juan Pérez', 'Clima Ltda.', True, True)])
+        agenda = next(m for m in mail.outbox if m.to == [FLUJO])
+        self.assertIn('Personal externo: Juan Pérez (Clima Ltda.)', json.loads(agenda.body)['detalle'])
+        self.assertTrue(any('Personal externo: Juan Pérez' in m.body for m in mail.outbox if m.to != [FLUJO]))
+
+    def test_solo_personal_habilitado_y_con_huella(self):
+        intervencion = self.aprobada()
+        error = self.asignar(intervencion, personal_externo=[self.sin_huella.id, self.deshabilitado.id]).json()
+        self.assertIn('Ana Soto: no tiene huella registrada', error['personal_externo'][0])
+        self.assertIn('Luis Mora: está deshabilitada', error['personal_externo'][0])
+
+    def test_cambiar_solo_el_personal_hasta_que_se_inicia(self):
+        intervencion = self.aprobada()
+        self.asignar(intervencion)
+        mail.outbox.clear()
+        url = f'/api/intervenciones/{intervencion.id}/personal/'
+        self.assertEqual(self.admin.post(url, {'personal_externo': [self.juan.id]}, format='json').json()['personal_externo'][0]['id'], self.juan.id)
+        self.assertFalse(any(m.to == [FLUJO] for m in mail.outbox))  # no vuelve a pedir la cita
+        self.assertEqual(self.tecnico_cliente.post(url, {'personal_externo': []}, format='json').status_code, 403)
+
+        # Parte 3: para iniciar, el personal externo debe haber verificado su huella.
+        IntervencionPersona.objects.filter(intervencion=intervencion).update(verificada_en=timezone.now())
+        self.assertEqual(self.tecnico_cliente.post(f'/api/intervenciones/{intervencion.id}/iniciar/').status_code, 200)
+        self.assertEqual(self.admin.post(url, {'personal_externo': []}, format='json').status_code, 409)
+
+    def test_si_se_deshabilita_despues_la_intervencion_lo_advierte(self):
+        intervencion = self.aprobada()
+        self.asignar(intervencion, personal_externo=[self.juan.id])
+        PersonaAutorizada.objects.filter(pk=self.juan.id).update(estado='Inactivo')
+        persona = self.auditor.get(f'/api/intervenciones/{intervencion.id}/').json()['personal_externo'][0]
+        self.assertFalse(persona['habilitada'])
+
+
+class VerificacionDeIdentidadTests(IntervencionesTestCase):
+    """Parte 3: permiso automático para la ventana y verificación por huella antes de iniciar."""
+
+    def setUp(self):
+        from django.contrib.auth.hashers import make_password
+
+        super().setUp()
+        self.sala = Ubicacion.objects.create(sala='Sala A')
+        self.punto = PuntoAcceso.objects.create(nombre='Puerta', ubicacion=self.sala, device_key_hash=make_password('clave'))
+        self.juan = PersonaAutorizada.objects.create(
+            nombre='Juan Pérez', identificador_biometrico_externo='EXT-00001', empresa='Clima', huella_registrada_en=timezone.now(),
+        )
+        self.intervencion = self.aprobada()
+        ahora = timezone.now()
+        self.asignar(self.intervencion, personal_externo=[self.juan.id],
+                     fecha_inicio=(ahora - timedelta(minutes=10)).isoformat(), fecha_termino=(ahora + timedelta(hours=2)).isoformat())
+        self.base = f'/api/intervenciones/{self.intervencion.id}/'
+
+    def lector(self):
+        cliente = APIClient()
+        cliente.credentials(HTTP_X_PUNTO_ACCESO=str(self.punto.id), HTTP_X_DEVICE_KEY='clave')
+        return cliente
+
+    def verificar(self, coincide=True, identificado='EXT-00001', mensaje='Identidad verificada.'):
+        solicitud = self.tecnico_cliente.post(self.base + f'personal/{self.juan.id}/verificar/', {}, format='json').json()
+        trabajo = self.lector().get('/api/accesos/lector/verificaciones/siguiente/').json()
+        self.assertEqual((trabajo['id'], trabajo['identificador']), (solicitud['id'], 'EXT-00001'))
+        self.lector().post(f'/api/accesos/lector/verificaciones/{solicitud["id"]}/resultado/',
+                           {'coincide': coincide, 'identificado': identificado, 'mensaje': mensaje}, format='json')
+        return solicitud
+
+    def test_asignar_crea_un_permiso_solo_para_la_ventana_y_cerrar_lo_revoca(self):
+        permiso = PermisoAcceso.objects.get(persona=self.juan)
+        self.assertEqual(permiso.estado, 'Activo')
+        hoy = timezone.localtime(timezone.now(), ZoneInfo('America/Santiago')).date()
+        self.assertTrue(permiso.vigencia_inicio <= hoy <= permiso.vigencia_fin)
+        # En el mismo día lleva su ventana horaria; si cruza la medianoche, vale los días completos.
+        un_dia = permiso.vigencia_inicio == permiso.vigencia_fin
+        self.assertEqual(PermisoDia.objects.filter(permiso=permiso).count(), 1 if un_dia else 0)
+        self.admin.post(self.base + 'cancelar/', {'motivo': 'x'}, format='json')
+        self.assertEqual(PermisoAcceso.objects.get(pk=permiso.pk).estado, 'Revocado')
+
+    def test_quitar_a_la_persona_revoca_su_permiso(self):
+        self.admin.post(self.base + 'personal/', {'personal_externo': []}, format='json')
+        self.assertEqual(PermisoAcceso.objects.get(persona=self.juan).estado, 'Revocado')
+
+    def test_no_se_inicia_sin_verificar_y_si_despues_de_verificar(self):
+        respuesta = self.tecnico_cliente.post(self.base + 'iniciar/')
+        self.assertEqual(respuesta.status_code, 409)
+        self.assertIn('Juan Pérez (sin verificar su huella)', respuesta.json()['detail'])
+
+        self.verificar()
+        persona = self.auditor.get(self.base).json()['personal_externo'][0]
+        self.assertIsNotNone(persona['verificada_en'])
+        self.assertEqual(persona['verificacion']['estado'], 'Completada')
+        evento = EventoAcceso.objects.get()
+        self.assertEqual((evento.resultado, evento.persona), ('Permitido', self.juan))
+        self.assertIn(f'intervención #{self.intervencion.id}', evento.motivo)
+        self.assertEqual(self.tecnico_cliente.post(self.base + 'iniciar/').json()['estado'], 'EnEjecucion')
+
+    def test_huella_de_otra_persona_queda_como_denegada(self):
+        ana = PersonaAutorizada.objects.create(nombre='Ana', identificador_biometrico_externo='EXT-00009')
+        self.verificar(coincide=False, identificado='EXT-00009', mensaje='La huella corresponde a otra persona (EXT-00009).')
+        evento = EventoAcceso.objects.get()
+        self.assertEqual((evento.resultado, evento.persona, evento.identificador_biometrico_externo), ('Denegado', ana, 'EXT-00009'))
+        self.assertEqual(self.tecnico_cliente.post(self.base + 'iniciar/').status_code, 409)
+
+    def test_deshabilitada_despues_de_verificar_no_deja_iniciar(self):
+        self.verificar()
+        PersonaAutorizada.objects.filter(pk=self.juan.id).update(estado='Inactivo')
+        self.assertIn('(deshabilitada)', self.tecnico_cliente.post(self.base + 'iniciar/').json()['detail'])
+
+    def test_fuera_de_la_ventana_no_se_puede_verificar(self):
+        manana = timezone.now() + timedelta(days=1)
+        self.asignar(self.intervencion, fecha_inicio=manana.isoformat(), fecha_termino=(manana + timedelta(hours=1)).isoformat())
+        respuesta = self.tecnico_cliente.post(self.base + f'personal/{self.juan.id}/verificar/', {}, format='json')
+        self.assertEqual(respuesta.status_code, 409)
+        self.assertIn('desde 1 hora antes del inicio', respuesta.json()['detail'])
+
+    def test_solo_el_tecnico_asignado_o_el_administrador(self):
+        otro = cliente_con_rol('otro', 'Tecnico')
+        self.assertEqual(otro.post(self.base + f'personal/{self.juan.id}/verificar/', {}, format='json').status_code, 403)
+        self.assertEqual(self.auditor.post(self.base + f'personal/{self.juan.id}/verificar/', {}, format='json').status_code, 403)
+
+
+
+class JefaturaCancelaTests(IntervencionesTestCase):
+    def test_jefatura_puede_cancelar_y_el_tecnico_no(self):
+        intervencion = self.aprobada()
+        url = f'/api/intervenciones/{intervencion.id}/cancelar/'
+        self.assertEqual(self.tecnico_cliente.post(url, {'motivo': 'x'}, format='json').status_code, 403)
+        respuesta = cliente_con_rol('jefe', 'Jefatura').post(url, {'motivo': 'Se reprograma'}, format='json')
+        self.assertEqual((respuesta.status_code, respuesta.json()['estado']), (200, 'Cancelada'))

@@ -6,16 +6,18 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from login.permissions import ADMIN_ROLES, READ_ROLES, RolePermission
+from login.permissions import ADMIN_ROLES, CANCELAR_INTERVENCION_ROLES, READ_ROLES, RolePermission
 
 from . import servicio
-from .models import ESTADOS_INTERVENCION, Intervencion, IntervencionActivo
+from .models import ESTADOS_INTERVENCION, Intervencion, IntervencionActivo, IntervencionPersona
 from .serializers import (
     ROLES_ASIGNABLES,
     AsignacionSerializer,
     CancelacionSerializer,
     CierreSerializer,
     IntervencionSerializer,
+    PersonalSerializer,
+    VerificarSerializer,
     nombre_usuario,
     rol_de,
 )
@@ -25,6 +27,7 @@ def _intervenciones():
     return Intervencion.objects.select_related('responsable').prefetch_related(
         Prefetch('activos_afectados', queryset=IntervencionActivo.objects.select_related('activo')),
         'decisiones__decisor',
+        Prefetch('personal_externo', queryset=IntervencionPersona.objects.select_related('persona')),
     )
 
 
@@ -106,7 +109,45 @@ class AsignarView(AccionIntervencionView):
     serializer_class = AsignacionSerializer
 
     def ejecutar(self, request, intervencion, datos):
-        servicio.asignar(intervencion, datos['tecnico'], datos['fecha_inicio'], datos['fecha_termino'], datos.get('activos'))
+        servicio.asignar(
+            intervencion, datos['tecnico'], datos['fecha_inicio'], datos['fecha_termino'], datos.get('activos'),
+            datos.get('personal_externo'), request.user,
+        )
+
+
+class VerificarPersonalView(SoloTecnicoAsignadoMixin, APIView):
+    """POST: pide al lector verificar la huella de una persona del personal externo (al iniciar)."""
+    permission_classes = [RolePermission]
+
+    def post(self, request, pk, persona_id, format=None):
+        from accesos.models import ACTIVO, PersonaAutorizada, PuntoAcceso
+        from accesos.serializers import SolicitudVerificacionSerializer
+
+        intervencion = get_object_or_404(Intervencion.objects.select_related('responsable'), pk=pk)
+        self.verificar_tecnico(request, intervencion)
+        persona = get_object_or_404(PersonaAutorizada, pk=persona_id)
+        serializer = VerificarSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        punto = serializer.validated_data.get('punto_acceso')
+        if punto is None:
+            activos = list(PuntoAcceso.objects.filter(estado=ACTIVO)[:2])
+            if len(activos) != 1:
+                return Response({'punto_acceso': 'Elige en qué lector se verificará la huella.'}, status=status.HTTP_400_BAD_REQUEST)
+            punto = activos[0]
+        try:
+            solicitud = servicio.solicitar_verificacion(intervencion, persona, punto, request.user)
+        except servicio.TransicionInvalida as error:
+            return Response({'detail': str(error)}, status=status.HTTP_409_CONFLICT)
+        return Response(SolicitudVerificacionSerializer(solicitud).data, status=status.HTTP_201_CREATED)
+
+
+class PersonalView(AccionIntervencionView):
+    """POST: cambia solo el personal externo, sin reasignar ni volver a pedir la cita al flujo."""
+    allowed_roles = ADMIN_ROLES
+    serializer_class = PersonalSerializer
+
+    def ejecutar(self, request, intervencion, datos):
+        servicio.fijar_personal(intervencion, datos['personal_externo'], request.user)
 
 
 class IniciarView(SoloTecnicoAsignadoMixin, AccionIntervencionView):
@@ -127,8 +168,8 @@ class CerrarView(SoloTecnicoAsignadoMixin, AccionIntervencionView):
 
 
 class CancelarView(AccionIntervencionView):
-    """POST: el Administrador cancela una intervención pendiente o aprobada."""
-    allowed_roles = ADMIN_ROLES
+    """POST: el Administrador o la Jefatura cancela una intervención pendiente o aprobada."""
+    allowed_roles = CANCELAR_INTERVENCION_ROLES
     serializer_class = CancelacionSerializer
 
     def ejecutar(self, request, intervencion, datos):

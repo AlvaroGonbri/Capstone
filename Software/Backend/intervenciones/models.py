@@ -86,3 +86,27 @@ class IntervencionActivo(models.Model):
         managed = False
         db_table = 'intervencion_activo'
         unique_together = ('intervencion', 'activo')
+
+
+class IntervencionPersona(models.Model):
+    """Personal externo que trabajará en la intervención. Lo elige el Administrador al asignarla."""
+
+    # db_constraint=False: intervencion.id y persona_autorizada.id son BIGINT UNSIGNED (script del equipo).
+    intervencion = models.ForeignKey(
+        Intervencion, on_delete=models.CASCADE, db_constraint=False, related_name='personal_externo',
+    )
+    persona = models.ForeignKey(
+        'accesos.PersonaAutorizada', on_delete=models.CASCADE, db_constraint=False, related_name='intervenciones',
+    )
+    agregada_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')
+    fecha = models.DateTimeField()
+    # Al iniciar, cada persona demuestra con su huella que es quien fue asignada.
+    verificada_en = models.DateTimeField(null=True, blank=True)
+    verificada_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    # Permisos de acceso que SICMA creó para la ventana de la intervención (se revocan al quitarla o cerrar).
+    permisos = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        db_table = 'intervencion_persona'
+        unique_together = ('intervencion', 'persona')
+        ordering = ['id']

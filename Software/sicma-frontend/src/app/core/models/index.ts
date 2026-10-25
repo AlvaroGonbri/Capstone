@@ -9,7 +9,9 @@ export type RolUsuario =
   | 'administradorprivilegiado'
   | 'tecnico'
   | 'jefatura'
-  | 'auditor';
+  | 'auditor'
+  /** Departamento de contratistas: solo enrola y habilita al personal externo. */
+  | 'contratistas';
 
 export interface Usuario {
   id: number;
@@ -19,7 +21,7 @@ export interface Usuario {
   inactivityTimeoutMinutes: number;
 }
 
-export type RolGestion = 'Administrador' | 'AdministradorPrivilegiado' | 'Jefatura' | 'Tecnico' | 'Auditor';
+export type RolGestion = 'Administrador' | 'AdministradorPrivilegiado' | 'Jefatura' | 'Tecnico' | 'Auditor' | 'Contratistas';
 
 export interface UsuarioGestion {
   id: number;
@@ -241,6 +243,8 @@ export interface Alerta {
   ubicacion: number | null;
   /** event_id de Zabbix, solo en alertas de origen Zabbix (RF-INF-02). */
   evento_zabbix: string | null;
+  /** Última acción manual: quién la reconoció o cerró, cuándo y con qué comentario. */
+  ultima_gestion: { accion: 'Reconocida' | 'Cerrada'; usuario: string | null; comentario: string; fecha_hora: string } | null;
 }
 
 // --------------------------------------------------------------- Arduinos
@@ -261,20 +265,96 @@ export interface Arduino {
 
 // ----------------------------------------------------------------- Accesos
 
-export type MetodoAcceso = 'biometrico' | 'tarjeta' | 'manual';
-export type ResultadoAcceso = 'autorizado' | 'denegado';
+/** Resultado de un intento de acceso (tabla evento_acceso). */
+export type ResultadoAcceso = 'Permitido' | 'Denegado' | 'Error';
+export type EstadoRegistro = 'Activo' | 'Inactivo';
+export type DiaSemana = 'Lun' | 'Mar' | 'Mie' | 'Jue' | 'Vie' | 'Sab' | 'Dom';
 
-export interface Acceso {
+/** Intento de acceso registrado por el agente del lector (RF-ACC-01). Nunca incluye la huella. */
+export interface EventoAcceso {
   id: number;
-  persona: string;
-  rol: string;
-  metodo: MetodoAcceso;
-  movimiento: 'entrada' | 'salida';
-  puerta: string;
-  sitio: Sitio;
+  fecha_hora: string;
   resultado: ResultadoAcceso;
-  motivo?: string;
-  registradoEn: string;
+  motivo: string | null;
+  identificador_biometrico_externo: string;
+  persona: number | null;
+  persona_nombre: string | null;
+  punto_acceso: number;
+  punto_nombre: string;
+  ubicacion_nombre: string;
+}
+
+export type EstadoEnrolamiento = 'Pendiente' | 'EnCurso' | 'Completada' | 'Fallida' | 'Cancelada';
+
+/** Pedido al agente del lector para capturar una huella (el navegador no puede usar el lector USB). */
+export interface SolicitudEnrolamiento {
+  id: number;
+  persona: number;
+  punto_acceso: number;
+  punto_nombre: string;
+  estado: EstadoEnrolamiento;
+  mensaje: string;
+  solicitada_por_nombre: string | null;
+  fecha_solicitud: string;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  /** Lo que pide el agente en este momento, para guiar a la persona frente al lector. */
+  muestra: number;
+  total_muestras: number;
+  indicacion: string;
+}
+
+/** Persona que puede entrar, asociada a su identificador de huella (RF-ACC-02). */
+export interface PersonaAutorizada {
+  id: number;
+  nombre: string;
+  rut: string | null;
+  empresa: string | null;
+  identificador_biometrico_externo: string;
+  /** Activo = habilitada para trabajar en el datacenter (lo decide el Departamento de contratistas). */
+  estado: EstadoRegistro;
+  usuario: number | null;
+  usuario_nombre: string | null;
+  huella_registrada_en: string | null;
+  huella_registrada_por_nombre: string | null;
+  enrolamiento: SolicitudEnrolamiento | null;
+}
+
+/** Alta o baja manual de una persona, con su motivo (historial). */
+export interface CambioHabilitacion {
+  habilitada: boolean;
+  motivo: string;
+  usuario_nombre: string | null;
+  fecha_hora: string;
+}
+
+/** Lector biométrico. Su agente se autentica con una clave que solo se muestra al crearla. */
+export interface PuntoAcceso {
+  id: number;
+  nombre: string;
+  ubicacion: number;
+  ubicacion_nombre: string;
+  estado: EstadoRegistro;
+  tiene_clave: boolean;
+}
+
+export interface VentanaPermiso {
+  dia_semana: DiaSemana;
+  hora_inicio: string;
+  hora_fin: string;
+}
+
+/** Permiso de una persona en un punto. Sin ventanas = todo el día, todos los días. */
+export interface PermisoAcceso {
+  id: number;
+  persona: number;
+  persona_nombre: string;
+  punto_acceso: number;
+  punto_nombre: string;
+  vigencia_inicio: string;
+  vigencia_fin: string | null;
+  estado: 'Activo' | 'Revocado';
+  dias: VentanaPermiso[];
 }
 
 // ---------------------------------------------------------- Intervenciones
@@ -321,6 +401,38 @@ export interface Intervencion {
   decisiones: DecisionIntervencion[];
   /** SICMA ya pidió al flujo de Power Automate crear la cita en Outlook. */
   agenda_enviada: boolean;
+  personal_externo: PersonalIntervencion[];
+}
+
+/** Persona externa que trabajará en la intervención, con su estado actual. */
+export interface PersonalIntervencion {
+  id: number;
+  nombre: string;
+  rut: string | null;
+  empresa: string | null;
+  identificador: string;
+  habilitada: boolean;
+  huella_registrada: boolean;
+  /** Huella verificada al iniciar la intervención (demuestra que es quien fue asignado). */
+  verificada_en: string | null;
+  verificacion: SolicitudVerificacion | null;
+}
+
+/** Pedido al lector para confirmar la identidad de UNA persona con su huella. */
+export interface SolicitudVerificacion {
+  id: number;
+  persona: number;
+  intervencion_id: number | null;
+  punto_acceso: number;
+  punto_nombre: string;
+  estado: 'Pendiente' | 'EnCurso' | 'Completada' | 'Fallida' | 'Cancelada';
+  mensaje: string;
+  identificado: string;
+  intento: number;
+  total_intentos: number;
+  indicacion: string;
+  fecha_solicitud: string;
+  fecha_fin: string | null;
 }
 
 export interface TecnicoAsignable {

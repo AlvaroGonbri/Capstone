@@ -28,6 +28,7 @@ import {
   UbicacionCatalogo,
   UsuarioResumen,
 } from '../../core/models';
+import { AuthService } from '../../core/services/auth.service';
 import { CatalogosService, nombreUbicacion } from '../../core/services/catalogos.service';
 import {
   CRITICIDADES,
@@ -80,10 +81,13 @@ export class ActivoFormPage {
   protected readonly usuarios = signal<UsuarioResumen[]>([]);
 
   /** Al editar se conserva el estado actual aunque luego se haya desactivado; en el alta no se ofrece la baja. */
+  /** Dar de baja o reincorporar un activo es una decisión de gestión: solo administradores. */
+  private readonly esAdmin = inject(AuthService).puedeModificar('administrador', 'administradorprivilegiado');
+
   protected readonly estados = computed(() =>
     this.inventario
       .estadosSeleccionables(this.original()?.estado)
-      .filter((e) => this.editando() || e.nombre !== ESTADO_RETIRADO),
+      .filter((e) => e.nombre !== ESTADO_RETIRADO || (this.editando() && this.esAdmin) || this.original()?.estado === ESTADO_RETIRADO),
   );
   protected readonly criticidades = CRITICIDADES;
   protected readonly nombreUbicacion = nombreUbicacion;

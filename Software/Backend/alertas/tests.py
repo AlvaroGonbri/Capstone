@@ -195,3 +195,34 @@ class EventosZabbixTests(TablasNoGestionadasTestCase):
         self.enviar()
         alertas = cliente_con_rol('aud', 'Auditor').get('/api/alertas/', {'origen': 'Zabbix'}).json()
         self.assertEqual([(a['condicion'], a['evento_zabbix']) for a in alertas], [('router01: MySQL Router caído', '51350')])
+
+
+
+class GestionDeAlertasTests(TablasNoGestionadasTestCase):
+    """El Técnico o el Administrador reconoce y cierra alertas; queda quién y cuándo."""
+
+    modelos = TablasNoGestionadasTestCase.modelos + (HostProblemaZabbix, Alerta)
+
+    def setUp(self):
+        self.alerta = Alerta.objects.create(
+            origen='Zabbix', condicion='mysql01: caído', severidad='Alta', estado='Nueva', fecha_apertura=timezone.now(),
+        )
+        self.tecnico = cliente_con_rol('tec', 'Tecnico')
+
+    def test_reconocer_y_cerrar_con_trazabilidad(self):
+        url = f'/api/alertas/{self.alerta.id}/'
+        reconocida = self.tecnico.post(url + 'reconocer/', {'comentario': 'Revisando el nodo'}, format='json').json()
+        self.assertEqual(reconocida['estado'], 'Reconocida')
+        self.assertEqual((reconocida['ultima_gestion']['usuario'], reconocida['ultima_gestion']['comentario']), ('tec', 'Revisando el nodo'))
+        self.assertEqual(self.tecnico.post(url + 'reconocer/', {}, format='json').status_code, 409)
+
+        cerrada = self.tecnico.post(url + 'cerrar/', {}, format='json').json()
+        self.assertEqual((cerrada['estado'], cerrada['ultima_gestion']['accion']), ('Cerrada', 'Cerrada'))
+        self.assertEqual(self.tecnico.post(url + 'cerrar/', {}, format='json').status_code, 409)
+        self.assertEqual(cliente_con_rol('aud', 'Auditor').get('/api/alertas/').json(), [])  # ya no está abierta
+
+    def test_auditor_y_jefatura_solo_consultan(self):
+        for usuario, rol in (('aud', 'Auditor'), ('jefe', 'Jefatura')):
+            cliente = cliente_con_rol(usuario, rol)
+            self.assertEqual(cliente.post(f'/api/alertas/{self.alerta.id}/cerrar/', {}, format='json').status_code, 403)
+            self.assertEqual(cliente.get('/api/alertas/').status_code, 200)

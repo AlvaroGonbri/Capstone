@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
@@ -13,16 +13,27 @@ import {
   IonLabel,
   IonList,
   IonNote,
+  IonSearchbar,
   IonSegment,
   IonSegmentButton,
   IonSelect,
   IonSelectOption,
   IonSkeletonText,
+  IonSpinner,
   IonText,
   IonTextarea,
 } from '@ionic/angular';
 import { Observable } from 'rxjs';
-import { ActivoInventario, EstadoIntervencion, Intervencion, TecnicoAsignable } from '../../core/models';
+import {
+  ActivoInventario,
+  EstadoIntervencion,
+  Intervencion,
+  PersonaAutorizada,
+  PersonalIntervencion,
+  SolicitudVerificacion,
+  TecnicoAsignable,
+} from '../../core/models';
+import { AccesosService } from '../../core/services/accesos.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
   ESTADOS_CERRADOS,
@@ -65,11 +76,13 @@ function aEntradaLocal(iso: string | null): string {
     IonLabel,
     IonList,
     IonNote,
+    IonSearchbar,
     IonSegment,
     IonSegmentButton,
     IonSelect,
     IonSelectOption,
     IonSkeletonText,
+    IonSpinner,
     IonText,
     IonTextarea,
   ],
@@ -81,6 +94,7 @@ export class IntervencionesPage {
   private readonly inventario = inject(InventarioService);
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
+  private readonly accesos = inject(AccesosService);
 
   /** RF-INT-05: asigna y cancela el Administrador. RF-INT-06: ejecuta el técnico asignado. */
   protected readonly esAdmin = this.auth.puedeModificar('administrador', 'administradorprivilegiado');
@@ -95,6 +109,13 @@ export class IntervencionesPage {
   protected readonly filtro = signal<Filtro>('abiertas');
   protected readonly seleccionada = signal<number | null>(null);
   protected readonly enviando = signal(false);
+  /** Personal externo elegido para la intervención abierta (se guarda al asignar o con "Guardar personal"). */
+  protected readonly personalElegido = signal<PersonalIntervencion[]>([]);
+  protected readonly resultadosPersonal = signal<PersonaAutorizada[]>([]);
+  protected readonly busquedaPersonal = signal('');
+  /** Verificación de identidad en curso (persona → solicitud); se consulta cada segundo. */
+  protected readonly verificando = signal<{ personaId: number; solicitud: SolicitudVerificacion } | null>(null);
+  private temporizadorVerificacion: ReturnType<typeof setInterval> | null = null;
 
   protected readonly etiquetaEstado = etiquetaEstadoIntervencion;
   protected readonly colorEstado = colorEstadoIntervencion;
@@ -125,6 +146,7 @@ export class IntervencionesPage {
   });
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.detenerVerificacion());
     this.cargar();
     if (this.esAdmin) {
       this.cargarTecnicos();
@@ -157,6 +179,9 @@ export class IntervencionesPage {
       fecha_termino: aEntradaLocal(i.fecha_termino ?? terminoSugerido),
       activos: i.activos.map((a) => a.id),
     });
+    this.personalElegido.set([...i.personal_externo]);
+    this.busquedaPersonal.set('');
+    this.resultadosPersonal.set([]);
     if (this.esAdmin && i.estado === 'Aprobada') {
       this.cargarTecnicos(); // refleja correos o roles cambiados en Usuarios
     }
@@ -172,8 +197,11 @@ export class IntervencionesPage {
     return this.esAdmin || (i.responsable !== null && i.responsable === this.usuarioId);
   }
 
+  /** Cancelan el Administrador y la Jefatura (que aprueba las intervenciones). */
+  private readonly esJefatura = this.auth.puedeModificar('jefatura');
+
   protected puedeCancelar(estado: EstadoIntervencion): boolean {
-    return this.esAdmin && (estado === 'Pendiente' || estado === 'Aprobada');
+    return (this.esAdmin || this.esJefatura) && (estado === 'Pendiente' || estado === 'Aprobada');
   }
 
   protected asignar(i: Intervencion): void {
@@ -189,9 +217,113 @@ export class IntervencionesPage {
         fecha_inicio: new Date(v.fecha_inicio).toISOString(),
         fecha_termino: new Date(v.fecha_termino).toISOString(),
         activos: v.activos,
+        personal_externo: this.personalElegido().map((p) => p.id),
       }),
       'Técnico asignado. SICMA pidió al flujo agendarla en el calendario de Outlook.',
     );
+  }
+
+  // ------------------------------------------------------- personal externo
+
+  protected buscarPersonal(texto: string): void {
+    this.busquedaPersonal.set(texto);
+    if (texto.trim().length < 2) {
+      this.resultadosPersonal.set([]);
+      return;
+    }
+    this.accesos.personas(texto.trim()).subscribe({
+      next: (lista) => this.resultadosPersonal.set(lista.slice(0, 8)),
+      error: () => this.resultadosPersonal.set([]),
+    });
+  }
+
+  /** Solo se puede elegir a quien está habilitado y tiene huella; si no, se dice por qué. */
+  protected impedimento(p: PersonaAutorizada): string | null {
+    if (p.estado !== 'Activo') return 'Deshabilitada';
+    if (!p.huella_registrada_en) return 'Sin huella registrada';
+    if (this.personalElegido().some((x) => x.id === p.id)) return 'Ya agregada';
+    return null;
+  }
+
+  protected agregarPersonal(p: PersonaAutorizada): void {
+    if (this.impedimento(p)) {
+      return;
+    }
+    this.personalElegido.update((lista) => [
+      ...lista,
+      { id: p.id, nombre: p.nombre, rut: p.rut, empresa: p.empresa, identificador: p.identificador_biometrico_externo, habilitada: true, huella_registrada: true, verificada_en: null, verificacion: null },
+    ]);
+  }
+
+  protected quitarPersonal(id: number): void {
+    this.personalElegido.update((lista) => lista.filter((p) => p.id !== id));
+  }
+
+  protected guardarPersonal(i: Intervencion): void {
+    this.ejecutar(
+      this.servicio.guardarPersonal(i.id, this.personalElegido().map((p) => p.id)),
+      'Personal externo actualizado.',
+    );
+  }
+
+  // --------------------------------------------- verificación de identidad
+
+  /** El técnico asignado (o un Administrador) verifica al personal externo antes de iniciar. */
+  protected puedeVerificar(i: Intervencion): boolean {
+    return i.estado === 'Aprobada' && !!i.responsable && this.puedeEjecutar(i) && i.personal_externo.length > 0;
+  }
+
+  protected readonly nombrePersona = (p: PersonalIntervencion) => p.nombre;
+
+  protected pendientesDeVerificar(i: Intervencion): PersonalIntervencion[] {
+    return i.personal_externo.filter((p) => !p.verificada_en || !p.habilitada);
+  }
+
+  protected verificar(i: Intervencion, p: PersonalIntervencion): void {
+    this.mensaje.set(null);
+    this.servicio.verificarPersona(i.id, p.id).subscribe({
+      next: (solicitud) => {
+        this.verificando.set({ personaId: p.id, solicitud });
+        this.consultarVerificacion(i.id, p.id, solicitud.id);
+      },
+      error: (r: { error?: unknown }) =>
+        this.mensaje.set({ texto: mensajeErrorApi(r.error, 'No fue posible pedir la verificación.'), error: true }),
+    });
+  }
+
+  private consultarVerificacion(intervencionId: number, personaId: number, solicitudId: number): void {
+    this.detenerVerificacion();
+    this.temporizadorVerificacion = setInterval(() => {
+      this.servicio.verificacion(solicitudId).subscribe({
+        next: (s) => {
+          this.verificando.set({ personaId, solicitud: s });
+          if (s.estado !== 'Pendiente' && s.estado !== 'EnCurso') {
+            this.detenerVerificacion();
+            this.recargarIntervencion(intervencionId);
+            this.mensaje.set({
+              texto: s.estado === 'Completada' ? 'Identidad verificada.' : `No verificada: ${s.mensaje}`,
+              error: s.estado !== 'Completada',
+            });
+          }
+        },
+        error: () => this.detenerVerificacion(),
+      });
+    }, 1000);
+  }
+
+  private detenerVerificacion(): void {
+    if (this.temporizadorVerificacion) {
+      clearInterval(this.temporizadorVerificacion);
+      this.temporizadorVerificacion = null;
+    }
+  }
+
+  private recargarIntervencion(id: number): void {
+    this.servicio.listar().subscribe({
+      next: (lista) => this.intervenciones.set(lista),
+      error: () => undefined,
+    });
+    this.verificando.update((v) => (v && v.solicitud.intervencion_id === id ? null : v));
   }
 
   protected iniciar(i: Intervencion): void {

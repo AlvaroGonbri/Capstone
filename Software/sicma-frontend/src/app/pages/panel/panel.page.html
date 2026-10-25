@@ -39,13 +39,15 @@
           </ion-card-content>
         </ion-card>
 
-        <ion-card routerLink="/accesos" button>
-          <ion-card-content>
-            <p class="etiqueta-menor">Accesos de hoy</p>
-            <p class="dato-grande">{{ resumen().accesosHoy }}</p>
-            <ion-note>{{ resumen().accesosDenegadosHoy }} denegados</ion-note>
-          </ion-card-content>
-        </ion-card>
+        @if (veAccesos) {
+          <ion-card routerLink="/accesos" button>
+            <ion-card-content>
+              <p class="etiqueta-menor">Accesos de hoy</p>
+              <p class="dato-grande">{{ resumen().accesosHoy }}</p>
+              <ion-note>{{ resumen().accesosDenegadosHoy }} denegados</ion-note>
+            </ion-card-content>
+          </ion-card>
+        }
 
         <ion-card routerLink="/intervenciones" button>
           <ion-card-content>

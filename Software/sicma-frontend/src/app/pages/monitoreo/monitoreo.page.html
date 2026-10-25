@@ -28,9 +28,20 @@
               · {{ alerta.contador_ocurrencias }} {{ alerta.contador_ocurrencias === 1 ? 'lectura' : 'lecturas' }} fuera de rango
               @if (alerta.fecha_ultima_ocurrencia) { · última {{ alerta.fecha_ultima_ocurrencia | date: 'HH:mm' }} }
             </span>
+            @if (alerta.ultima_gestion; as g) {
+              <small class="gestion">{{ g.accion }} por {{ g.usuario || '—' }} a las {{ g.fecha_hora | date: 'HH:mm' }}</small>
+            }
+            @if (puedeGestionarAlertas) {
+              <span class="acciones-alerta">
+                @if (alerta.estado === 'Nueva') {
+                  <ion-button size="small" fill="outline" (click)="reconocerAlerta(alerta)">Reconocer</ion-button>
+                }
+                <ion-button size="small" fill="clear" (click)="cerrarAlerta(alerta)">Cerrar</ion-button>
+              </span>
+            }
           </div>
         }
-        <ion-note>Se cierran solas cuando las lecturas vuelven al rango.</ion-note>
+        <ion-note>Se cierran solas cuando las lecturas vuelven al rango. Cerrar una a mano no evita que se abra otra si la lectura sigue fuera de rango.</ion-note>
       </section>
     }
 

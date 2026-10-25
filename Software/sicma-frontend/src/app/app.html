@@ -27,7 +27,7 @@
               </ion-item>
             </ion-menu-toggle>
           }
-          @for (item of menu; track item.ruta) {
+          @for (item of menu(); track item.ruta) {
             <ion-menu-toggle autoHide="false">
               <ion-item
                 [routerLink]="item.ruta"

@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
-import { rolGuard } from './core/guards/rol.guard';
+import { excluirRolesGuard, rolGuard } from './core/guards/rol.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'panel' },
@@ -88,8 +88,15 @@ export const routes: Routes = [
   {
     path: 'accesos',
     title: 'Accesos · SICMA',
-    canActivate: [authGuard],
+    // RF-ACC-03: el registro de accesos es información sensible; no lo ve el Técnico.
+    canActivate: [authGuard, excluirRolesGuard('tecnico')],
     loadComponent: () => import('./pages/accesos/accesos.page').then((m) => m.AccesosPage),
+  },
+  {
+    path: 'personal',
+    title: 'Personal externo · SICMA',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/personal/personal.page').then((m) => m.PersonalPage),
   },
   {
     path: 'intervenciones',

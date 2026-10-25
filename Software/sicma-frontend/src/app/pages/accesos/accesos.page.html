@@ -2,53 +2,162 @@
 
 <ion-content>
   <div class="contenido-limitado">
-    <ion-segment [value]="filtro()" (ionChange)="cambiarFiltro($any($event.detail).value)">
-      <ion-segment-button value="todos"><ion-label>Todos</ion-label></ion-segment-button>
-      <ion-segment-button value="autorizado"><ion-label>Autorizados</ion-label></ion-segment-button>
-      <ion-segment-button value="denegado">
-        <ion-label>Denegados ({{ denegados() }})</ion-label>
-      </ion-segment-button>
-    </ion-segment>
+    @if (esAdmin) {
+      <ion-segment [value]="pestana()" scrollable (ionChange)="cambiarPestana($event.detail.value)">
+        <ion-segment-button value="registro"><ion-label>Registro</ion-label></ion-segment-button>
+        <ion-segment-button value="puntos"><ion-label>Lectores</ion-label></ion-segment-button>
+        <ion-segment-button value="permisos"><ion-label>Permisos</ion-label></ion-segment-button>
+      </ion-segment>
+    }
+    @if (mensaje(); as m) {
+      <ion-text [color]="m.error ? 'danger' : 'success'"><p class="nota" role="status">{{ m.texto }}</p></ion-text>
+    }
 
-    @if (cargando()) {
-      <ion-list>
-        @for (i of [1, 2, 3, 4, 5]; track i) {
-          <ion-item>
-            <ion-label>
-              <ion-skeleton-text animated style="width: 45%"></ion-skeleton-text>
-              <ion-skeleton-text animated style="width: 70%"></ion-skeleton-text>
-            </ion-label>
-          </ion-item>
+    @switch (pestana()) {
+      @case ('registro') {
+        <form class="rejilla-form filtros" [formGroup]="filtros" (ngSubmit)="buscar()">
+          <ion-input label="Desde" labelPlacement="stacked" type="date" formControlName="desde"></ion-input>
+          <ion-input label="Hasta" labelPlacement="stacked" type="date" formControlName="hasta"></ion-input>
+          <ion-select label="Resultado" labelPlacement="stacked" interface="popover" formControlName="resultado">
+            <ion-select-option value="">Todos</ion-select-option>
+            <ion-select-option value="Permitido">Permitido</ion-select-option>
+            <ion-select-option value="Denegado">Denegado</ion-select-option>
+            <ion-select-option value="Error">Error</ion-select-option>
+          </ion-select>
+          <ion-select label="Lector" labelPlacement="stacked" interface="popover" formControlName="punto">
+            <ion-select-option [value]="0">Todos</ion-select-option>
+            @for (p of puntos(); track p.id) { <ion-select-option [value]="p.id">{{ p.nombre }}</ion-select-option> }
+          </ion-select>
+          <ion-searchbar placeholder="Persona o identificador" formControlName="q" [debounce]="0"></ion-searchbar>
+          <div class="acciones">
+            <ion-button type="submit" size="small">Filtrar</ion-button>
+            <ion-button size="small" fill="clear" (click)="limpiarFiltros()">Limpiar</ion-button>
+          </div>
+        </form>
+
+        @if (cargando()) {
+          <ion-list>
+            @for (i of [1, 2, 3]; track i) {
+              <ion-item><ion-label><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></ion-label></ion-item>
+            }
+          </ion-list>
+        } @else if (eventos().length === 0) {
+          <p class="vacio">Sin intentos de acceso para estos filtros.</p>
+        } @else {
+          <ion-note class="nota">{{ eventos().length }} intentos{{ eventos().length === 500 ? ' (los 500 más recientes; acota los filtros)' : '' }}</ion-note>
+          <ion-list lines="full">
+            @for (e of eventos(); track e.id) {
+              <ion-item [class.denegado]="e.resultado !== 'Permitido'">
+                <ion-icon slot="start" name="finger-print-outline" [color]="colorResultado(e.resultado)" aria-hidden="true"></ion-icon>
+                <ion-label>
+                  <h3>{{ e.persona_nombre || 'Persona no identificada' }}</h3>
+                  <p>{{ e.punto_nombre }} · {{ e.ubicacion_nombre }} · identificador {{ e.identificador_biometrico_externo }}</p>
+                  @if (e.motivo) { <p class="motivo">{{ e.motivo }}</p> }
+                </ion-label>
+                <div slot="end" class="derecha">
+                  <ion-badge [color]="colorResultado(e.resultado)">{{ e.resultado }}</ion-badge>
+                  <ion-note>{{ e.fecha_hora | date: 'dd/MM/yyyy HH:mm:ss' }}</ion-note>
+                </div>
+              </ion-item>
+            }
+          </ion-list>
         }
-      </ion-list>
-    } @else if (filtrados().length === 0) {
-      <p class="vacio">Sin eventos para este filtro.</p>
-    } @else {
-      <ion-list lines="full">
-        @for (acceso of filtrados(); track acceso.id) {
-          <ion-item [class.denegado]="acceso.resultado === 'denegado'">
-            <ion-icon
-              slot="start"
-              [name]="icono(acceso.metodo)"
-              [color]="acceso.resultado === 'denegado' ? 'danger' : 'medium'"
-              aria-hidden="true"
-            ></ion-icon>
-            <ion-label>
-              <h3>{{ acceso.persona }}</h3>
-              <p>{{ acceso.movimiento }} · {{ acceso.puerta }} · sitio {{ acceso.sitio }}</p>
-              @if (acceso.motivo) {
-                <p class="motivo">{{ acceso.motivo }}</p>
+        <ion-note class="nota">SICMA no guarda huellas: el lector compara la huella en su equipo y envía solo el identificador reconocido.
+          Las personas y sus huellas se registran en <a routerLink="/personal">Personal externo</a>.</ion-note>
+      }
+
+      @case ('puntos') {
+        @if (claveNueva(); as c) {
+          <div class="clave" role="alert">
+            <strong>Clave del lector «{{ c.punto }}» (id {{ c.id }}):</strong>
+            <code>{{ c.clave }}</code>
+            <span>Cópiala ahora en la configuración del agente del lector. SICMA guarda solo su hash y no la volverá a mostrar.</span>
+            <ion-button size="small" fill="clear" (click)="claveNueva.set(null)">Ya la copié</ion-button>
+          </div>
+        }
+        <ion-card>
+          <ion-card-header><ion-card-title>Nuevo lector</ion-card-title></ion-card-header>
+          <ion-card-content>
+            <form class="rejilla-form" [formGroup]="formPunto" (ngSubmit)="crearPunto()">
+              <ion-input label="Nombre *" labelPlacement="stacked" formControlName="nombre" placeholder="Puerta sala principal"></ion-input>
+              <ion-select label="Ubicación *" labelPlacement="stacked" interface="popover" formControlName="ubicacion">
+                @for (u of ubicaciones(); track u.id) { <ion-select-option [value]="u.id">{{ nombreUbicacion(u) }}</ion-select-option> }
+              </ion-select>
+              <div class="acciones"><ion-button type="submit" size="small">Registrar</ion-button></div>
+            </form>
+          </ion-card-content>
+        </ion-card>
+        <ion-list lines="full">
+          @for (p of puntos(); track p.id) {
+            <ion-item>
+              <ion-label>
+                <h3>{{ p.nombre }} <span class="id">· id {{ p.id }}</span></h3>
+                <p>{{ p.ubicacion_nombre }}</p>
+              </ion-label>
+              @if (p.estado !== 'Activo') { <ion-badge slot="end" color="medium">desactivado</ion-badge> }
+              <ion-button slot="end" size="small" fill="clear" (click)="regenerarClave(p)">Nueva clave</ion-button>
+              <ion-button slot="end" size="small" fill="clear" [color]="p.estado === 'Activo' ? 'danger' : 'success'" (click)="cambiarEstadoPunto(p)">
+                {{ p.estado === 'Activo' ? 'Desactivar' : 'Reactivar' }}
+              </ion-button>
+            </ion-item>
+          } @empty {
+            <p class="vacio">No hay lectores registrados.</p>
+          }
+        </ion-list>
+      }
+
+      @case ('permisos') {
+        <ion-card>
+          <ion-card-header><ion-card-title>Nuevo permiso</ion-card-title></ion-card-header>
+          <ion-card-content>
+            <form [formGroup]="formPermiso" (ngSubmit)="crearPermiso()">
+              <div class="rejilla-form">
+                <ion-select label="Persona *" labelPlacement="stacked" interface="popover" formControlName="persona">
+                  @for (p of personas(); track p.id) {
+                    @if (p.estado === 'Activo') { <ion-select-option [value]="p.id">{{ p.nombre }}</ion-select-option> }
+                  }
+                </ion-select>
+                <ion-select label="Lector *" labelPlacement="stacked" interface="popover" formControlName="punto_acceso">
+                  @for (p of puntos(); track p.id) { <ion-select-option [value]="p.id">{{ p.nombre }}</ion-select-option> }
+                </ion-select>
+                <ion-input label="Vigente desde *" labelPlacement="stacked" type="date" formControlName="vigencia_inicio"></ion-input>
+                <ion-input label="Vigente hasta" labelPlacement="stacked" type="date" formControlName="vigencia_fin" helperText="Vacío: sin término"></ion-input>
+              </div>
+              <p class="etiqueta">Días con horario (sin marcar ninguno: todos los días, todo el día)</p>
+              <div class="dias">
+                @for (d of dias; track d) {
+                  <ion-checkbox labelPlacement="end" [checked]="formPermiso.controls.dias.value.includes(d)" (ionChange)="alternarDia(d, $event.detail.checked)">{{ d }}</ion-checkbox>
+                }
+              </div>
+              @if (formPermiso.controls.dias.value.length > 0) {
+                <div class="rejilla-form">
+                  <ion-input label="Desde las" labelPlacement="stacked" type="time" formControlName="hora_inicio"></ion-input>
+                  <ion-input label="Hasta las" labelPlacement="stacked" type="time" formControlName="hora_fin"></ion-input>
+                </div>
               }
-            </ion-label>
-            <div slot="end" class="derecha">
-              <ion-badge [color]="acceso.resultado === 'denegado' ? 'danger' : 'success'">
-                {{ acceso.resultado }}
-              </ion-badge>
-              <ion-note>{{ acceso.registradoEn | date: 'dd/MM HH:mm' }}</ion-note>
-            </div>
-          </ion-item>
-        }
-      </ion-list>
+              <div class="acciones"><ion-button type="submit" size="small">Crear permiso</ion-button></div>
+            </form>
+          </ion-card-content>
+        </ion-card>
+        <ion-list lines="full">
+          @for (p of permisos(); track p.id) {
+            <ion-item>
+              <ion-label class="ion-text-wrap">
+                <h3>{{ p.persona_nombre }} → {{ p.punto_nombre }}</h3>
+                <p>Desde {{ p.vigencia_inicio | date: 'dd/MM/yyyy' }}{{ p.vigencia_fin ? ' hasta ' + (p.vigencia_fin | date: 'dd/MM/yyyy') : ', sin término' }}</p>
+                <p>{{ resumenHorario(p) }}</p>
+              </ion-label>
+              @if (p.estado === 'Activo') {
+                <ion-button slot="end" size="small" fill="clear" color="danger" (click)="revocar(p)">Revocar</ion-button>
+              } @else {
+                <ion-badge slot="end" color="medium">revocado</ion-badge>
+              }
+            </ion-item>
+          } @empty {
+            <p class="vacio">No hay permisos registrados.</p>
+          }
+        </ion-list>
+      }
     }
   </div>
 </ion-content>

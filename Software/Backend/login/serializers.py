@@ -12,6 +12,7 @@ from rest_framework_simplejwt.serializers import (
     TokenRefreshSerializer,
 )
 
+from . import bloqueo
 from .authentication import CLAIM_SOLO_LECTURA
 from .models import PasswordPolicy, UserSessionSettings
 from .passwords import (
@@ -33,6 +34,9 @@ ROLE_NAMES = {
     'técnico': 'tecnico',
     'auditor': 'auditor',
     'auditores': 'auditor',
+    # Departamento de contratistas: enrola y habilita al personal externo (RF-ACC).
+    'contratistas': 'contratistas',
+    'contratista': 'contratistas',
 }
 
 
@@ -78,7 +82,17 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         user = User.objects.filter(email__iexact=login, is_active=True).first()
         if user:
             attrs[self.username_field] = user.get_username()
-        data = super().validate(attrs)
+        else:
+            user = User.objects.filter(username=login, is_active=True).first()
+        if user:
+            bloqueo.comprobar(user)  # bloqueada: ni siquiera se prueba la contraseña
+        try:
+            data = super().validate(attrs)
+        except AuthenticationFailed:
+            if user:
+                bloqueo.registrar_fallo(user)
+            raise
+        bloqueo.registrar_exito(self.user)
         # Se revisa después de validar la clave, para no revelar el estado de cuentas ajenas.
         if password_is_expired(self.user):
             raise PasswordExpired()
@@ -137,10 +151,15 @@ class PasswordChangeSerializer(serializers.Serializer):
             User.objects.filter(email__iexact=login, is_active=True).first()
             or User.objects.filter(username=login, is_active=True).first()
         )
+        if user is not None:
+            bloqueo.comprobar(user)
         if user is None or not user.check_password(attrs['current_password']):
+            if user is not None:
+                bloqueo.registrar_fallo(user)
             raise serializers.ValidationError(
                 {'detail': 'El usuario o la contraseña actual no son correctos.'}
             )
+        bloqueo.registrar_exito(user)
         if attrs['new_password'] == attrs['current_password']:
             raise serializers.ValidationError(
                 {'new_password': 'La nueva contraseña debe ser distinta de la actual.'}
@@ -231,6 +250,30 @@ class ManagedUserSerializer(serializers.ModelSerializer):
         data['password_expired'] = expires_at is not None and timezone.now() >= expires_at
         return data
 
+    def validate(self, attrs):
+        """Un Administrador (no Privilegiado) no toca cuentas de administración ni la seguridad de las sesiones.
+
+        Evita que se otorgue a sí mismo, o a otro, más privilegios de los que tiene.
+        """
+        from rest_framework.exceptions import PermissionDenied
+
+        from .permissions import GRUPOS_ADMINISTRACION, es_privilegiado
+
+        solicitante = self.context.get('request').user if self.context.get('request') else None
+        if solicitante is None or es_privilegiado(solicitante):
+            return attrs
+        if attrs.get('role') in GRUPOS_ADMINISTRACION:
+            raise PermissionDenied('Solo un Administrador Privilegiado puede asignar roles de administración.')
+        if self.instance is not None and self.instance.groups.filter(name__in=GRUPOS_ADMINISTRACION).exists():
+            raise PermissionDenied('Solo un Administrador Privilegiado puede modificar cuentas de administración.')
+        actuales = UserSessionSettings.objects.filter(user=self.instance).first() if self.instance else None
+        timeout_actual = actuales.inactivity_timeout_minutes if actuales else 15
+        nunca_actual = actuales.password_never_expires if actuales else False
+        if attrs.get('inactivity_timeout_minutes', timeout_actual) != timeout_actual or \
+                attrs.get('password_never_expires', nunca_actual) != nunca_actual:
+            raise PermissionDenied('Solo un Administrador Privilegiado cambia la inactividad y la vigencia de contraseñas.')
+        return attrs
+
     def validate_role(self, value):
         normalized = value.strip().lower()
         if normalized == 'administradorprivilegiado':
@@ -241,6 +284,7 @@ class ManagedUserSerializer(serializers.ModelSerializer):
             'tecnico': 'Tecnico',
             'técnico': 'Tecnico',
             'auditor': 'Auditor',
+            'contratistas': 'Contratistas',
         }.get(normalized)
         if canonical is None:
             raise serializers.ValidationError('El rol no es válido.')

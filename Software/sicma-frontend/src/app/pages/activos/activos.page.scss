@@ -61,3 +61,14 @@ ion-badge {
 ion-item ion-badge {
   vertical-align: middle;
 }
+
+.gestion {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+}
+
+.acciones-alerta {
+  display: inline-flex;
+  gap: 4px;
+}

@@ -70,6 +70,18 @@
                       }
                     </dd>
                   }
+                  @if (i.personal_externo.length > 0) {
+                    <dt>Personal externo</dt>
+                    <dd>
+                      @for (p of i.personal_externo; track p.id) {
+                        <span class="persona" [class.alerta]="!p.habilitada || !p.huella_registrada">
+                          {{ p.nombre }} ({{ p.empresa || 'sin empresa' }}) · RUT {{ p.rut || '—' }}
+                          @if (!p.habilitada) { <b> · deshabilitada: reemplázala</b> }
+                          @else if (!p.huella_registrada) { <b> · sin huella registrada</b> }
+                        </span>
+                      }
+                    </dd>
+                  }
                   @for (d of i.decisiones; track d.fecha_hora) {
                     <dt>{{ d.decision }}</dt>
                     <dd>
@@ -101,8 +113,44 @@
                         <ion-select-option [value]="a.id">{{ a.codigo }} · {{ a.nombre }}</ion-select-option>
                       }
                     </ion-select>
+                  </form>
+
+                  <div class="personal">
+                    <p class="etiqueta">Personal externo</p>
+                    @for (p of personalElegido(); track p.id) {
+                      <div class="elegido">
+                        <span>{{ p.nombre }} · {{ p.empresa || 'sin empresa' }} · RUT {{ p.rut || '—' }}</span>
+                        <ion-button size="small" fill="clear" color="medium" (click)="quitarPersonal(p.id)" [attr.aria-label]="'Quitar a ' + p.nombre">Quitar</ion-button>
+                      </div>
+                    } @empty {
+                      <p class="vacio-chico">Sin personal externo: solo trabajará el técnico.</p>
+                    }
+                    <ion-searchbar
+                      placeholder="Agregar por nombre, RUT o empresa"
+                      [value]="busquedaPersonal()"
+                      [debounce]="300"
+                      (ionInput)="buscarPersonal($any($event.detail).value ?? '')"
+                    ></ion-searchbar>
+                    @for (r of resultadosPersonal(); track r.id) {
+                      <div class="resultado">
+                        <span>{{ r.nombre }} · {{ r.empresa || 'sin empresa' }} · RUT {{ r.rut || '—' }}</span>
+                        @if (impedimento(r); as motivo) {
+                          <ion-note>{{ motivo }}</ion-note>
+                        } @else {
+                          <ion-button size="small" fill="outline" (click)="agregarPersonal(r)">Agregar</ion-button>
+                        }
+                      </div>
+                    } @empty {
+                      @if (busquedaPersonal().trim().length >= 2) { <p class="vacio-chico">Nadie coincide con «{{ busquedaPersonal() }}».</p> }
+                    }
+                  </div>
+
+                  <form [formGroup]="formAsignar" (ngSubmit)="asignar(i)">
                     <div class="acciones">
                       <ion-button type="submit" size="small" [disabled]="enviando()">Asignar y agendar</ion-button>
+                      @if (i.responsable) {
+                        <ion-button size="small" fill="outline" [disabled]="enviando()" (click)="guardarPersonal(i)">Guardar solo el personal</ion-button>
+                      }
                     </div>
                   </form>
                   @if (i.responsable) {
@@ -110,9 +158,48 @@
                   }
                 }
 
+                @if (puedeVerificar(i)) {
+                  <h4>Verificación del personal externo</h4>
+                  <p class="vacio-chico">Cada persona debe apoyar su dedo en el lector para confirmar que es quien fue asignada.</p>
+                  @for (p of i.personal_externo; track p.id) {
+                    <div class="verificacion">
+                      <div class="quien">
+                        <b>{{ p.nombre }}</b> · {{ p.empresa || 'sin empresa' }} · RUT {{ p.rut || '—' }}
+                        @if (!p.habilitada) {
+                          <span class="estado mal">Deshabilitada: no puede trabajar</span>
+                        } @else if (p.verificada_en) {
+                          <span class="estado ok">✓ Verificada a las {{ p.verificada_en | date: 'HH:mm' }}</span>
+                        } @else if (p.verificacion?.estado === 'Fallida') {
+                          <span class="estado mal">No verificada: {{ p.verificacion!.mensaje }}</span>
+                        } @else {
+                          <span class="estado">Pendiente de verificar</span>
+                        }
+                      </div>
+                      @if (verificando()?.personaId === p.id && (verificando()!.solicitud.estado === 'Pendiente' || verificando()!.solicitud.estado === 'EnCurso')) {
+                        @if (verificando()!.solicitud; as v) {
+                          <div class="guia-verificacion" role="status">
+                            @if (v.estado === 'Pendiente' || !v.indicacion) {
+                              <ion-spinner name="dots" aria-hidden="true"></ion-spinner>
+                              <span>Preparando el lector «{{ v.punto_nombre }}»… todavía no apoyes el dedo.</span>
+                            } @else {
+                              <span class="intento">Intento {{ v.intento }} de {{ v.total_intentos }}</span>
+                              <span class="indicacion" aria-live="assertive">{{ p.nombre }}: {{ v.indicacion }}</span>
+                            }
+                          </div>
+                        }
+                      } @else if (p.habilitada && !p.verificada_en) {
+                        <ion-button size="small" fill="outline" [disabled]="!!verificando()" (click)="verificar(i, p)">Verificar huella</ion-button>
+                      }
+                    </div>
+                  }
+                }
+
                 @if (i.estado === 'Aprobada' && i.responsable && puedeEjecutar(i)) {
                   <div class="acciones">
-                    <ion-button size="small" color="tertiary" [disabled]="enviando()" (click)="iniciar(i)">Iniciar intervención</ion-button>
+                    <ion-button size="small" color="tertiary" [disabled]="enviando() || pendientesDeVerificar(i).length > 0" (click)="iniciar(i)">Iniciar intervención</ion-button>
+                    @if (pendientesDeVerificar(i).length > 0) {
+                      <ion-note>Para iniciar, verifica la huella de: {{ pendientesDeVerificar(i).map(nombrePersona).join(', ') }}.</ion-note>
+                    }
                   </div>
                 }
 

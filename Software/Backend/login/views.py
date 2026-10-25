@@ -14,6 +14,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .models import PasswordPolicy, UserSessionSettings
 from .passwords import mark_password_changed
+from .permissions import es_privilegiado
 from .permissions import AdministratorPermission
 from .serializers import (
     PasswordChangeSerializer,
@@ -127,6 +128,8 @@ class PasswordPolicyView(APIView):
         return Response(PasswordPolicySerializer(PasswordPolicy.get_solo()).data)
 
     def patch(self, request, format=None):
+        if not es_privilegiado(request.user):
+            return Response({'detail': 'Solo un Administrador Privilegiado cambia la política de contraseñas.'}, status=status.HTTP_403_FORBIDDEN)
         serializer = PasswordPolicySerializer(PasswordPolicy.get_solo(), data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -163,6 +166,8 @@ class SessionTimeoutView(APIView):
     permission_classes = [AdministratorPermission]
 
     def patch(self, request, user_id, format=None):
+        if not es_privilegiado(request.user):
+            return Response({'detail': 'Solo un Administrador Privilegiado cambia los tiempos de sesión.'}, status=status.HTTP_403_FORBIDDEN)
         user = User.objects.filter(pk=user_id).first()
         if user is None:
             return Response(
@@ -195,7 +200,7 @@ class ManagedUserListView(APIView):
         return Response(ManagedUserSerializer(users, many=True, context=context).data)
 
     def post(self, request, format=None):
-        serializer = ManagedUserSerializer(data=request.data)
+        serializer = ManagedUserSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         return Response(ManagedUserSerializer(serializer.save()).data, status=status.HTTP_201_CREATED)
 
@@ -212,7 +217,7 @@ class ManagedUserDetailView(APIView):
         user = User.objects.filter(pk=user_id).first()
         if user is None:
             return Response({'detail': 'El usuario no existe.'}, status=404)
-        serializer = ManagedUserSerializer(user, data=request.data, partial=True)
+        serializer = ManagedUserSerializer(user, data=request.data, partial=True, context={'request': request})
         serializer.is_valid(raise_exception=True)
         return Response(ManagedUserSerializer(serializer.save()).data)
 

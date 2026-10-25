@@ -1,11 +1,13 @@
+/**
+ * Web publicada en Cloudflare Pages (https://app.sicma.cl).
+ *
+ * La web y la API están en dominios distintos, así que la API va con URL absoluta:
+ * el backend on-premise publicado por Cloudflare Tunnel.
+ */
 export const environment = {
   production: true,
-  apiUrl: '/api',
-  /**
-   * Se mantiene en true para que la demostracion y el APK funcionen sin backend.
-   * Ponerlo en false apenas el API Django este publicado: no hay que tocar nada mas.
-   */
-  usarDatosSimulados: true,
+  apiUrl: 'https://api.sicma.cl/api',
+  usarDatosSimulados: false,
   soloConsulta: false,
   refrescoMonitoreoMs: 10_000,
   refrescoInfraestructuraMs: 60_000,

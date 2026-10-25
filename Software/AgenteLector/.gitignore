@@ -1,0 +1,4 @@
+agente_lector.ini
+*.dat
+pendientes.json
+__pycache__/

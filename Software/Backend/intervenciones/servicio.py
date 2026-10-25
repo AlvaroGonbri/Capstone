@@ -5,7 +5,7 @@ Aprobada  --(Administrador asigna técnico y horario)--> Aprobada + correo AGEND
 Aprobada  --(técnico inicia)--> EnEjecucion --(técnico cierra)--> Ejecutada | Fallida
 Pendiente | Aprobada --(Administrador)--> Cancelada
 """
-from datetime import timezone as dt_timezone
+from datetime import timedelta, timezone as dt_timezone
 import json
 import logging
 import threading
@@ -29,6 +29,7 @@ from .models import (
     DecisionIntervencion,
     Intervencion,
     IntervencionActivo,
+    IntervencionPersona,
 )
 
 
@@ -117,8 +118,114 @@ def registrar_decision(forms_id, aprobada, decisor_correo, comentario):
     return intervencion, True
 
 
-def asignar(intervencion, tecnico, fecha_inicio, fecha_termino, activos):
-    """RF-INT-05: el Administrador asigna técnico y horario; SICMA pide al flujo agendarla en Outlook."""
+# El personal externo puede entrar desde un poco antes del inicio; verificar su huella, desde 1 hora antes.
+MARGEN_PERMISO = timedelta(minutes=30)
+MARGEN_VERIFICACION = timedelta(hours=1)
+
+
+def _revocar_permisos(ip):
+    from accesos.models import REVOCADO, PermisoAcceso
+
+    if ip.permisos:
+        PermisoAcceso.objects.filter(id__in=ip.permisos).update(estado=REVOCADO)
+        ip.permisos = []
+        ip.save(update_fields=['permisos'])
+
+
+def _crear_permisos(ip, intervencion):
+    """Permiso en cada lector activo, solo para el día y el horario de la intervención."""
+    from accesos.models import ACTIVO, DIAS_SEMANA, PermisoAcceso, PermisoDia, PuntoAcceso
+
+    desde = timezone.localtime(intervencion.fecha_inicio - MARGEN_PERMISO, _zona())
+    hasta = timezone.localtime(intervencion.fecha_termino, _zona())
+    ids = []
+    for punto in PuntoAcceso.objects.filter(estado=ACTIVO):
+        permiso = PermisoAcceso.objects.create(
+            persona=ip.persona, punto_acceso=punto, vigencia_inicio=desde.date(), vigencia_fin=hasta.date(), estado=ACTIVO,
+        )
+        if desde.date() == hasta.date():  # varios días: vale el día completo dentro de la vigencia
+            PermisoDia.objects.create(
+                permiso=permiso, dia_semana=DIAS_SEMANA[desde.weekday()], hora_inicio=desde.time().replace(microsecond=0),
+                hora_fin=hasta.time().replace(microsecond=0),
+            )
+        ids.append(permiso.id)
+    ip.permisos = ids
+    ip.save(update_fields=['permisos'])
+
+
+def sincronizar_permisos(intervencion):
+    """Rehace los permisos del personal según el horario actual (al asignar o al cambiar el personal)."""
+    if not (intervencion.fecha_inicio and intervencion.fecha_termino):
+        return
+    for ip in intervencion.personal_externo.select_related('persona'):
+        _revocar_permisos(ip)
+        _crear_permisos(ip, intervencion)
+
+
+def revocar_permisos_personal(intervencion):
+    for ip in intervencion.personal_externo.all():
+        _revocar_permisos(ip)
+
+
+def fijar_personal(intervencion, personas, usuario):
+    """Reemplaza el personal externo de la intervención. Solo mientras no se haya iniciado."""
+    _exigir_estado(intervencion, PENDIENTE, APROBADA)
+    ids = {p.id for p in personas}
+    for ip in IntervencionPersona.objects.filter(intervencion=intervencion).exclude(persona_id__in=ids):
+        _revocar_permisos(ip)
+        ip.delete()
+    existentes = set(intervencion.personal_externo.values_list('persona_id', flat=True))
+    IntervencionPersona.objects.bulk_create([
+        IntervencionPersona(intervencion=intervencion, persona=p, agregada_por=usuario, fecha=timezone.now())
+        for p in personas if p.id not in existentes
+    ])
+    sincronizar_permisos(intervencion)
+
+
+def solicitar_verificacion(intervencion, persona, punto, usuario):
+    """El técnico pide que la persona apoye su huella para demostrar que es quien fue asignada."""
+    from accesos import servicio as accesos
+
+    _exigir_estado(intervencion, APROBADA)
+    if not intervencion.personal_externo.filter(persona=persona).exists():
+        raise TransicionInvalida(f'{persona.nombre} no está asignada a esta intervención.')
+    ahora = timezone.now()
+    if not intervencion.fecha_inicio or not intervencion.fecha_termino:
+        raise TransicionInvalida('La intervención aún no tiene horario.')
+    if ahora < intervencion.fecha_inicio - MARGEN_VERIFICACION or ahora > intervencion.fecha_termino:
+        raise TransicionInvalida(
+            f'La huella se verifica desde 1 hora antes del inicio ({_hora_local(intervencion.fecha_inicio)}) '
+            f'hasta el término ({_hora_local(intervencion.fecha_termino)}).'
+        )
+    return accesos.solicitar_verificacion(persona, punto, intervencion.id, usuario)
+
+
+def marcar_verificada(intervencion_id, persona, usuario):
+    IntervencionPersona.objects.filter(intervencion_id=intervencion_id, persona=persona).update(
+        verificada_en=timezone.now(), verificada_por=usuario,
+    )
+
+
+def personal_pendiente(intervencion):
+    """Quién impide iniciar: sin verificar su huella o deshabilitado después de verificarla."""
+    from accesos.models import ACTIVO
+
+    return [
+        ip.persona.nombre + (' (deshabilitada)' if ip.persona.estado != ACTIVO else ' (sin verificar su huella)')
+        for ip in intervencion.personal_externo.select_related('persona')
+        if ip.verificada_en is None or ip.persona.estado != ACTIVO
+    ]
+
+
+def nombres_personal(intervencion):
+    return ', '.join(
+        f'{ip.persona.nombre} ({ip.persona.empresa or "sin empresa"})'
+        for ip in intervencion.personal_externo.select_related('persona')
+    )
+
+
+def asignar(intervencion, tecnico, fecha_inicio, fecha_termino, activos, personal=None, usuario=None):
+    """RF-INT-05: el Administrador asigna técnico, horario y personal externo; SICMA pide agendarla."""
     with transaction.atomic():
         _exigir_estado(intervencion, APROBADA)
         intervencion.responsable = tecnico
@@ -132,6 +239,10 @@ def asignar(intervencion, tecnico, fecha_inicio, fecha_termino, activos):
                 IntervencionActivo(intervencion=intervencion, activo=activo)
                 for activo in activos if activo.id not in existentes
             ])
+        if personal is not None:
+            fijar_personal(intervencion, personal, usuario)
+        else:
+            sincronizar_permisos(intervencion)  # el horario pudo cambiar
         programar_agenda(intervencion.id)
         programar_aviso(intervencion.id, f'Se asignó al técnico {_nombre(tecnico)}.')
     return intervencion
@@ -143,6 +254,9 @@ def iniciar(intervencion):
         _exigir_estado(intervencion, APROBADA)
         if not intervencion.responsable_id:
             raise TransicionInvalida('Primero el Administrador debe asignar un técnico.')
+        pendientes = personal_pendiente(intervencion)
+        if pendientes:
+            raise TransicionInvalida('Falta verificar al personal externo: ' + ', '.join(pendientes) + '.')
         intervencion.estado = EN_EJECUCION
         intervencion.save(update_fields=['estado'])
         programar_aviso(intervencion.id, 'El técnico comenzó la intervención.')
@@ -157,6 +271,7 @@ def cerrar(intervencion, exitosa, observacion):
         intervencion.fecha_cierre = timezone.now()
         intervencion.observacion_cierre = observacion
         intervencion.save(update_fields=['estado', 'fecha_cierre', 'observacion_cierre'])
+        revocar_permisos_personal(intervencion)  # terminado el trabajo, el personal externo ya no entra
         programar_aviso(intervencion.id, f'Observación del cierre: {observacion}')
     return intervencion
 
@@ -168,6 +283,7 @@ def cancelar(intervencion, motivo):
         intervencion.fecha_cierre = timezone.now()
         intervencion.observacion_cierre = motivo
         intervencion.save(update_fields=['estado', 'fecha_cierre', 'observacion_cierre'])
+        revocar_permisos_personal(intervencion)
         programar_aviso(intervencion.id, f'Motivo: {motivo}')
     return intervencion
 
@@ -237,6 +353,7 @@ def avisar_involucrados(intervencion_id, detalle=''):
         f'Inicio: {_hora_local(intervencion.fecha_inicio)}',
         f'Término: {_hora_local(intervencion.fecha_termino)}' if intervencion.fecha_termino else None,
         f'Técnico: {_nombre(intervencion.responsable)}',
+        f'Personal externo: {nombres_personal(intervencion)}' if intervencion.personal_externo.exists() else None,
         f'Solicitante: {intervencion.solicitante_nombre or "-"} ({intervencion.solicitante_correo or "-"})',
         '',
         'Mensaje automático de SICMA. No responda este correo.',
@@ -266,6 +383,7 @@ def datos_agenda(intervencion):
             f'Descripción: {intervencion.descripcion or "-"}\n'
             f'Plan de reversa: {intervencion.plan_reversa or "-"}\n'
             f'Técnico: {_nombre(tecnico)}\n'
+            f'Personal externo: {nombres_personal(intervencion) or "-"}\n'
             f'Solicitante: {intervencion.solicitante_nombre or "-"} ({intervencion.solicitante_correo or "-"})'
         ),
     }

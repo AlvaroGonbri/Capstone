@@ -1,0 +1,15 @@
+# Copiar como agente_lector.ini (junto a agente_lector.py) y completar.
+# agente_lector.ini no se sube al repositorio: tiene la clave del lector.
+
+[sicma]
+# API de SICMA (el backend corre en este mismo PC).
+url = http://127.0.0.1:8000/api
+# Id y clave que muestra SICMA al registrar el lector en Accesos → Lectores.
+punto_id =
+clave =
+
+[secugen]
+# Carpeta bin\x64 del FDx SDK Pro for Windows (no va en el repositorio).
+dir_sdk = C:\Users\Alvaro\Desktop\FDx_SDK_Pro_Windows_v4.3.1_J1.21\FDx SDK Pro for Windows v4.3.1\bin\x64
+# Archivo cifrado con las plantillas (por defecto en C:\ProgramData\SICMA\lector\).
+# plantillas = C:\ProgramData\SICMA\lector\plantillas.dat

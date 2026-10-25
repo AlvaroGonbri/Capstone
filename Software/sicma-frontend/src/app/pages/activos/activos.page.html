@@ -50,6 +50,17 @@
               <strong>{{ alerta.condicion }}</strong>
               <small>desde {{ alerta.fecha_apertura | date: 'dd/MM HH:mm' }} · evento Zabbix {{ alerta.evento_zabbix }}</small>
             </span>
+            @if (alerta.ultima_gestion; as g) {
+              <small class="gestion">{{ g.accion }} por {{ g.usuario || '—' }} a las {{ g.fecha_hora | date: 'HH:mm' }}</small>
+            }
+            @if (puedeGestionarAlertas) {
+              <span class="acciones-alerta">
+                @if (alerta.estado === 'Nueva') {
+                  <ion-button size="small" fill="outline" (click)="reconocerAlerta(alerta)">Reconocer</ion-button>
+                }
+                <ion-button size="small" fill="clear" (click)="cerrarAlerta(alerta)">Cerrar</ion-button>
+              </span>
+            }
           </div>
         }
       </section>

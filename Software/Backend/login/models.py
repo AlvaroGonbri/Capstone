@@ -13,6 +13,9 @@ class UserSessionSettings(models.Model):
     last_activity_at = models.DateTimeField(null=True, blank=True)
     password_changed_at = models.DateTimeField(default=timezone.now)
     password_never_expires = models.BooleanField(default=False)
+    # RNF-SEG-02: intentos fallidos seguidos y hasta cuándo queda bloqueada la cuenta.
+    failed_login_attempts = models.PositiveSmallIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'configuración de sesión'

@@ -9,6 +9,7 @@ class AlertaReadSerializer(serializers.ModelSerializer):
     evento_zabbix = serializers.CharField(
         source='host_problema_zabbix.identificador_externo', default=None, read_only=True,
     )
+    ultima_gestion = serializers.SerializerMethodField()
 
     class Meta:
         model = Alerta
@@ -24,7 +25,15 @@ class AlertaReadSerializer(serializers.ModelSerializer):
             'sensor_codigo',
             'ubicacion',
             'evento_zabbix',
+            'ultima_gestion',
         )
+
+    def get_ultima_gestion(self, alerta):
+        g = next(iter(alerta.gestiones.all()), None)
+        if g is None:
+            return None
+        nombre = (g.usuario.get_full_name() or g.usuario.get_username()) if g.usuario else None
+        return {'accion': g.accion, 'usuario': nombre, 'comentario': g.comentario, 'fecha_hora': g.fecha_hora}
 
 
 class AlertaFilterSerializer(serializers.Serializer):
@@ -44,3 +53,7 @@ class ResponsablesSerializer(serializers.Serializer):
     def validate_correos(self, correos):
         # Sin duplicados, conservando el orden.
         return list(dict.fromkeys(correo.strip().lower() for correo in correos))
+
+
+class GestionAlertaSerializer(serializers.Serializer):
+    comentario = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')

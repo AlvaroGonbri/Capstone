@@ -76,7 +76,10 @@ class ActivosTests(InventarioTestCase):
         activo = self.alta().json()
         self.assertEqual(self.admin.delete(f'/api/activos/{activo["id"]}/').status_code, 405)
 
-        self.tecnico.patch(f'/api/activos/{activo["id"]}/', {'estado': 'Retirado'}, format='json')
+        # Dar de baja es solo de administradores.
+        self.assertEqual(self.tecnico.patch(f'/api/activos/{activo["id"]}/', {'estado': 'Retirado'}, format='json').status_code, 403)
+        self.admin.patch(f'/api/activos/{activo["id"]}/', {'estado': 'Retirado'}, format='json')
+        self.assertEqual(self.tecnico.patch(f'/api/activos/{activo["id"]}/', {'estado': 'Operativo'}, format='json').status_code, 403)
 
         self.assertEqual(self.auditor.get('/api/activos/').json(), [])
         todos = self.auditor.get('/api/activos/', {'incluir_retirados': 'true'}).json()

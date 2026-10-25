@@ -50,6 +50,101 @@ h4 {
   margin-top: 8px;
 }
 
+.personal {
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .etiqueta {
+    margin: 8px 0 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+}
+
+.elegido,
+.resultado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+
+  span {
+    overflow-wrap: anywhere;
+  }
+}
+
+.vacio-chico {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ion-color-medium);
+}
+
+.verificacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ion-color-medium) 25%, transparent);
+
+  .quien {
+    flex: 1 1 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .estado {
+    font-size: 0.85rem;
+    color: var(--ion-color-medium);
+
+    &.ok {
+      color: var(--ion-color-success);
+      font-weight: 600;
+    }
+
+    &.mal {
+      color: var(--ion-color-danger);
+      font-weight: 600;
+    }
+  }
+}
+
+.guia-verificacion {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-left: 4px solid var(--ion-color-primary);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ion-color-primary) 10%, transparent);
+
+  .intento {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ion-color-medium);
+  }
+
+  .indicacion {
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+}
+
+.persona {
+  display: block;
+
+  &.alerta b {
+    color: var(--ion-color-danger);
+  }
+}
+
 .fila {
   display: flex;
   flex-wrap: wrap;

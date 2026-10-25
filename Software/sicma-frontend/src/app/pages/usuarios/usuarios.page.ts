@@ -2,10 +2,11 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
-  IonBadge, IonButton, IonContent, IonInput, IonItem, IonLabel, IonList,
+  IonBadge, IonButton, IonContent, IonInput, IonItem, IonLabel, IonList, IonNote,
   IonSelect, IonSelectOption, IonSpinner, IonText, IonToggle,
 } from '@ionic/angular';
 import { RolGestion, UsuarioGestion } from '../../core/models';
+import { AuthService } from '../../core/services/auth.service';
 import { DatosUsuario, UsuariosService } from '../../core/services/usuarios.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
 
@@ -13,7 +14,7 @@ import { EncabezadoComponent } from '../../shared/encabezado.component';
   selector: 'app-usuarios',
   imports: [
     ReactiveFormsModule, DatePipe, EncabezadoComponent, IonBadge, IonButton, IonContent,
-    IonInput, IonItem, IonLabel, IonList, IonSelect, IonSelectOption,
+    IonInput, IonItem, IonLabel, IonList, IonNote, IonSelect, IonSelectOption,
     IonSpinner, IonText, IonToggle,
   ],
   templateUrl: './usuarios.page.html',
@@ -27,9 +28,19 @@ export class UsuariosPage {
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly editando = signal<number | null>(null);
-  protected readonly roles: RolGestion[] = [
-    'Administrador', 'AdministradorPrivilegiado', 'Jefatura', 'Tecnico', 'Auditor',
-  ];
+  /** Solo el Administrador Privilegiado gestiona cuentas de administración y la seguridad de las sesiones. */
+  protected readonly esPrivilegiado = inject(AuthService).puedeModificar('administradorprivilegiado');
+  protected readonly roles: RolGestion[] = (
+    ['Administrador', 'AdministradorPrivilegiado', 'Jefatura', 'Tecnico', 'Auditor', 'Contratistas'] as RolGestion[]
+  ).filter((r) => this.esPrivilegiado || (r !== 'Administrador' && r !== 'AdministradorPrivilegiado'));
+
+  protected esCuentaAdministracion(usuario: UsuarioGestion): boolean {
+    return usuario.rol === 'administrador' || usuario.rol === 'administradorprivilegiado';
+  }
+
+  protected puedeEditarCuenta(usuario: UsuarioGestion): boolean {
+    return this.esPrivilegiado || !this.esCuentaAdministracion(usuario);
+  }
   protected readonly formulario = this.fb.nonNullable.group({
     username: ['', [Validators.required]],
     email: ['', [Validators.email]],
@@ -52,6 +63,11 @@ export class UsuariosPage {
   constructor() {
     this.cargar();
     this.cargarPolitica();
+    if (!this.esPrivilegiado) {
+      this.formulario.controls.inactivity_timeout_minutes.disable();
+      this.formulario.controls.password_never_expires.disable();
+      this.formularioPolitica.disable();
+    }
   }
 
   protected cargarPolitica(): void {
@@ -106,6 +122,10 @@ export class UsuariosPage {
   }
 
   protected editar(usuario: UsuarioGestion): void {
+    if (!this.puedeEditarCuenta(usuario)) {
+      this.error.set('Solo un Administrador Privilegiado puede modificar cuentas de administración.');
+      return;
+    }
     this.editando.set(usuario.id);
     this.formulario.reset({
       username: usuario.username, email: usuario.email, first_name: usuario.first_name,
@@ -167,6 +187,7 @@ export class UsuariosPage {
       auditor: 'Auditor',
       jefatura: 'Jefatura',
       tecnico: 'Tecnico',
+      contratistas: 'Contratistas',
     };
     return usuario.rol ? (roles[usuario.rol] ?? 'Tecnico') : 'Tecnico';
   }

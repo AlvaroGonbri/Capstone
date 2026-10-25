@@ -1,5 +1,4 @@
 import {
-  Acceso,
   Activo,
   EstadoSensor,
   Umbrales,
@@ -96,14 +95,4 @@ export const SENSORES: EstadoSensor[] = [
   construirSensor('ESP-S3-0006', 'Bodega de equipos', 'B', 'B2', 23.1, 33, 2),
 ];
 
-export const ACCESOS: Acceso[] = [
-  { id: 1, persona: 'Alvaro Gonzalez', rol: 'Administrador de infraestructura', metodo: 'biometrico', movimiento: 'entrada', puerta: 'Puerta principal', sitio: 'A', resultado: 'autorizado', registradoEn: haceMinutos(18) },
-  { id: 2, persona: 'Fidel Rodriguez', rol: 'Desarrollo e integracion', metodo: 'biometrico', movimiento: 'entrada', puerta: 'Puerta principal', sitio: 'A', resultado: 'autorizado', registradoEn: haceMinutos(96) },
-  { id: 3, persona: 'Desconocido', rol: 'Sin registro', metodo: 'biometrico', movimiento: 'entrada', puerta: 'Puerta principal', sitio: 'A', resultado: 'denegado', motivo: 'Huella no reconocida', registradoEn: haceMinutos(133) },
-  { id: 4, persona: 'Claudio Varas', rol: 'Coordinacion de pruebas', metodo: 'tarjeta', movimiento: 'entrada', puerta: 'Puerta lateral', sitio: 'A', resultado: 'autorizado', registradoEn: haceMinutos(190) },
-  { id: 5, persona: 'Alvaro Gonzalez', rol: 'Administrador de infraestructura', metodo: 'biometrico', movimiento: 'salida', puerta: 'Puerta principal', sitio: 'A', resultado: 'autorizado', registradoEn: haceMinutos(240) },
-  { id: 6, persona: 'Proveedor SAI', rol: 'Servicio externo', metodo: 'manual', movimiento: 'entrada', puerta: 'Puerta principal', sitio: 'A', resultado: 'autorizado', motivo: 'Autorizado por jefatura', registradoEn: haceMinutos(300) },
-  { id: 7, persona: 'Proveedor SAI', rol: 'Servicio externo', metodo: 'manual', movimiento: 'entrada', puerta: 'Sala contingencia', sitio: 'B', resultado: 'denegado', motivo: 'Fuera de horario autorizado', registradoEn: haceMinutos(370) },
-  { id: 8, persona: 'Fidel Rodriguez', rol: 'Desarrollo e integracion', metodo: 'biometrico', movimiento: 'salida', puerta: 'Puerta principal', sitio: 'A', resultado: 'autorizado', registradoEn: haceMinutos(1420) },
-];
 

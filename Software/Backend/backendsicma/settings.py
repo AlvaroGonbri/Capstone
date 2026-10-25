@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'alertas',
     'inventario',
     'intervenciones',
+    'accesos',
 ]
 
 MIDDLEWARE = [
@@ -111,7 +112,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.ScopedRateThrottle',
+        # Limita por la IP real (CF-Connecting-IP detrás del túnel), no por X-Forwarded-For.
+        'login.throttling.ScopedRateThrottleClienteReal',
     ],
     'DEFAULT_THROTTLE_RATES': {
         'login': '10/minute',
@@ -182,7 +184,8 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default=None)
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default=None)
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-PASSWORD_RESET_CONFIRM_URL = 'http://localhost:4200/recuperar/confirmar'
+# Página de la web que recibe el enlace del correo de recuperación (publicada: https://app.sicma.cl/...).
+PASSWORD_RESET_CONFIRM_URL = config('PASSWORD_RESET_CONFIRM_URL', default='http://localhost:4200/recuperar/confirmar')
 
 # Las fechas se guardan en UTC y se muestran en esta zona horaria (RN-08).
 SICMA_ZONA_HORARIA = 'America/Santiago'
@@ -204,3 +207,8 @@ INTERVENCIONES_CORREO_FLUJO = config('INTERVENCIONES_CORREO_FLUJO', default='')
 INTERVENCIONES_TOKEN = config('INTERVENCIONES_TOKEN', default='')
 # El buzón de SICMA (EMAIL_HOST_USER) se lee por IMAP con la misma contraseña de aplicación.
 INTERVENCIONES_IMAP_HOST = config('INTERVENCIONES_IMAP_HOST', default='imap.gmail.com')
+
+
+# RNF-SEG-02: bloqueo de cuenta tras intentos fallidos de ingreso.
+LOGIN_MAX_INTENTOS = 5
+LOGIN_BLOQUEO_MINUTOS = 15

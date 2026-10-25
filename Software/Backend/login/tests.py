@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -17,6 +18,15 @@ SIN_THROTTLE = {
 }
 
 
+class SinLimiteDeLoginMixin:
+    """El límite de 10 logins/minuto (throttle 'login') usa la caché y la vista lo fija al importarse,
+    así que override_settings no lo apaga: se limpia la caché para que los tests no dependan del orden."""
+
+    def setUp(self):
+        cache.clear()
+        super().setUp()
+
+
 def crear_usuario(username, rol='Tecnico', **extra):
     usuario = User.objects.create_user(username=username, email=f'{username}@sicma.test', password=CLAVE)
     usuario.groups.set([Group.objects.get_or_create(name=rol)[0]])
@@ -25,8 +35,9 @@ def crear_usuario(username, rol='Tecnico', **extra):
 
 
 @override_settings(REST_FRAMEWORK=SIN_THROTTLE)
-class VencimientoContrasenaTests(TestCase):
+class VencimientoContrasenaTests(SinLimiteDeLoginMixin, TestCase):
     def setUp(self):
+        super().setUp()
         self.cliente = APIClient()
         PasswordPolicy.objects.update_or_create(pk=1, defaults={'max_age_days': 30})
         hace_40_dias = timezone.now() - timedelta(days=40)
@@ -80,8 +91,9 @@ class VencimientoContrasenaTests(TestCase):
 
 
 @override_settings(REST_FRAMEWORK=SIN_THROTTLE)
-class AdministracionVencimientoTests(TestCase):
+class AdministracionVencimientoTests(SinLimiteDeLoginMixin, TestCase):
     def setUp(self):
+        super().setUp()
         self.cliente = APIClient()
         self.admin = crear_usuario('admin', rol='AdministradorPrivilegiado')
         self.tecnico = crear_usuario('tecnico')
@@ -129,11 +141,12 @@ class PermisosPorRolTests(TestCase):
     'DEFAULT_AUTHENTICATION_CLASSES': ['login.authentication.SicmaJWTAuthentication'],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
 })
-class AppMovilSoloLecturaTests(TestCase):
+class AppMovilSoloLecturaTests(SinLimiteDeLoginMixin, TestCase):
     """RF-PLT-02: la app móvil solo consulta, aunque el usuario sea Administrador."""
 
     def setUp(self):
-        crear_usuario('admin', rol='Administrador')
+        super().setUp()
+        crear_usuario('admin', rol='AdministradorPrivilegiado')
 
     def tokens(self, canal=None):
         datos = {'username': 'admin', 'password': CLAVE}
@@ -168,3 +181,101 @@ class AppMovilSoloLecturaTests(TestCase):
     def test_canal_desconocido_se_rechaza(self):
         respuesta = APIClient().post('/api/auth/token/', {'username': 'admin', 'password': CLAVE, 'canal': 'otro'}, format='json')
         self.assertEqual(respuesta.status_code, 400)
+
+
+@override_settings(REST_FRAMEWORK=SIN_THROTTLE, LOGIN_MAX_INTENTOS=5, LOGIN_BLOQUEO_MINUTOS=15)
+class BloqueoDeCuentaTests(SinLimiteDeLoginMixin, TestCase):
+    """RNF-SEG-02: la cuenta se bloquea tras 5 contraseñas incorrectas seguidas."""
+
+    def setUp(self):
+        super().setUp()
+        self.usuario = crear_usuario('ana')
+
+    def login(self, password=CLAVE, login='ana@sicma.test'):
+        return APIClient().post('/api/auth/token/', {'username': login, 'password': password}, format='json')
+
+    def test_cinco_fallos_bloquean_aunque_luego_la_clave_sea_correcta(self):
+        for _ in range(4):
+            self.assertEqual(self.login('mala').status_code, 401)
+        self.assertEqual(self.login('mala').status_code, 401)  # el quinto bloquea
+        respuesta = self.login()
+        self.assertEqual((respuesta.status_code, respuesta.json()['code']), (403, 'account_locked'))
+        self.assertIn('bloqueada por intentos fallidos', respuesta.json()['detail'])
+
+    def test_el_bloqueo_vence_y_un_ingreso_exitoso_reinicia_el_contador(self):
+        for _ in range(5):
+            self.login('mala')
+        UserSessionSettings.objects.filter(user=self.usuario).update(locked_until=timezone.now() - timedelta(seconds=1))
+        cache.clear()  # el límite de 10 por minuto y por IP (throttle) es otra protección; aquí se prueba el bloqueo
+        self.assertEqual(self.login().status_code, 200)
+        for _ in range(4):
+            self.login('mala')
+        self.assertEqual(self.login().status_code, 200)  # 4 fallos no bloquean y el éxito reinicia
+
+    def test_por_nombre_de_usuario_y_en_el_cambio_de_clave_tambien_cuenta(self):
+        for _ in range(3):
+            self.login('mala', login='ana')
+        for _ in range(2):
+            APIClient().post('/api/auth/password-change/', {
+                'username': 'ana', 'current_password': 'mala', 'new_password': 'Otra-Clave-2026',
+            }, format='json')
+        self.assertEqual(self.login().json()['code'], 'account_locked')
+
+    def test_un_usuario_inexistente_no_revela_nada(self):
+        self.assertEqual(self.login('mala', login='nadie@sicma.test').status_code, 401)
+
+
+class IdentidadDelClienteTests(TestCase):
+    """El límite de intentos usa la IP real: CF-Connecting-IP solo si viene del túnel."""
+
+    def ident(self, **meta):
+        from rest_framework.test import APIRequestFactory
+
+        from .throttling import ScopedRateThrottleClienteReal
+
+        return ScopedRateThrottleClienteReal().get_ident(APIRequestFactory().get('/', **meta))
+
+    def test_cabeceras(self):
+        self.assertEqual(self.ident(REMOTE_ADDR='127.0.0.1', HTTP_CF_CONNECTING_IP='200.1.2.3'), '200.1.2.3')
+        # X-Forwarded-For lo escribe cualquiera: se ignora.
+        self.assertEqual(self.ident(REMOTE_ADDR='127.0.0.1', HTTP_X_FORWARDED_FOR='9.9.9.9'), '127.0.0.1')
+        # En la red local no se cree a CF-Connecting-IP: no pasó por Cloudflare.
+        self.assertEqual(self.ident(REMOTE_ADDR='192.168.100.50', HTTP_CF_CONNECTING_IP='200.1.2.3'), '192.168.100.50')
+
+
+class AdministracionDeRolesTests(TestCase):
+    """Solo el Administrador Privilegiado gestiona cuentas de administración y la seguridad de sesiones."""
+
+    def setUp(self):
+        self.admin_usuario = crear_usuario('admin', rol='Administrador')
+        self.priv_usuario = crear_usuario('priv', rol='AdministradorPrivilegiado')
+        self.tecnico = crear_usuario('tec', rol='Tecnico')
+        self.admin, self.priv = APIClient(), APIClient()
+        self.admin.force_authenticate(self.admin_usuario)
+        self.priv.force_authenticate(self.priv_usuario)
+
+    def alta(self, cliente, rol, username='nuevo'):
+        return cliente.post('/api/auth/users/', {'username': username, 'password': CLAVE, 'role': rol}, format='json')
+
+    def test_administrador_gestiona_roles_comunes_pero_no_de_administracion(self):
+        self.assertEqual(self.alta(self.admin, 'Tecnico').status_code, 201)
+        self.assertEqual(self.alta(self.admin, 'Contratistas', 'c').status_code, 201)
+        self.assertEqual(self.alta(self.admin, 'Administrador', 'a').status_code, 403)
+        self.assertEqual(self.alta(self.admin, 'AdministradorPrivilegiado', 'p').status_code, 403)
+        # No puede subir de rol a un técnico ni tocar la cuenta de un administrador.
+        self.assertEqual(self.admin.patch(f'/api/auth/users/{self.tecnico.id}/', {'role': 'Administrador'}, format='json').status_code, 403)
+        self.assertEqual(self.admin.patch(f'/api/auth/users/{self.priv_usuario.id}/', {'is_active': False}, format='json').status_code, 403)
+        self.assertEqual(self.admin.patch(f'/api/auth/users/{self.tecnico.id}/', {'first_name': 'Ana'}, format='json').status_code, 200)
+
+    def test_seguridad_de_sesiones_solo_privilegiado(self):
+        url = f'/api/auth/users/{self.tecnico.id}/'
+        self.assertEqual(self.admin.patch(url, {'inactivity_timeout_minutes': 60}, format='json').status_code, 403)
+        self.assertEqual(self.admin.patch(url, {'password_never_expires': True}, format='json').status_code, 403)
+        self.assertEqual(self.admin.patch('/api/auth/password-policy/', {'max_age_days': 10}, format='json').status_code, 403)
+        self.assertEqual(self.admin.get('/api/auth/password-policy/').status_code, 200)
+        self.assertEqual(self.priv.patch(url, {'inactivity_timeout_minutes': 60}, format='json').status_code, 200)
+        self.assertEqual(self.priv.patch('/api/auth/password-policy/', {'max_age_days': 10}, format='json').status_code, 200)
+
+    def test_privilegiado_gestiona_administradores(self):
+        self.assertEqual(self.alta(self.priv, 'Administrador').status_code, 201)
+        self.assertEqual(self.priv.patch(f'/api/auth/users/{self.admin_usuario.id}/', {'is_active': False}, format='json').status_code, 200)

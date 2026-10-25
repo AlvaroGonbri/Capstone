@@ -19,6 +19,7 @@ import {
 } from '@ionic/angular';
 import { Observable, forkJoin } from 'rxjs';
 import { Alerta, EstadoSensor, UmbralZona, Umbrales } from '../../core/models';
+import { AlertasService } from '../../core/services/alertas.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MonitoreoService, VariableAmbiental } from '../../core/services/monitoreo.service';
 import { rangoTexto } from '../../core/services/umbrales.util';
@@ -226,4 +227,28 @@ export class MonitoreoPage {
       })
       .join(' ');
   }
+
+  // ------------------------------------------------- gestión de alertas
+  /** Reconocen y cierran alertas el Técnico y el Administrador. */
+  protected readonly puedeGestionarAlertas = inject(AuthService).puedeModificar('administrador', 'administradorprivilegiado', 'tecnico');
+  private readonly alertasService = inject(AlertasService);
+
+  protected reconocerAlerta(alerta: Alerta): void {
+    this.alertasService.reconocer(alerta.id).subscribe({
+      next: (a) => this.alertas.update((lista) => lista.map((x) => (x.id === a.id ? a : x))),
+      error: () => undefined,
+    });
+  }
+
+  protected cerrarAlerta(alerta: Alerta): void {
+    const comentario = prompt('Comentario del cierre (opcional): qué se hizo') ?? null;
+    if (comentario === null) {
+      return;
+    }
+    this.alertasService.cerrar(alerta.id, comentario).subscribe({
+      next: () => this.alertas.update((lista) => lista.filter((x) => x.id !== alerta.id)),
+      error: () => undefined,
+    });
+  }
+
 }

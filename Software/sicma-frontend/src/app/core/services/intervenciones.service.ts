@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { EstadoIntervencion, Intervencion, TecnicoAsignable } from '../models';
+import { EstadoIntervencion, Intervencion, SolicitudVerificacion, TecnicoAsignable } from '../models';
 
 export interface DatosAsignacion {
   tecnico: number;
@@ -10,6 +10,7 @@ export interface DatosAsignacion {
   fecha_inicio: string;
   fecha_termino: string;
   activos: number[];
+  personal_externo: number[];
 }
 
 /**
@@ -45,6 +46,20 @@ export class IntervencionesService {
 
   asignar(id: number, datos: DatosAsignacion): Observable<Intervencion> {
     return this.http.post<Intervencion>(`${this.url}${id}/asignar/`, datos);
+  }
+
+  /** Cambia solo el personal externo (no vuelve a pedir la cita al flujo). */
+  guardarPersonal(id: number, personal: number[]): Observable<Intervencion> {
+    return this.http.post<Intervencion>(`${this.url}${id}/personal/`, { personal_externo: personal });
+  }
+
+  /** Pide al lector que la persona apoye su huella para confirmar que es quien fue asignada. */
+  verificarPersona(id: number, personaId: number): Observable<SolicitudVerificacion> {
+    return this.http.post<SolicitudVerificacion>(`${this.url}${id}/personal/${personaId}/verificar/`, {});
+  }
+
+  verificacion(id: number): Observable<SolicitudVerificacion> {
+    return this.http.get<SolicitudVerificacion>(`${environment.apiUrl}/accesos/verificaciones/${id}/`);
   }
 
   iniciar(id: number): Observable<Intervencion> {
