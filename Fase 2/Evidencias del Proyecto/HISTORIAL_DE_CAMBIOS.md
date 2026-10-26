@@ -22,6 +22,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | SICMA-EAV Estado de Avance | SICMA_EAV_v1.0.docx | 1.0 | 2026-10-17 |
 | SICMA-BMK Benchmarking y Estado del Arte | SICMA_BMK_v1.0.docx | 1.0 | 2026-10-24 |
 | SICMA-ESO Impacto Ético, Social y Sostenibilidad | SICMA_ESO_v1.0.docx | 1.0 | 2026-10-24 |
+| SICMA-ARQ Arquitectura del Sistema | SICMA_ARQ_v1.0.docx | 1.0 | 2026-10-26 |
 
 ## Decisiones de negocio que generaron cambios
 
@@ -148,3 +149,9 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 2026-10-24 | Primera versión: análisis del impacto ético, social y de sostenibilidad de SICMA, con riesgos, medidas e indicadores. |
+
+## SICMA-ARQ · Arquitectura del Sistema
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 1.0 | 2026-10-26 | Primera versión: arquitectura en cinco vistas (modelo 4+1), despliegue, seguridad, monitoreo y registro de eventos, decisiones de arquitectura y diferencias con los documentos vigentes. Se hizo con el código del repositorio al 25 de octubre (commit 59710a5d). |
