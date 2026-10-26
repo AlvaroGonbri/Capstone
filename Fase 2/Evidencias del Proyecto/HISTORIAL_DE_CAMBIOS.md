@@ -19,7 +19,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | SICMA-PRY Plan del proyecto | SICMA_PRY_v1.2.docx | 1.2 | 2026-10-26 |
 | SICMA-RCF Resolución de conflictos | SICMA_RCF_v1.1.docx | 1.1 | 2026-10-26 |
 | SICMA-STK Stakeholders | SICMA_STK_v1.2.docx | 1.2 | 2026-10-26 |
-| SICMA-EAV Estado de Avance | SICMA_EAV_v1.0.docx | 1.0 | 2026-10-17 |
+| SICMA-EAV Estado de Avance | SICMA_EAV_v1.1.docx | 1.1 | 2026-10-26 |
 | SICMA-BMK Benchmarking y Estado del Arte | SICMA_BMK_v1.1.docx | 1.1 | 2026-10-26 |
 | SICMA-ESO Impacto Ético, Social y Sostenibilidad | SICMA_ESO_v1.1.docx | 1.1 | 2026-10-26 |
 | SICMA-ARQ Arquitectura del Sistema | SICMA_ARQ_v1.0.docx | 1.0 | 2026-10-26 |
@@ -150,6 +150,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 |---|---|---|
 | 0.1 | 2026-10-10 | Primer estado real del proyecto: código hecho contra requerimientos, Kanban y fechas. |
 | 1.0 | 2026-10-17 | Pasa a estado de avance vigente. Corte de la semana 10: incorpora el avance del 17 de octubre (activos, catálogos, alertas, Zabbix y cambio de contraseña), el avance de la documentación y el monitoreo contra SICMA-PRY v1.0. |
+| 1.1 | 2026-10-26 | Corte de la semana 12: incorpora el avance de código del 20 y 25 de octubre (control de acceso con lector SecuGen, personal externo, intervenciones con Power Automate por correo, bloqueo de cuenta y app móvil de solo consulta), 16 documentos vigentes con la especificación OpenAPI, el nuevo estado del Kanban y la actualización de riesgos, hitos y pendientes. |
 
 ## SICMA-BMK · Benchmarking y Estado del Arte
 
