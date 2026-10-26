@@ -68,7 +68,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.2 | 2026-10-10 | La Jefatura aprueba las intervenciones y el Administrador asigna al Técnico; DecisionIntervencion guarda quién decidió (decididoPor, un usuario). Se cierra D-14 y se reformula D-15. |
 | 0.3 | 2026-10-10 | La Jefatura aprueba por Microsoft Teams con Power Automate; el resultado se guarda en DecisionIntervencion. Se cierra D-01. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Cierra D-02 y D-03 y agrega D-20 (personas autorizadas sin cuenta, ver D-30 de SICMA-BDD). |
+| 1.1 | 2026-10-26 | Cierra D-02 y D-03 y agrega D-20 (personas autorizadas sin cuenta, ver D-30 de SICMA-BDD). Corrección del mismo día: los estados de la intervención y la regla RI-16 se alinean con el código (sin Asignada ni Cerrada; Ejecutada, Fallida y Cancelada). |
 
 ## SICMA-ACT · Diagramas de actividad
 
@@ -78,7 +78,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.2 | 2026-10-10 | AD-08: aprueba la Jefatura. AD-09: asigna el Administrador. Se cierra D-14 y se actualizan los diagramas de ambas actividades. |
 | 0.3 | 2026-10-10 | AD-08: la Jefatura aprueba por Microsoft Teams con Power Automate. Se actualiza el diagrama y se cierra D-01. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Se redibujan AD-06 (enrolamiento de personal externo) y AD-07 (registro de accesos con la clave del agente y permisos por día) y se cierran D-02 y D-03. El diagrama AD-09 sigue con los estados Asignada y Cerrada. Corrección del mismo día: AD-09 se redibuja con el flujo real (la asignación no cambia el estado; cierre como Ejecutada o Fallida). |
+| 1.1 | 2026-10-26 | Se redibujan AD-06 (enrolamiento de personal externo) y AD-07 (registro de accesos con la clave del agente y permisos por día) y se cierran D-02 y D-03. El diagrama AD-09 sigue con los estados Asignada y Cerrada. Corrección del mismo día: AD-09 se redibuja con el flujo real (la asignación no cambia el estado; cierre como Ejecutada o Fallida). Además, la tabla de estados se alinea con el código. |
 
 ## SICMA-BDD · Base de datos
 
@@ -88,7 +88,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.2 | 2026-10-10 | La Jefatura aprueba las intervenciones por Microsoft Teams y quien decide es un usuario de SICMA. Se actualizan D-15 y las referencias a SICMA-REQ v0.4, SICMA-CUS v0.3, SICMA-CLA v0.3 y SICMA-ACT v0.3. |
 | 0.3 | 2026-10-10 | RI-09 pasa de No cubierta a Aplicación: el backend valida que el mínimo sea menor que el máximo y que haya un solo umbral vigente. Se cierra D-32. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Se actualizan las referencias a las versiones vigentes de los demás documentos. |
+| 1.1 | 2026-10-26 | Se actualizan las referencias a las versiones vigentes de los demás documentos. Corrección del mismo día: D-22 se actualiza, porque los demás documentos ya usan los estados del código. |
 
 ## SICMA-MCK · Mockups
 
@@ -97,7 +97,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.1 | 2026-10-10 | Primera versión. Basada en SICMA-REQ v0.2, SICMA-CUS v0.1, SICMA-CLA v0.1, SICMA-ACT v0.1, SICMA-BDD v0.1 y en el frontend del repositorio del equipo. Las capturas usan nombres ficticios y el frontend solo se usó como referencia de diseño. |
 | 0.2 | 2026-10-10 | La Jefatura aprueba por Microsoft Teams: MW-20 muestra la aprobación pendiente en Teams y se cierra D-01. Referencias a SICMA-REQ v0.4, SICMA-CUS v0.3, SICMA-CLA v0.3 y SICMA-ACT v0.3. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Lector SecuGen y quién registra las huellas (Contratistas o el Administrador). Corrección del mismo día: se quita el aviso de técnico con otra intervención en el mismo horario, que el código no controla. |
+| 1.1 | 2026-10-26 | Lector SecuGen y quién registra las huellas (Contratistas o el Administrador). Corrección del mismo día: se quita el aviso de técnico con otra intervención en el mismo horario, que el código no controla. Además, D-36 usa los estados del código. |
 
 ## SICMA-PLP · Plan de pruebas
 
@@ -117,7 +117,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.2 | 2026-10-10 | Segunda parte: 54 casos nuevos de monitoreo ambiental y alertas (26), infraestructura con Zabbix (11) y control de acceso físico (17). Total 112 casos. Incluye los casos de RI-09 validada por el backend. Agrega D-53 a D-59. Por ahora solo se diseñan los casos; los resultados se registran cuando las pruebas se ejecuten. |
 | 0.3 | 2026-10-10 | Tercera parte: 87 casos nuevos. Intervenciones (29), inteligencia de negocio (10), plataformas web y móvil (11), rendimiento y carga (7), recuperación del clúster (6), seguridad transversal (10), usabilidad y estándares (6), calidad (4), despliegue (3) y aceptación (1). Total 199 casos, con todos los RF y RNF cubiertos. Agrega D-60 a D-65 y la referencia a D-02, D-04, D-05, D-09, D-11, D-12, D-22, D-24 y D-42. Resultados siguen para la fase de ejecución. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Lector SecuGen, enrolamiento de personal externo (CP-ACC-01 y CP-ACC-17) y cierre de D-03. No cambia la cantidad de casos. Corrección del mismo día: CP-INT-19 prueba que solo se asigna en una intervención Aprobada, porque el código no controla el cruce de horarios de un técnico. |
+| 1.1 | 2026-10-26 | Lector SecuGen, enrolamiento de personal externo (CP-ACC-01 y CP-ACC-17) y cierre de D-03. No cambia la cantidad de casos. Corrección del mismo día: CP-INT-19 prueba que solo se asigna en una intervención Aprobada, porque el código no controla el cruce de horarios de un técnico. Además, CP-INT-16, 20, 25 y 28 usan los estados del código. |
 
 ## SICMA-PRY · Plan del proyecto
 
