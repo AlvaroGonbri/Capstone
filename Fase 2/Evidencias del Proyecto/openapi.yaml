@@ -1873,7 +1873,6 @@ paths:
           type: string
           enum:
           - Pendiente
-          - CambiosSolicitados
           - Aprobada
           - Rechazada
           - EnEjecucion
@@ -4843,7 +4842,6 @@ components:
           type: string
           enum:
           - Pendiente
-          - CambiosSolicitados
           - Aprobada
           - Rechazada
           - EnEjecucion

@@ -48,7 +48,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.3 | 2026-10-10 | La Jefatura aprueba las intervenciones y el Administrador asigna al Técnico. El key user deja de aprobar y asignar. Se ajustan roles, RF-INT-03, HU-15, HU-16, D-01 y glosario. Se agrega la fila "Asignar técnico a la intervención" a la matriz de permisos. Se cierra D-14 y se agrega D-42 (aviso al key user). |
 | 0.4 | 2026-10-10 | La Jefatura aprueba por Microsoft Teams con un flujo de Power Automate. Se actualiza RF-INT-03 y se cierra D-01. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Se alinean los requerimientos con el código del 25 de octubre (commit 59710a5d): lector SecuGen (cierra D-03), comunicación con Power Automate por correo (cierra D-02), roles Administrador Privilegiado y Contratistas, estados de la intervención (RN-12), personal externo, retiro de activos solo por el Administrador (RN-13) y plantillas de huella solo en el PC del lector (RN-11). No cambia la cantidad de requerimientos. Corrección del mismo día: la matriz de permisos agrega las columnas Administrador Privilegiado y Contratistas, y RN-03 se alinea con el código (la asignación puede ajustar activos, horario y personal sin volver a Pendiente). |
+| 1.1 | 2026-10-26 | Se alinean los requerimientos con el código del 25 de octubre (commit 59710a5d): lector SecuGen (cierra D-03), comunicación con Power Automate por correo (cierra D-02), roles Administrador Privilegiado y Contratistas, estados de la intervención (RN-12), personal externo, retiro de activos solo por el Administrador (RN-13) y plantillas de huella solo en el PC del lector (RN-11). No cambia la cantidad de requerimientos. Corrección del mismo día: la matriz de permisos agrega las columnas Administrador Privilegiado y Contratistas, y RN-03 se alinea con el código (la asignación puede ajustar activos, horario y personal sin volver a Pendiente). Además, se quita el estado CambiosSolicitados de RN-12. |
 
 ## SICMA-CUS · Casos de uso
 
@@ -68,7 +68,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.2 | 2026-10-10 | La Jefatura aprueba las intervenciones y el Administrador asigna al Técnico; DecisionIntervencion guarda quién decidió (decididoPor, un usuario). Se cierra D-14 y se reformula D-15. |
 | 0.3 | 2026-10-10 | La Jefatura aprueba por Microsoft Teams con Power Automate; el resultado se guarda en DecisionIntervencion. Se cierra D-01. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Cierra D-02 y D-03 y agrega D-20 (personas autorizadas sin cuenta, ver D-30 de SICMA-BDD). Corrección del mismo día: los estados de la intervención y la regla RI-16 se alinean con el código (sin Asignada ni Cerrada; Ejecutada, Fallida y Cancelada). |
+| 1.1 | 2026-10-26 | Cierra D-02 y D-03 y agrega D-20 (personas autorizadas sin cuenta, ver D-30 de SICMA-BDD). Corrección del mismo día: los estados de la intervención y la regla RI-16 se alinean con el código (sin Asignada ni Cerrada; Ejecutada, Fallida y Cancelada). Además, se quita la mención del estado CambiosSolicitados. |
 
 ## SICMA-ACT · Diagramas de actividad
 
@@ -78,7 +78,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.2 | 2026-10-10 | AD-08: aprueba la Jefatura. AD-09: asigna el Administrador. Se cierra D-14 y se actualizan los diagramas de ambas actividades. |
 | 0.3 | 2026-10-10 | AD-08: la Jefatura aprueba por Microsoft Teams con Power Automate. Se actualiza el diagrama y se cierra D-01. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Se redibujan AD-06 (enrolamiento de personal externo) y AD-07 (registro de accesos con la clave del agente y permisos por día) y se cierran D-02 y D-03. El diagrama AD-09 sigue con los estados Asignada y Cerrada. Corrección del mismo día: AD-09 se redibuja con el flujo real (la asignación no cambia el estado; cierre como Ejecutada o Fallida). Además, la tabla de estados se alinea con el código. |
+| 1.1 | 2026-10-26 | Se redibujan AD-06 (enrolamiento de personal externo) y AD-07 (registro de accesos con la clave del agente y permisos por día) y se cierran D-02 y D-03. El diagrama AD-09 sigue con los estados Asignada y Cerrada. Corrección del mismo día: AD-09 se redibuja con el flujo real (la asignación no cambia el estado; cierre como Ejecutada o Fallida). Además, la tabla de estados se alinea con el código. Además, se quita la mención del estado CambiosSolicitados. |
 
 ## SICMA-BDD · Base de datos
 
@@ -88,7 +88,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.2 | 2026-10-10 | La Jefatura aprueba las intervenciones por Microsoft Teams y quien decide es un usuario de SICMA. Se actualizan D-15 y las referencias a SICMA-REQ v0.4, SICMA-CUS v0.3, SICMA-CLA v0.3 y SICMA-ACT v0.3. |
 | 0.3 | 2026-10-10 | RI-09 pasa de No cubierta a Aplicación: el backend valida que el mínimo sea menor que el máximo y que haya un solo umbral vigente. Se cierra D-32. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Se actualizan las referencias a las versiones vigentes de los demás documentos. Corrección del mismo día: D-22 se actualiza, porque los demás documentos ya usan los estados del código. |
+| 1.1 | 2026-10-26 | Se actualizan las referencias a las versiones vigentes de los demás documentos. Corrección del mismo día: D-22 se actualiza, porque los demás documentos ya usan los estados del código. Además, se quita la mención de CambiosSolicitados en D-22; las definiciones de columnas siguen como están en el código. |
 
 ## SICMA-MCK · Mockups
 
