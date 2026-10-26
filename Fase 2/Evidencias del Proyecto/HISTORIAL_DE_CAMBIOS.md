@@ -58,7 +58,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.2 | 2026-10-10 | La Jefatura aprueba las intervenciones (CU-20) y el Administrador asigna al técnico (CU-21). Se actualizan actores, diagrama del módulo 6, fichas y pendientes (D-01, D-14, D-42). |
 | 0.3 | 2026-10-10 | La Jefatura aprueba por Microsoft Teams con un flujo de Power Automate (CU-20). Se actualizan el actor externo, la ficha de CU-20 y el diagrama del módulo 6, y se cierra D-01. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Casos de uso alineados con el código: lector SecuGen con agente, correo con IMAP para Power Automate, rol Contratistas y Administrador Privilegiado, personal externo con verificación de huella, estados de la intervención y gestión de alertas. Se redibuja el diagrama del módulo 5. Corrección del mismo día: CU-20 ya no menciona "cambios solicitados", porque el código no tiene ningún flujo que asigne ese estado, y CU-20 se alinea con RN-03. |
+| 1.1 | 2026-10-26 | Casos de uso alineados con el código: lector SecuGen con agente, correo con IMAP para Power Automate, rol Contratistas y Administrador Privilegiado, personal externo con verificación de huella, estados de la intervención y gestión de alertas. Se redibuja el diagrama del módulo 5. Corrección del mismo día: CU-20 ya no menciona "cambios solicitados", porque el código no tiene ningún flujo que asigne ese estado, y CU-20 se alinea con RN-03. Se quita la excepción de técnico con otra intervención en el mismo horario, que el código no controla. |
 
 ## SICMA-CLA · Diagrama de clases
 
@@ -78,7 +78,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.2 | 2026-10-10 | AD-08: aprueba la Jefatura. AD-09: asigna el Administrador. Se cierra D-14 y se actualizan los diagramas de ambas actividades. |
 | 0.3 | 2026-10-10 | AD-08: la Jefatura aprueba por Microsoft Teams con Power Automate. Se actualiza el diagrama y se cierra D-01. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Se redibujan AD-06 (enrolamiento de personal externo) y AD-07 (registro de accesos con la clave del agente y permisos por día) y se cierran D-02 y D-03. El diagrama AD-09 sigue con los estados Asignada y Cerrada. Corrección del mismo día: AD-09 se redibuja con el flujo real (la asignación no cambia el estado; cierre como Ejecutada o Fallida) y se anota que RI-17 no está en el código. |
+| 1.1 | 2026-10-26 | Se redibujan AD-06 (enrolamiento de personal externo) y AD-07 (registro de accesos con la clave del agente y permisos por día) y se cierran D-02 y D-03. El diagrama AD-09 sigue con los estados Asignada y Cerrada. Corrección del mismo día: AD-09 se redibuja con el flujo real (la asignación no cambia el estado; cierre como Ejecutada o Fallida). |
 
 ## SICMA-BDD · Base de datos
 
@@ -97,7 +97,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.1 | 2026-10-10 | Primera versión. Basada en SICMA-REQ v0.2, SICMA-CUS v0.1, SICMA-CLA v0.1, SICMA-ACT v0.1, SICMA-BDD v0.1 y en el frontend del repositorio del equipo. Las capturas usan nombres ficticios y el frontend solo se usó como referencia de diseño. |
 | 0.2 | 2026-10-10 | La Jefatura aprueba por Microsoft Teams: MW-20 muestra la aprobación pendiente en Teams y se cierra D-01. Referencias a SICMA-REQ v0.4, SICMA-CUS v0.3, SICMA-CLA v0.3 y SICMA-ACT v0.3. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Lector SecuGen y quién registra las huellas (Contratistas o el Administrador). |
+| 1.1 | 2026-10-26 | Lector SecuGen y quién registra las huellas (Contratistas o el Administrador). Corrección del mismo día: se quita el aviso de técnico con otra intervención en el mismo horario, que el código no controla. |
 
 ## SICMA-PLP · Plan de pruebas
 
@@ -117,7 +117,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.2 | 2026-10-10 | Segunda parte: 54 casos nuevos de monitoreo ambiental y alertas (26), infraestructura con Zabbix (11) y control de acceso físico (17). Total 112 casos. Incluye los casos de RI-09 validada por el backend. Agrega D-53 a D-59. Por ahora solo se diseñan los casos; los resultados se registran cuando las pruebas se ejecuten. |
 | 0.3 | 2026-10-10 | Tercera parte: 87 casos nuevos. Intervenciones (29), inteligencia de negocio (10), plataformas web y móvil (11), rendimiento y carga (7), recuperación del clúster (6), seguridad transversal (10), usabilidad y estándares (6), calidad (4), despliegue (3) y aceptación (1). Total 199 casos, con todos los RF y RNF cubiertos. Agrega D-60 a D-65 y la referencia a D-02, D-04, D-05, D-09, D-11, D-12, D-22, D-24 y D-42. Resultados siguen para la fase de ejecución. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Lector SecuGen, enrolamiento de personal externo (CP-ACC-01 y CP-ACC-17) y cierre de D-03. No cambia la cantidad de casos. |
+| 1.1 | 2026-10-26 | Lector SecuGen, enrolamiento de personal externo (CP-ACC-01 y CP-ACC-17) y cierre de D-03. No cambia la cantidad de casos. Corrección del mismo día: CP-INT-19 prueba que solo se asigna en una intervención Aprobada, porque el código no controla el cruce de horarios de un técnico. |
 
 ## SICMA-PRY · Plan del proyecto
 
