@@ -1,0 +1,4971 @@
+openapi: 3.0.3
+info:
+  title: SICMA API
+  version: 1.0.0
+  description: 'API REST del backend de SICMA (Sistema Integrado de Control y Monitoreo de Activos), un monolito Django con
+    Django REST Framework. Todo el tráfico es JSON.
+
+
+    **Autenticación.** Las personas usan un token JWT en la cabecera Authorization: Bearer. Se obtiene en /api/auth/token/
+    con el canal web, o con el canal movil para un token de solo lectura. Hay tres canales de máquina: los sensores ESP32-S3
+    (cabecera X-Device-Key y código del sensor en el cuerpo), el agente del lector SecuGen (cabeceras X-Punto-Acceso y X-Device-Key)
+    y el webhook de Zabbix (cabecera X-Zabbix-Token).
+
+
+    **Roles.** Cada cuenta tiene exactamente un rol: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor
+    o Contratistas. La autorización se comprueba en cada endpoint y los roles permitidos están en su descripción. La aplicación
+    móvil usa un token de solo lectura: toda escritura responde 403, salvo el cierre de sesión y el registro de actividad.
+
+
+    **Sesión.** Un token se puede renovar mientras no pase el tiempo de inactividad de la cuenta (15 minutos por defecto).
+    La contraseña puede expirar y entonces el inicio de sesión responde 403 con code password_expired. Tras 5 contraseñas
+    incorrectas seguidas la cuenta se bloquea 15 minutos.
+
+
+    **Límites de uso.** Por IP real (CF-Connecting-IP detrás del túnel de Cloudflare): 10 por minuto en el inicio de sesión
+    y el cambio de contraseña, y 3 por hora en la recuperación de contraseña. Se responde 429 al superarlos.
+
+
+    **Canal de correo con Power Automate.** Las solicitudes de intervención y las decisiones de la Jefatura no entran por
+    esta API. Con la licencia gratuita de Power Automate no hay conectores HTTP, así que el flujo escribe un correo y SICMA
+    lee su buzón por IMAP cada minuto. El asunto lleva la etiqueta [SICMA-INT] y el cuerpo es un JSON con el tipo "nueva"
+    (forms_id, correo, nombre, rack, fecha, hora, hora_termino, descripcion, plan_reversa, servicios) o el tipo "decision"
+    (forms_id, decision, decisor, comentario), más un token compartido. Solo se aceptan los correos del remitente configurado.
+
+
+    **Convenciones.** Los recursos con historial no se eliminan: se desactivan o se retiran. Las fechas van en ISO 8601 y
+    SICMA las guarda en UTC. Las claves de dispositivos se entregan una sola vez al crearlas y SICMA guarda solo su hash.'
+  contact:
+    name: Equipo SICMA, Duoc UC Plaza Oeste
+servers:
+- url: https://api.sicma.cl
+  description: Publicación por Cloudflare Tunnel
+- url: http://localhost:8000
+  description: Desarrollo local
+tags:
+- name: Autenticación
+  description: Sesión, contraseñas y cuentas de usuario
+- name: Monitoreo ambiental
+  description: Dispositivos IoT, lecturas, ubicaciones y umbrales
+- name: Inventario
+  description: Activos, su historial y los catálogos de tipos y estados
+- name: Alertas
+  description: Alertas y responsables de alerta por zona
+- name: Infraestructura
+  description: Estado de servidores y clúster según Zabbix
+- name: Intervenciones
+  description: Ciclo de vida de las intervenciones
+- name: Control de acceso
+  description: Personal externo, puntos de acceso, permisos y registro de accesos
+- name: Agente del lector
+  description: Endpoints que usa el agente del lector SecuGen
+security:
+- bearerAuth: []
+paths:
+  /api/auth/token/:
+    post:
+      tags:
+      - Autenticación
+      summary: Iniciar sesión
+      operationId: post_api_auth_token
+      description: Entrega el par de tokens JWT. Se puede entrar con el correo o con el nombre de usuario. Con canal movil
+        el token es de solo lectura. Límite de 10 intentos por minuto por IP; tras 5 contraseñas incorrectas seguidas la cuenta
+        se bloquea 15 minutos (403 account_locked). Si la contraseña expiró responde 403 con code password_expired.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      security: []
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '403':
+          description: Cuenta bloqueada, contraseña expirada o rol no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Demasiados intentos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          description: Credenciales incorrectas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/auth/token/refresh/:
+    post:
+      tags:
+      - Autenticación
+      summary: Renovar el token de acceso
+      operationId: post_api_auth_token_refresh
+      description: Falla si la sesión superó su tiempo de inactividad o si la contraseña expiró.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      security: []
+      responses:
+        '200':
+          description: Token renovado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        '401':
+          description: Token inválido, sesión expirada por inactividad o usuario inactivo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: La contraseña expiró
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          $ref: '#/components/responses/Validacion'
+  /api/auth/logout/:
+    post:
+      tags:
+      - Autenticación
+      summary: Cerrar sesión
+      operationId: post_api_auth_logout
+      description: Invalida el token de refresco (lista negra). También lo puede usar un token de solo lectura.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      security:
+      - bearerAuth: []
+      responses:
+        '204':
+          description: Sesión cerrada
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/auth/me/:
+    get:
+      tags:
+      - Autenticación
+      summary: Datos de la cuenta actual
+      operationId: get_api_auth_me
+      description: Incluye el rol único y el tiempo de inactividad.
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Cuenta actual
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/auth/activity/:
+    post:
+      tags:
+      - Autenticación
+      summary: Registrar actividad
+      operationId: post_api_auth_activity
+      description: Renueva la marca de última actividad para el cierre por inactividad. Sin cuerpo.
+      security:
+      - bearerAuth: []
+      responses:
+        '204':
+          description: Actividad registrada
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/auth/password-reset/:
+    post:
+      tags:
+      - Autenticación
+      summary: Pedir recuperación de contraseña
+      operationId: post_api_auth_password_reset
+      description: Envía un correo con el enlace si la cuenta existe. La respuesta es la misma exista o no. Límite de 3 por
+        hora por IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      security: []
+      responses:
+        '202':
+          description: Solicitud recibida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Demasiados intentos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          $ref: '#/components/responses/Validacion'
+  /api/auth/password-reset/confirm/:
+    post:
+      tags:
+      - Autenticación
+      summary: Confirmar recuperación de contraseña
+      operationId: post_api_auth_password_reset_confirm
+      description: Los parámetros uid y token vienen del enlace del correo y se pueden enviar en el cuerpo o en la consulta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+      security: []
+      responses:
+        '200':
+          description: Contraseña actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          $ref: '#/components/responses/Validacion'
+  /api/auth/password-change/:
+    post:
+      tags:
+      - Autenticación
+      summary: Cambiar la contraseña con la clave actual
+      operationId: post_api_auth_password_change
+      description: 'No exige sesión: sirve cuando la contraseña expiró. Cuenta para el bloqueo por intentos fallidos. Límite
+        de 10 por minuto por IP.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+      security: []
+      responses:
+        '200':
+          description: Contraseña actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Cuenta bloqueada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          $ref: '#/components/responses/Validacion'
+  /api/auth/password-policy/:
+    get:
+      tags:
+      - Autenticación
+      summary: Ver la vigencia de contraseñas
+      operationId: get_api_auth_password_policy
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Roles: Administrador, Administrador Privilegiado.'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Política vigente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordPolicy'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+    patch:
+      tags:
+      - Autenticación
+      summary: Cambiar la vigencia de contraseñas
+      operationId: patch_api_auth_password_policy
+      x-roles:
+      - administradorprivilegiado
+      description: 'Solo el Administrador Privilegiado cambia la política; un Administrador recibe 403. Roles: Administrador
+        Privilegiado.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordPolicy'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Política actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordPolicy'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/auth/users/:
+    get:
+      tags:
+      - Autenticación
+      summary: Listar cuentas
+      operationId: get_api_auth_users
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Roles: Administrador, Administrador Privilegiado.'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Cuentas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ManagedUser'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+    post:
+      tags:
+      - Autenticación
+      summary: Crear una cuenta
+      operationId: post_api_auth_users
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Un Administrador no puede crear cuentas de administración ni fijar la inactividad ni la vigencia de la
+        contraseña: eso es del Administrador Privilegiado. Roles: Administrador, Administrador Privilegiado.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManagedUserWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Cuenta creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedUser'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/auth/users/{user_id}/:
+    patch:
+      tags:
+      - Autenticación
+      summary: Editar una cuenta
+      operationId: patch_api_auth_users_user_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Cambia datos, rol o contraseña, o desactiva la cuenta. Las cuentas de administración solo las modifica
+        un Administrador Privilegiado. Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        description: Id del usuario
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManagedUserWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Cuenta actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedUser'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/auth/users/{user_id}/session-timeout/:
+    patch:
+      tags:
+      - Autenticación
+      summary: Cambiar el tiempo de inactividad de una cuenta
+      operationId: patch_api_auth_users_user_id_session_timeout
+      x-roles:
+      - administradorprivilegiado
+      description: 'Solo el Administrador Privilegiado. De 1 a 120 minutos. Roles: Administrador Privilegiado.'
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        description: Id del usuario
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionTimeout'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Tiempo actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTimeout'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/mediciones/:
+    post:
+      tags:
+      - Monitoreo ambiental
+      summary: Enviar una lectura (dispositivo IoT)
+      operationId: post_api_mediciones
+      description: El ESP32-S3 se identifica con el código del sensor en el cuerpo y su clave en la cabecera X-Device-Key.
+        Reenviar el mismo evento_id no duplica la lectura. Al crear una lectura nueva se evalúa contra los umbrales y puede
+        abrir una alerta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicionIngest'
+      security:
+      - deviceKey: []
+      responses:
+        '201':
+          description: Lectura creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicionIngestRespuesta'
+        '200':
+          description: La lectura ya existía (duplicate true)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicionIngestRespuesta'
+        '401':
+          description: Credenciales del dispositivo no válidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          $ref: '#/components/responses/Validacion'
+    get:
+      tags:
+      - Monitoreo ambiental
+      summary: Consultar lecturas
+      operationId: get_api_mediciones
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Paginado de 100 por página (máximo 500 con page_size). Roles: Administrador, Administrador Privilegiado,
+        Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: sensor
+        in: query
+        required: false
+        description: Id del sensor
+        schema:
+          type: integer
+      - name: desde
+        in: query
+        required: false
+        description: Medición desde
+        schema:
+          type: string
+          format: date-time
+      - name: hasta
+        in: query
+        required: false
+        description: Medición hasta
+        schema:
+          type: string
+          format: date-time
+      - name: recibido_desde
+        in: query
+        required: false
+        description: Recibidas después de esta fecha
+        schema:
+          type: string
+          format: date-time
+      - name: origen
+        in: query
+        required: false
+        description: Origen
+        schema:
+          type: string
+          enum:
+          - Real
+          - Simulado
+      - name: ordering
+        in: query
+        required: false
+        description: Orden
+        schema:
+          type: string
+          enum:
+          - fecha_hora_medicion
+          - -fecha_hora_medicion
+          default: fecha_hora_medicion
+      - name: page
+        in: query
+        required: false
+        description: Número de página
+        schema:
+          type: integer
+      - name: page_size
+        in: query
+        required: false
+        description: Tamaño de página
+        schema:
+          type: integer
+          maximum: 500
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Página de lecturas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicionPagina'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/sensores/:
+    get:
+      tags:
+      - Monitoreo ambiental
+      summary: Listar dispositivos
+      operationId: get_api_sensores
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Incluye la última lectura de cada uno. Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico,
+        Auditor.'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Dispositivos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+    post:
+      tags:
+      - Monitoreo ambiental
+      summary: Registrar un dispositivo
+      operationId: post_api_sensores
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Entrega la clave del dispositivo una sola vez. Roles: Administrador, Administrador Privilegiado.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Dispositivo creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensorCreado'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/sensores/{id}/:
+    get:
+      tags:
+      - Monitoreo ambiental
+      summary: Ver un dispositivo
+      operationId: get_api_sensores_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Dispositivo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sensor'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+    patch:
+      tags:
+      - Monitoreo ambiental
+      summary: Editar o desactivar un dispositivo
+      operationId: patch_api_sensores_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Desactivar es estado Inactivo. El código no cambia. Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensorWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Dispositivo actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sensor'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/sensores/{id}/clave/:
+    post:
+      tags:
+      - Monitoreo ambiental
+      summary: Generar una clave nueva para el dispositivo
+      operationId: post_api_sensores_id_clave
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'La clave anterior deja de funcionar de inmediato. Sin cuerpo. Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Clave nueva
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaveSensor'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/ubicaciones/:
+    get:
+      tags:
+      - Monitoreo ambiental
+      summary: Listar ubicaciones y zonas
+      operationId: get_api_ubicaciones
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Por defecto solo las activas. Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: todas
+        in: query
+        required: false
+        description: Con 1 incluye las desactivadas
+        schema:
+          type: string
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Ubicaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ubicacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+    post:
+      tags:
+      - Monitoreo ambiental
+      summary: Crear una ubicación o zona
+      operationId: post_api_ubicaciones
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Roles: Administrador, Administrador Privilegiado.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UbicacionWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Ubicación creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ubicacion'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/ubicaciones/{id}/:
+    get:
+      tags:
+      - Monitoreo ambiental
+      summary: Ver una ubicación
+      operationId: get_api_ubicaciones_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Ubicación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ubicacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+    patch:
+      tags:
+      - Monitoreo ambiental
+      summary: Editar o desactivar una ubicación
+      operationId: patch_api_ubicaciones_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Nunca se elimina (RN-02). Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UbicacionWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Ubicación actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ubicacion'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/umbrales/:
+    get:
+      tags:
+      - Monitoreo ambiental
+      summary: Ver los umbrales vigentes
+      operationId: get_api_umbrales
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Devuelve la última versión por ubicación y variable. Roles: Administrador, Administrador Privilegiado,
+        Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: ubicacion
+        in: query
+        required: false
+        description: Filtra por ubicación
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Umbrales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Umbral'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+    post:
+      tags:
+      - Monitoreo ambiental
+      summary: Definir un umbral
+      operationId: post_api_umbrales
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'No edita: crea la versión siguiente. Roles: Administrador, Administrador Privilegiado.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UmbralWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Umbral creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Umbral'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/activos/:
+    get:
+      tags:
+      - Inventario
+      summary: Buscar activos
+      operationId: get_api_activos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Por defecto excluye los retirados. Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico,
+        Auditor.'
+      parameters:
+      - name: q
+        in: query
+        required: false
+        description: Texto en código, nombre, serie, marca o modelo
+        schema:
+          type: string
+      - name: tipo
+        in: query
+        required: false
+        description: Tipo
+        schema:
+          type: string
+      - name: ubicacion
+        in: query
+        required: false
+        description: Id de ubicación
+        schema:
+          type: integer
+      - name: estado
+        in: query
+        required: false
+        description: Estado
+        schema:
+          type: string
+      - name: incluir_retirados
+        in: query
+        required: false
+        description: Incluye los retirados
+        schema:
+          type: boolean
+          default: false
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Activos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activo'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+    post:
+      tags:
+      - Inventario
+      summary: Registrar un activo
+      operationId: post_api_activos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - tecnico
+      description: 'Deja una entrada de alta en el historial. Roles: Administrador, Administrador Privilegiado, Técnico.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivoWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Activo creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activo'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/activos/{id}/:
+    get:
+      tags:
+      - Inventario
+      summary: Ver un activo
+      operationId: get_api_activos_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Activo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activo'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+    patch:
+      tags:
+      - Inventario
+      summary: Editar un activo
+      operationId: patch_api_activos_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - tecnico
+      description: 'Cada campo que cambia queda en el historial. No existe DELETE: la baja es el estado Retirado, y solo un
+        Administrador puede dar de baja o reincorporar (403 para el Técnico). Roles: Administrador, Administrador Privilegiado,
+        Técnico.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivoWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Activo actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activo'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/activos/{id}/historial/:
+    get:
+      tags:
+      - Inventario
+      summary: Historial de cambios de un activo
+      operationId: get_api_activos_id_historial
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Del más reciente al más antiguo. Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico,
+        Auditor.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Historial
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistorialActivo'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/activos/responsables/:
+    get:
+      tags:
+      - Inventario
+      summary: Usuarios que pueden ser responsables de un activo
+      operationId: get_api_activos_responsables
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Usuarios activos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsuarioResumen'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/activos/tipos/:
+    get:
+      tags:
+      - Inventario
+      summary: Listar tipos de activo
+      operationId: get_api_activos_tipos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: todos
+        in: query
+        required: false
+        description: Con 1 incluye los desactivados
+        schema:
+          type: string
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Tipos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TipoActivo'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+    post:
+      tags:
+      - Inventario
+      summary: Crear un tipo de activo
+      operationId: post_api_activos_tipos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Roles: Administrador, Administrador Privilegiado.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TipoActivo'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Tipo creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoActivo'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/activos/tipos/{id}/:
+    patch:
+      tags:
+      - Inventario
+      summary: Renombrar o desactivar un tipo
+      operationId: patch_api_activos_tipos_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Al renombrar, los activos de ese tipo se actualizan. Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TipoActivo'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Tipo actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoActivo'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/activos/estados/:
+    get:
+      tags:
+      - Inventario
+      summary: Listar estados de activo
+      operationId: get_api_activos_estados
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: todos
+        in: query
+        required: false
+        description: Con 1 incluye los desactivados
+        schema:
+          type: string
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Estados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EstadoActivo'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+    post:
+      tags:
+      - Inventario
+      summary: Crear un estado de activo
+      operationId: post_api_activos_estados
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Roles: Administrador, Administrador Privilegiado.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstadoActivo'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Estado creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoActivo'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/activos/estados/{id}/:
+    patch:
+      tags:
+      - Inventario
+      summary: Editar un estado de activo
+      operationId: patch_api_activos_estados_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'El nombre no cambia. Los estados de sistema no se desactivan ni se desactivan los que tienen activos.
+        Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstadoActivo'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Estado actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoActivo'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/alertas/:
+    get:
+      tags:
+      - Alertas
+      summary: Listar alertas
+      operationId: get_api_alertas
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Las 100 más recientes. Por defecto solo las abiertas (Nueva y Reconocida). Roles: Administrador, Administrador
+        Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: estado
+        in: query
+        required: false
+        description: Abiertas o todas
+        schema:
+          type: string
+          enum:
+          - abiertas
+          - todas
+          default: abiertas
+      - name: origen
+        in: query
+        required: false
+        description: Origen
+        schema:
+          type: string
+          enum:
+          - IoT
+          - Biometria
+          - Zabbix
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Alertas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alerta'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/alertas/{id}/reconocer/:
+    post:
+      tags:
+      - Alertas
+      summary: Reconocer una alerta
+      operationId: post_api_alertas_id_reconocer
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - tecnico
+      description: 'Marca que alguien la está atendiendo. Solo desde Nueva; si no, 409. Roles: Administrador, Administrador
+        Privilegiado, Técnico.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GestionAlerta'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Alerta reconocida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alerta'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/alertas/{id}/cerrar/:
+    post:
+      tags:
+      - Alertas
+      summary: Cerrar una alerta
+      operationId: post_api_alertas_id_cerrar
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - tecnico
+      description: 'Desde Nueva o Reconocida. Cerrar no impide que vuelva: si la condición sigue, la siguiente lectura abre
+        otra (RN-04). Roles: Administrador, Administrador Privilegiado, Técnico.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GestionAlerta'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Alerta cerrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alerta'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/alertas/responsables/:
+    get:
+      tags:
+      - Alertas
+      summary: Responsables de alerta de cada zona
+      operationId: get_api_alertas_responsables
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Responsables por zona
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResponsablesZona'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/alertas/responsables/{ubicacion_id}/:
+    put:
+      tags:
+      - Alertas
+      summary: Reemplazar los responsables de una zona
+      operationId: put_api_alertas_responsables_ubicacion_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Crea una versión nueva de la regla de alerta de esa zona. Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: ubicacion_id
+        in: path
+        required: true
+        description: Id de la ubicación
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResponsablesWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Responsables guardados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponsablesZona'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/infraestructura/estado/:
+    get:
+      tags:
+      - Infraestructura
+      summary: Estado del clúster MySQL y problemas activos
+      operationId: get_api_infraestructura_estado
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Devuelve la última sincronización con Zabbix; si no hay, consulta Zabbix con caché de 30 segundos. 503
+        si Zabbix no responde. Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoInfra'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/infraestructura/hosts/:
+    get:
+      tags:
+      - Infraestructura
+      summary: Servidores monitoreados
+      operationId: get_api_infraestructura_hosts
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Servidores y si su agente responde. Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico,
+        Auditor.'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HostZabbix'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/infraestructura/activos/:
+    get:
+      tags:
+      - Infraestructura
+      summary: Servidores con formato de activo
+      operationId: get_api_infraestructura_activos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Hosts de los grupos Cluster e Hypervisores. Roles: Administrador, Administrador Privilegiado, Jefatura,
+        Técnico, Auditor.'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivoZabbix'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/infraestructura/hosts/{hostid}/eventos/:
+    get:
+      tags:
+      - Infraestructura
+      summary: Historial de eventos técnicos de un servidor
+      operationId: get_api_infraestructura_hosts_hostid_eventos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: hostid
+        in: path
+        required: true
+        description: Id del host en Zabbix
+        schema:
+          type: integer
+      - name: dias
+        in: query
+        required: false
+        description: Días hacia atrás, de 1 a 365
+        schema:
+          type: integer
+          default: 30
+          minimum: 1
+          maximum: 365
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoHost'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: El parámetro dias no es válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/infraestructura/sincronizacion/:
+    get:
+      tags:
+      - Infraestructura
+      summary: Estado de la última consulta periódica a Zabbix
+      operationId: get_api_infraestructura_sincronizacion
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'SICMA consulta a Zabbix cada 60 segundos (RF-INF-01). Roles: Administrador, Administrador Privilegiado,
+        Jefatura, Técnico, Auditor.'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Estado de la sincronización
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sincronizacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/integraciones/zabbix/webhook/:
+    post:
+      tags:
+      - Infraestructura
+      summary: Recibir un aviso de Zabbix
+      operationId: post_api_integraciones_zabbix_webhook
+      description: Zabbix avisa cuando se abre (PROBLEM) o se resuelve (RESOLVED) un problema. Se autentica con el secreto
+        compartido en la cabecera X-Zabbix-Token. Crea o cierra la alerta correspondiente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookZabbix'
+      security:
+      - zabbixToken: []
+      responses:
+        '202':
+          description: Aviso recibido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookRespuesta'
+        '403':
+          description: Token de webhook no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '503':
+          description: Servicio no disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/intervenciones/:
+    get:
+      tags:
+      - Intervenciones
+      summary: Listar intervenciones
+      operationId: get_api_intervenciones
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'De la más reciente a la más antigua. Las solicitudes nacen por correo del flujo de Power Automate (ver
+        la sección Canal de correo), no por esta API. Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico,
+        Auditor.'
+      parameters:
+      - name: estado
+        in: query
+        required: false
+        description: Estado
+        schema:
+          type: string
+          enum:
+          - Pendiente
+          - CambiosSolicitados
+          - Aprobada
+          - Rechazada
+          - EnEjecucion
+          - Ejecutada
+          - Fallida
+          - Cancelada
+      - name: activo
+        in: query
+        required: false
+        description: Id de un activo afectado
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Intervenciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Intervencion'
+        '400':
+          description: Estado desconocido o activo no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/intervenciones/tecnicos/:
+    get:
+      tags:
+      - Intervenciones
+      summary: Usuarios a quienes se puede asignar una intervención
+      operationId: get_api_intervenciones_tecnicos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Técnicos, Administradores y Administradores Privilegiados activos. Roles: Administrador, Administrador
+        Privilegiado, Jefatura, Técnico, Auditor.'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Candidatos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tecnico'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/intervenciones/{id}/:
+    get:
+      tags:
+      - Intervenciones
+      summary: Ver una intervención
+      operationId: get_api_intervenciones_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Intervención
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intervencion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/intervenciones/{id}/asignar/:
+    post:
+      tags:
+      - Intervenciones
+      summary: Asignar técnico, horario, activos y personal externo
+      operationId: post_api_intervenciones_id_asignar
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Solo desde Aprobada. Agrega a la cita en el calendario compartido de Outlook mediante un correo al flujo,
+        y crea los permisos de acceso del personal externo. Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Asignacion'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Intervención asignada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intervencion'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/intervenciones/{id}/personal/:
+    post:
+      tags:
+      - Intervenciones
+      summary: Cambiar solo el personal externo
+      operationId: post_api_intervenciones_id_personal
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'No reasigna ni vuelve a pedir la cita al flujo. El personal debe estar habilitado y con huella registrada.
+        Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonalAsignado'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Personal actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intervencion'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/intervenciones/{id}/personal/{persona_id}/verificar/:
+    post:
+      tags:
+      - Intervenciones
+      summary: Pedir la verificación de huella de una persona externa
+      operationId: post_api_intervenciones_id_personal_persona_id_verificar
+      x-roles:
+      - tecnico
+      - administrador
+      - administradorprivilegiado
+      description: 'Pide al lector que confirme que la huella apoyada es la de esa persona. Se puede hacer desde 1 hora antes
+        del inicio. Un Técnico solo puede hacerlo en sus propias intervenciones. Consultar el avance en GET /api/accesos/verificaciones/{id}/.
+        Roles: Técnico, Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      - name: persona_id
+        in: path
+        required: true
+        description: Id de la persona externa
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificarPersonal'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Verificación solicitada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudVerificacion'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/intervenciones/{id}/iniciar/:
+    post:
+      tags:
+      - Intervenciones
+      summary: Iniciar la intervención
+      operationId: post_api_intervenciones_id_iniciar
+      x-roles:
+      - tecnico
+      - administrador
+      - administradorprivilegiado
+      description: 'Solo desde Aprobada, con técnico asignado y con todo el personal externo verificado. Pasa a EnEjecucion.
+        Solo el técnico asignado, o un Administrador en su lugar. Sin cuerpo. Roles: Técnico, Administrador, Administrador
+        Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Intervención en ejecución
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intervencion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/intervenciones/{id}/cerrar/:
+    post:
+      tags:
+      - Intervenciones
+      summary: Cerrar la intervención
+      operationId: post_api_intervenciones_id_cerrar
+      x-roles:
+      - tecnico
+      - administrador
+      - administradorprivilegiado
+      description: 'Solo desde EnEjecucion. Pasa a Ejecutada si exitosa es true, o a Fallida si es false. Roles: Técnico,
+        Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cierre'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Intervención cerrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intervencion'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/intervenciones/{id}/cancelar/:
+    post:
+      tags:
+      - Intervenciones
+      summary: Cancelar la intervención
+      operationId: post_api_intervenciones_id_cancelar
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      description: 'Solo desde Pendiente o Aprobada. Roles: Administrador, Administrador Privilegiado, Jefatura.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cancelacion'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Intervención cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intervencion'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/accesos/personas/:
+    get:
+      tags:
+      - Control de acceso
+      summary: Listar personal externo
+      operationId: get_api_accesos_personas
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      - contratistas
+      description: 'Incluye el estado de su último enrolamiento. Roles: Administrador, Administrador Privilegiado, Jefatura,
+        Técnico, Auditor, Contratistas.'
+      parameters:
+      - name: q
+        in: query
+        required: false
+        description: Nombre, RUT, empresa o identificador
+        schema:
+          type: string
+      - name: estado
+        in: query
+        required: false
+        description: Estado
+        schema:
+          type: string
+          enum:
+          - Activo
+          - Inactivo
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Personas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Persona'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+    post:
+      tags:
+      - Control de acceso
+      summary: Registrar a una persona externa
+      operationId: post_api_accesos_personas
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - contratistas
+      description: 'Si no se indica el identificador, SICMA genera uno. Roles: Administrador, Administrador Privilegiado,
+        Contratistas.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonaWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Persona creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Persona'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/accesos/personas/{id}/:
+    get:
+      tags:
+      - Control de acceso
+      summary: Ver una persona
+      operationId: get_api_accesos_personas_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      - contratistas
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor, Contratistas.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Persona
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Persona'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+    patch:
+      tags:
+      - Control de acceso
+      summary: Editar una persona
+      operationId: patch_api_accesos_personas_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - contratistas
+      description: 'La habilitación no se cambia aquí sino en /habilitacion/. El identificador no cambia. Roles: Administrador,
+        Administrador Privilegiado, Contratistas.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonaWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Persona actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Persona'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+    delete:
+      tags:
+      - Control de acceso
+      summary: Eliminar a una persona
+      operationId: delete_api_accesos_personas_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - contratistas
+      description: 'Ordena a los lectores borrar su huella de su PC. Devuelve cuántos lectores se notificaron. Roles: Administrador,
+        Administrador Privilegiado, Contratistas.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Persona eliminada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BajaPersona'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/accesos/personas/{id}/habilitacion/:
+    get:
+      tags:
+      - Control de acceso
+      summary: Historial de habilitación de una persona
+      operationId: get_api_accesos_personas_id_habilitacion
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      - contratistas
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor, Contratistas.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Cambios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CambioHabilitacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+    post:
+      tags:
+      - Control de acceso
+      summary: Habilitar o deshabilitar a una persona
+      operationId: post_api_accesos_personas_id_habilitacion
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - contratistas
+      description: 'Deshabilitar exige un motivo y queda en el historial. Roles: Administrador, Administrador Privilegiado,
+        Contratistas.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Habilitacion'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Persona actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Persona'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/accesos/personas/{id}/enrolar/:
+    post:
+      tags:
+      - Control de acceso
+      summary: Pedir el enrolamiento de la huella
+      operationId: post_api_accesos_personas_id_enrolar
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - contratistas
+      description: 'Pide al agente del lector que capture la huella; la persona debe estar frente al lector. La plantilla
+        queda cifrada en el PC del lector y no viaja a SICMA. Roles: Administrador, Administrador Privilegiado, Contratistas.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitarEnrolamiento'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Enrolamiento solicitado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudEnrolamiento'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/accesos/enrolamientos/{id}/:
+    get:
+      tags:
+      - Control de acceso
+      summary: Estado de un enrolamiento
+      operationId: get_api_accesos_enrolamientos_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - contratistas
+      description: 'Se consulta mientras la persona apoya el dedo. Roles: Administrador, Administrador Privilegiado, Contratistas.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Solicitud
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudEnrolamiento'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/accesos/enrolamientos/{id}/cancelar/:
+    post:
+      tags:
+      - Control de acceso
+      summary: Cancelar un enrolamiento abierto
+      operationId: post_api_accesos_enrolamientos_id_cancelar
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - contratistas
+      description: 'Sin cuerpo. Si ya no está abierto, devuelve la solicitud sin cambios. Roles: Administrador, Administrador
+        Privilegiado, Contratistas.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Solicitud
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudEnrolamiento'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/accesos/verificaciones/{id}/:
+    get:
+      tags:
+      - Control de acceso
+      summary: Estado de una verificación de identidad
+      operationId: get_api_accesos_verificaciones_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Solicitud
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudVerificacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/accesos/puntos/:
+    get:
+      tags:
+      - Control de acceso
+      summary: Listar puntos de acceso
+      operationId: get_api_accesos_puntos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      - contratistas
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor, Contratistas.'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Puntos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PuntoAcceso'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+    post:
+      tags:
+      - Control de acceso
+      summary: Crear un punto de acceso
+      operationId: post_api_accesos_puntos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Entrega la clave del agente una sola vez. Roles: Administrador, Administrador Privilegiado.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PuntoAccesoWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Punto creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PuntoAccesoCreado'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/accesos/puntos/{id}/:
+    get:
+      tags:
+      - Control de acceso
+      summary: Ver un punto de acceso
+      operationId: get_api_accesos_puntos_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Punto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PuntoAcceso'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+    patch:
+      tags:
+      - Control de acceso
+      summary: Editar o desactivar un punto de acceso
+      operationId: patch_api_accesos_puntos_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PuntoAccesoWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Punto actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PuntoAcceso'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/accesos/puntos/{id}/clave/:
+    post:
+      tags:
+      - Control de acceso
+      summary: Generar una clave nueva para el agente
+      operationId: post_api_accesos_puntos_id_clave
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'La anterior deja de funcionar de inmediato. Sin cuerpo. Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Clave nueva
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClavePunto'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/accesos/permisos/:
+    get:
+      tags:
+      - Control de acceso
+      summary: Listar permisos de acceso
+      operationId: get_api_accesos_permisos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: persona
+        in: query
+        required: false
+        description: Id de la persona
+        schema:
+          type: integer
+      - name: punto
+        in: query
+        required: false
+        description: Id del punto
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Permisos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Permiso'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+    post:
+      tags:
+      - Control de acceso
+      summary: Crear un permiso
+      operationId: post_api_accesos_permisos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Por persona y punto, con vigencia y ventanas horarias por día opcionales. Roles: Administrador, Administrador
+        Privilegiado.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermisoWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          description: Permiso creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permiso'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/accesos/permisos/{id}/:
+    get:
+      tags:
+      - Control de acceso
+      summary: Ver un permiso
+      operationId: get_api_accesos_permisos_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - tecnico
+      - auditor
+      description: 'Roles: Administrador, Administrador Privilegiado, Jefatura, Técnico, Auditor.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Permiso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permiso'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+    patch:
+      tags:
+      - Control de acceso
+      summary: Editar o revocar un permiso
+      operationId: patch_api_accesos_permisos_id
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      description: 'Revocar es estado Revocado; no se borra. Roles: Administrador, Administrador Privilegiado.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermisoWrite'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Permiso actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permiso'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+  /api/accesos/eventos/:
+    get:
+      tags:
+      - Control de acceso
+      summary: Registro de intentos de acceso
+      operationId: get_api_accesos_eventos
+      x-roles:
+      - administrador
+      - administradorprivilegiado
+      - jefatura
+      - auditor
+      description: 'Los 500 más recientes que cumplan el filtro. Solo lectura: los eventos nacen del agente del lector y nunca
+        se editan (RN-09). El Técnico no tiene acceso. Roles: Administrador, Administrador Privilegiado, Jefatura, Auditor.'
+      parameters:
+      - name: desde
+        in: query
+        required: false
+        description: Fecha inicial
+        schema:
+          type: string
+          format: date
+      - name: hasta
+        in: query
+        required: false
+        description: Fecha final
+        schema:
+          type: string
+          format: date
+      - name: resultado
+        in: query
+        required: false
+        description: Resultado
+        schema:
+          type: string
+          enum:
+          - Permitido
+          - Denegado
+          - Error
+      - name: punto
+        in: query
+        required: false
+        description: Id del punto
+        schema:
+          type: integer
+      - name: persona
+        in: query
+        required: false
+        description: Id de la persona
+        schema:
+          type: integer
+      - name: q
+        in: query
+        required: false
+        description: Nombre o identificador
+        schema:
+          type: string
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Eventos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoAcceso'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '403':
+          $ref: '#/components/responses/SinPermiso'
+  /api/accesos/lector/intentos/:
+    post:
+      tags:
+      - Agente del lector
+      summary: Informar un intento de acceso
+      operationId: post_api_accesos_lector_intentos
+      description: El agente del lector SecuGen se identifica con X-Punto-Acceso (id del punto) y X-Device-Key (su clave).
+        Nunca envía huellas ni plantillas, solo el identificador reconocido. Reenviar el mismo evento_id no duplica el evento.
+        Sin permiso vigente en el punto y la hora, el resultado es Denegado aunque la huella se reconozca.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntentoLector'
+      security:
+      - puntoAcceso: []
+        deviceKey: []
+      responses:
+        '201':
+          description: Evento registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntentoRespuesta'
+        '200':
+          description: El evento ya existía (duplicado true)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntentoRespuesta'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          description: Credenciales del lector no válidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/accesos/lector/enrolamientos/siguiente/:
+    get:
+      tags:
+      - Agente del lector
+      summary: Pedir la próxima huella que debe enrolar
+      operationId: get_api_accesos_lector_enrolamientos_siguiente
+      description: El agente del lector SecuGen se identifica con X-Punto-Acceso (id del punto) y X-Device-Key (su clave).
+        Responde 204 si no hay ninguna.
+      security:
+      - puntoAcceso: []
+        deviceKey: []
+      responses:
+        '200':
+          description: Tarea para el agente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TareaLector'
+        '204':
+          description: No hay tareas pendientes
+        '401':
+          description: Credenciales del lector no válidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/accesos/lector/verificaciones/siguiente/:
+    get:
+      tags:
+      - Agente del lector
+      summary: Pedir la próxima huella que debe verificar contra una persona
+      operationId: get_api_accesos_lector_verificaciones_siguiente
+      description: El agente del lector SecuGen se identifica con X-Punto-Acceso (id del punto) y X-Device-Key (su clave).
+        Responde 204 si no hay ninguna.
+      security:
+      - puntoAcceso: []
+        deviceKey: []
+      responses:
+        '200':
+          description: Tarea para el agente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TareaLector'
+        '204':
+          description: No hay tareas pendientes
+        '401':
+          description: Credenciales del lector no válidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/accesos/lector/enrolamientos/{id}/progreso/:
+    post:
+      tags:
+      - Agente del lector
+      summary: Informar el avance de un enrolamiento
+      operationId: post_api_accesos_lector_enrolamientos_id_progreso
+      description: El agente del lector SecuGen se identifica con X-Punto-Acceso (id del punto) y X-Device-Key (su clave).
+        Muestra en pantalla qué se le pide a la persona, por ejemplo muestra 2 de 3.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgresoEnrolamiento'
+      security:
+      - puntoAcceso: []
+        deviceKey: []
+      responses:
+        '204':
+          description: Avance registrado
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          description: Credenciales del lector no válidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/accesos/lector/enrolamientos/{id}/resultado/:
+    post:
+      tags:
+      - Agente del lector
+      summary: Informar el resultado de un enrolamiento
+      operationId: post_api_accesos_lector_enrolamientos_id_resultado
+      description: 'El agente del lector SecuGen se identifica con X-Punto-Acceso (id del punto) y X-Device-Key (su clave).
+        La huella nunca viaja: queda cifrada en el PC del lector.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResultadoEnrolamiento'
+      security:
+      - puntoAcceso: []
+        deviceKey: []
+      responses:
+        '200':
+          description: Solicitud actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudEnrolamiento'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          description: Credenciales del lector no válidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/accesos/lector/verificaciones/{id}/progreso/:
+    post:
+      tags:
+      - Agente del lector
+      summary: Informar el avance de una verificación
+      operationId: post_api_accesos_lector_verificaciones_id_progreso
+      description: 'El agente del lector SecuGen se identifica con X-Punto-Acceso (id del punto) y X-Device-Key (su clave). '
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgresoVerificacion'
+      security:
+      - puntoAcceso: []
+        deviceKey: []
+      responses:
+        '204':
+          description: Avance registrado
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          description: Credenciales del lector no válidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/accesos/lector/verificaciones/{id}/resultado/:
+    post:
+      tags:
+      - Agente del lector
+      summary: Informar el resultado de una verificación
+      operationId: post_api_accesos_lector_verificaciones_id_resultado
+      description: El agente del lector SecuGen se identifica con X-Punto-Acceso (id del punto) y X-Device-Key (su clave).
+        Indica si la huella apoyada coincide con la persona pedida.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResultadoVerificacion'
+      security:
+      - puntoAcceso: []
+        deviceKey: []
+      responses:
+        '200':
+          description: Solicitud actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudVerificacion'
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          description: Credenciales del lector no válidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+  /api/accesos/lector/bajas/siguiente/:
+    get:
+      tags:
+      - Agente del lector
+      summary: Pedir la próxima huella que debe borrar
+      operationId: get_api_accesos_lector_bajas_siguiente
+      description: El agente del lector SecuGen se identifica con X-Punto-Acceso (id del punto) y X-Device-Key (su clave).
+        Se genera al eliminar a una persona. Responde 204 si no hay ninguna.
+      security:
+      - puntoAcceso: []
+        deviceKey: []
+      responses:
+        '200':
+          description: Orden de baja
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TareaLector'
+        '204':
+          description: No hay órdenes pendientes
+        '401':
+          description: Credenciales del lector no válidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/accesos/lector/bajas/{id}/resultado/:
+    post:
+      tags:
+      - Agente del lector
+      summary: Informar el resultado de una baja de huella
+      operationId: post_api_accesos_lector_bajas_id_resultado
+      description: 'El agente del lector SecuGen se identifica con X-Punto-Acceso (id del punto) y X-Device-Key (su clave). '
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResultadoEnrolamiento'
+      security:
+      - puntoAcceso: []
+        deviceKey: []
+      responses:
+        '204':
+          description: Resultado registrado
+        '400':
+          $ref: '#/components/responses/Validacion'
+        '401':
+          description: Credenciales del lector no válidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token de acceso de /api/auth/token/
+    deviceKey:
+      type: apiKey
+      in: header
+      name: X-Device-Key
+      description: Clave del dispositivo (sensor o agente del lector)
+    puntoAcceso:
+      type: apiKey
+      in: header
+      name: X-Punto-Acceso
+      description: Id del punto de acceso del agente del lector
+    zabbixToken:
+      type: apiKey
+      in: header
+      name: X-Zabbix-Token
+      description: Secreto compartido con Zabbix
+  responses:
+    Validacion:
+      description: Datos no válidos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorValidacion'
+    NoAutenticado:
+      description: Falta el token o no es válido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    SinPermiso:
+      description: El rol no tiene permiso, o el token es de solo lectura y la operación escribe
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NoEncontrado:
+      description: El recurso no existe
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflicto:
+      description: El estado actual no permite la operación
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Mensaje para la persona usuaria
+      description: Error simple. Los errores de validación devuelven un objeto con un arreglo de mensajes por campo.
+    ErrorValidacion:
+      type: object
+      properties: {}
+      description: Objeto cuyas claves son los campos con error y cuyos valores son arreglos de mensajes. Un error general
+        usa la clave detail o non_field_errors.
+      additionalProperties:
+        oneOf:
+        - type: array
+          items:
+            type: string
+        - type: string
+    TokenRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Correo o nombre de usuario
+        password:
+          type: string
+          format: password
+        canal:
+          type: string
+          enum:
+          - web
+          - movil
+          default: web
+          description: Con 'movil' el token emitido es de solo lectura (RF-PLT-02)
+      required:
+      - username
+      - password
+    TokenResponse:
+      type: object
+      properties:
+        access:
+          type: string
+          description: JWT de acceso
+        refresh:
+          type: string
+          description: JWT de refresco
+      required:
+      - access
+      - refresh
+    RefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+      required:
+      - refresh
+    RefreshResponse:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+          description: Solo si la rotación de tokens está activa
+      required:
+      - access
+    LogoutRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+      required:
+      - refresh
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    PasswordResetConfirm:
+      type: object
+      properties:
+        uid:
+          type: string
+        token:
+          type: string
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+      required:
+      - uid
+      - token
+      - new_password
+    PasswordChange:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Correo o nombre de usuario
+        current_password:
+          type: string
+          format: password
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+      required:
+      - username
+      - current_password
+      - new_password
+    PasswordPolicy:
+      type: object
+      properties:
+        max_age_days:
+          type: integer
+          minimum: 0
+          maximum: 365
+          description: Vigencia máxima de las contraseñas en días. 0 es sin expiración
+      required:
+      - max_age_days
+    SessionTimeout:
+      type: object
+      properties:
+        inactivity_timeout_minutes:
+          type: integer
+          minimum: 1
+          maximum: 120
+    Me:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        nombre:
+          type: string
+        rol:
+          type: string
+          enum:
+          - administrador
+          - administradorprivilegiado
+          - jefatura
+          - tecnico
+          - auditor
+          - contratistas
+          description: Rol único de la cuenta
+        inactivity_timeout_minutes:
+          type: integer
+    ManagedUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        is_active:
+          type: boolean
+        rol:
+          type: string
+          enum:
+          - administrador
+          - administradorprivilegiado
+          - jefatura
+          - tecnico
+          - auditor
+          - contratistas
+          nullable: true
+        inactivity_timeout_minutes:
+          type: integer
+          minimum: 1
+          maximum: 120
+        password_never_expires:
+          type: boolean
+        password_changed_at:
+          type: string
+          format: date-time
+          nullable: true
+        password_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        password_expired:
+          type: boolean
+    ManagedUserWrite:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        is_active:
+          type: boolean
+        role:
+          type: string
+          enum:
+          - Administrador
+          - AdministradorPrivilegiado
+          - Jefatura
+          - Tecnico
+          - Auditor
+          - Contratistas
+          description: Rol a asignar. Reemplaza al anterior
+        password:
+          type: string
+          format: password
+          description: Obligatoria al crear
+        inactivity_timeout_minutes:
+          type: integer
+          minimum: 1
+          maximum: 120
+          description: Solo el Administrador Privilegiado puede cambiarla
+        password_never_expires:
+          type: boolean
+          description: Solo el Administrador Privilegiado puede cambiarla
+      required:
+      - username
+      - role
+    Ubicacion:
+      type: object
+      properties:
+        id:
+          type: integer
+        sala:
+          type: string
+        zona:
+          type: string
+          nullable: true
+        rack:
+          type: string
+          nullable: true
+        posicion:
+          type: string
+          nullable: true
+        ubicacion_padre_id:
+          type: integer
+          nullable: true
+        activa:
+          type: boolean
+    UbicacionWrite:
+      type: object
+      properties:
+        sala:
+          type: string
+          maxLength: 100
+        zona:
+          type: string
+          maxLength: 100
+          nullable: true
+        rack:
+          type: string
+          maxLength: 100
+          nullable: true
+        posicion:
+          type: string
+          maxLength: 100
+          nullable: true
+        ubicacion_padre:
+          type: integer
+          description: Id de la ubicación padre; debe estar activa
+          nullable: true
+        activa:
+          type: boolean
+          description: false desactiva; falla si tiene sensores activos, activos sin retirar o hijas activas
+      required:
+      - sala
+    Medicion:
+      type: object
+      properties:
+        id:
+          type: integer
+        sensor:
+          type: integer
+        evento_id:
+          type: string
+          format: uuid
+        temperatura:
+          type: number
+          format: decimal
+          description: Grados Celsius, entre -40 y 80
+          nullable: true
+        humedad:
+          type: number
+          format: decimal
+          description: Porcentaje, entre 0 y 100
+          nullable: true
+        fecha_hora_medicion:
+          type: string
+          format: date-time
+        fecha_hora_recepcion:
+          type: string
+          format: date-time
+        origen:
+          type: string
+          enum:
+          - Real
+          - Simulado
+    MedicionPagina:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Medicion'
+    MedicionIngest:
+      type: object
+      properties:
+        sensor_codigo:
+          type: string
+          maxLength: 50
+        evento_id:
+          type: string
+          format: uuid
+          description: Identificador único del envío. Reintentar con el mismo id no duplica la lectura
+        temperatura:
+          type: number
+          nullable: true
+        humedad:
+          type: number
+          nullable: true
+        fecha_hora_medicion:
+          type: string
+          format: date-time
+      required:
+      - sensor_codigo
+      - evento_id
+      - fecha_hora_medicion
+      description: Debe traer temperatura, humedad o ambas.
+    MedicionIngestRespuesta:
+      type: object
+      properties:
+        id:
+          type: integer
+        evento_id:
+          type: string
+        duplicate:
+          type: boolean
+      required:
+      - id
+      - evento_id
+      - duplicate
+    Sensor:
+      type: object
+      properties:
+        id:
+          type: integer
+        codigo:
+          type: string
+        tipo:
+          type: string
+        estado:
+          type: string
+          enum:
+          - Activo
+          - Inactivo
+        intervalo_esperado_segundos:
+          type: integer
+        ubicacion:
+          $ref: '#/components/schemas/Ubicacion'
+        ultima_medicion:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/Medicion'
+    SensorWrite:
+      type: object
+      properties:
+        codigo:
+          type: string
+          maxLength: 50
+          description: No se puede cambiar después del alta
+        tipo:
+          type: string
+          maxLength: 100
+        ubicacion:
+          type: integer
+          description: Id de una ubicación activa
+        estado:
+          type: string
+          enum:
+          - Activo
+          - Inactivo
+        intervalo_esperado_segundos:
+          type: integer
+          minimum: 1
+          maximum: 86400
+      required:
+      - codigo
+      - tipo
+      - ubicacion
+      - intervalo_esperado_segundos
+    SensorCreado:
+      allOf:
+      - $ref: '#/components/schemas/Sensor'
+      - type: object
+        properties:
+          clave_dispositivo:
+            type: string
+            description: Se muestra una sola vez; SICMA guarda solo su hash
+    ClaveSensor:
+      type: object
+      properties:
+        codigo:
+          type: string
+        clave_dispositivo:
+          type: string
+    Umbral:
+      type: object
+      properties:
+        id:
+          type: integer
+        ubicacion:
+          type: integer
+        variable:
+          type: string
+          enum:
+          - Temperatura
+          - Humedad
+        valor_minimo:
+          type: number
+        valor_maximo:
+          type: number
+        version:
+          type: integer
+        vigente_desde:
+          type: string
+          format: date-time
+    UmbralWrite:
+      type: object
+      properties:
+        ubicacion:
+          type: integer
+        variable:
+          type: string
+          enum:
+          - Temperatura
+          - Humedad
+        valor_minimo:
+          type: number
+        valor_maximo:
+          type: number
+          description: 'Mayor que el mínimo. Temperatura: -40 a 80. Humedad: 0 a 100'
+      required:
+      - ubicacion
+      - variable
+      - valor_minimo
+      - valor_maximo
+    Activo:
+      type: object
+      properties:
+        id:
+          type: integer
+        codigo:
+          type: string
+        nombre:
+          type: string
+        tipo:
+          type: string
+          nullable: true
+        marca:
+          type: string
+          nullable: true
+        modelo:
+          type: string
+          nullable: true
+        numero_serie:
+          type: string
+          nullable: true
+        estado:
+          type: string
+        criticidad:
+          type: string
+          enum:
+          - Baja
+          - Media
+          - Alta
+          - Critica
+        ubicacion:
+          type: integer
+        ubicacion_nombre:
+          type: string
+        responsable:
+          type: integer
+          nullable: true
+        responsable_nombre:
+          type: string
+          nullable: true
+        responsable_email:
+          type: string
+          nullable: true
+        fecha_alta:
+          type: string
+          format: date-time
+        observaciones:
+          type: string
+          nullable: true
+    ActivoWrite:
+      type: object
+      properties:
+        codigo:
+          type: string
+        nombre:
+          type: string
+        tipo:
+          type: string
+          description: Nombre de un tipo activo del catálogo
+          nullable: true
+        marca:
+          type: string
+          nullable: true
+        modelo:
+          type: string
+          nullable: true
+        numero_serie:
+          type: string
+          nullable: true
+        estado:
+          type: string
+          description: Nombre de un estado activo del catálogo. 'Retirado' solo lo asigna un Administrador
+        criticidad:
+          type: string
+          enum:
+          - Baja
+          - Media
+          - Alta
+          - Critica
+        ubicacion:
+          type: integer
+          description: Id de una ubicación activa
+        responsable:
+          type: integer
+          description: Id de un usuario activo
+          nullable: true
+        observaciones:
+          type: string
+          nullable: true
+      required:
+      - codigo
+      - nombre
+      - ubicacion
+    HistorialActivo:
+      type: object
+      properties:
+        id:
+          type: integer
+        campo_modificado:
+          type: string
+        valor_anterior:
+          type: string
+          nullable: true
+        valor_nuevo:
+          type: string
+          nullable: true
+        usuario_nombre:
+          type: string
+          nullable: true
+        fecha_hora:
+          type: string
+          format: date-time
+    TipoActivo:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        activo:
+          type: boolean
+    EstadoActivo:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+          description: Clave del estado. No cambia después del alta
+        etiqueta:
+          type: string
+        color:
+          type: string
+          enum:
+          - primary
+          - secondary
+          - tertiary
+          - success
+          - warning
+          - danger
+          - medium
+          - dark
+        activo:
+          type: boolean
+        es_sistema:
+          type: boolean
+          readOnly: true
+        orden:
+          type: integer
+      required:
+      - nombre
+    UsuarioResumen:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        email:
+          type: string
+          nullable: true
+    Alerta:
+      type: object
+      properties:
+        id:
+          type: integer
+        origen:
+          type: string
+          enum:
+          - IoT
+          - Biometria
+          - Zabbix
+        condicion:
+          type: string
+        severidad:
+          type: string
+          enum:
+          - Informativa
+          - Advertencia
+          - Alta
+          - Critica
+        estado:
+          type: string
+          enum:
+          - Nueva
+          - Reconocida
+          - Cerrada
+        fecha_apertura:
+          type: string
+          format: date-time
+        contador_ocurrencias:
+          type: integer
+        fecha_ultima_ocurrencia:
+          type: string
+          format: date-time
+        sensor_codigo:
+          type: string
+          nullable: true
+        ubicacion:
+          type: integer
+          nullable: true
+        evento_zabbix:
+          type: string
+          nullable: true
+        ultima_gestion:
+          type: object
+          properties:
+            accion:
+              type: string
+              enum:
+              - Reconocida
+              - Cerrada
+            usuario:
+              type: string
+              nullable: true
+            comentario:
+              type: string
+            fecha_hora:
+              type: string
+              format: date-time
+          nullable: true
+    GestionAlerta:
+      type: object
+      properties:
+        comentario:
+          type: string
+          maxLength: 255
+          default: ''
+    ResponsablesZona:
+      type: object
+      properties:
+        ubicacion:
+          type: integer
+        correos:
+          type: array
+          items:
+            type: string
+            format: email
+    ResponsablesWrite:
+      type: object
+      properties:
+        correos:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            format: email
+            maxLength: 254
+          description: Reemplaza la lista completa. Se normalizan a minúsculas y sin repetidos
+      required:
+      - correos
+    NodoCluster:
+      type: object
+      properties:
+        nodo:
+          type: string
+        online:
+          type: boolean
+        primario:
+          type: boolean
+        ultima_lectura:
+          type: string
+          format: date-time
+          nullable: true
+    ProblemaZabbix:
+      type: object
+      properties:
+        evento_id:
+          type: string
+        host:
+          type: string
+          nullable: true
+        problema:
+          type: string
+        severidad:
+          type: string
+        severidad_num:
+          type: integer
+        desde:
+          type: string
+          format: date-time
+          nullable: true
+        reconocido:
+          type: boolean
+    EstadoInfra:
+      type: object
+      properties:
+        cluster:
+          type: object
+          properties:
+            nodos:
+              type: array
+              items:
+                $ref: '#/components/schemas/NodoCluster'
+            primario:
+              type: string
+              nullable: true
+            nodos_online:
+              type: integer
+        problemas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProblemaZabbix'
+    HostZabbix:
+      type: object
+      properties:
+        id:
+          type: string
+        nombre:
+          type: string
+        habilitado:
+          type: boolean
+        ip:
+          type: string
+          nullable: true
+        agente:
+          type: string
+          nullable: true
+    ActivoZabbix:
+      type: object
+      properties:
+        id:
+          type: integer
+        codigo:
+          type: string
+        nombre:
+          type: string
+        tipo:
+          type: string
+          enum:
+          - servidor
+        grupo:
+          type: array
+          items:
+            type: string
+        estado:
+          type: string
+          enum:
+          - operativo
+          - en falla
+          - en mantencion
+        direccion:
+          type: string
+        puerto:
+          type: integer
+          nullable: true
+        mantenimiento:
+          type: boolean
+        problemasActivos:
+          type: integer
+        mysqlGrupoOnline:
+          type: boolean
+          nullable: true
+        mysqlEsPrimario:
+          type: boolean
+          nullable: true
+        ultimoError:
+          type: string
+          nullable: true
+    EventoHost:
+      type: object
+      properties:
+        evento_id:
+          type: string
+        problema:
+          type: string
+        severidad:
+          type: string
+        severidad_num:
+          type: integer
+        inicio:
+          type: string
+          format: date-time
+          nullable: true
+        fin:
+          type: string
+          format: date-time
+          nullable: true
+        estado:
+          type: string
+          enum:
+          - activo
+          - resuelto
+        duracion_segundos:
+          type: integer
+          nullable: true
+        reconocido:
+          type: boolean
+    Sincronizacion:
+      type: object
+      properties:
+        intervalo_segundos:
+          type: integer
+        ultimo_intento:
+          type: string
+          format: date-time
+          nullable: true
+        ultima_exitosa:
+          type: string
+          format: date-time
+          nullable: true
+        al_dia:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+    WebhookZabbix:
+      type: object
+      properties:
+        event_id:
+          type: string
+          pattern: ^\d{1,20}$
+        host:
+          type: string
+          maxLength: 200
+        problem:
+          type: string
+          maxLength: 400
+        severity:
+          type: string
+          maxLength: 50
+        status:
+          type: string
+          enum:
+          - PROBLEM
+          - RESOLVED
+        time:
+          type: string
+          maxLength: 50
+      required:
+      - event_id
+      - host
+      - problem
+      - status
+    WebhookRespuesta:
+      type: object
+      properties:
+        detail:
+          type: string
+        alerta_id:
+          type: integer
+          nullable: true
+        estado_alerta:
+          type: string
+          nullable: true
+    SolicitudEnrolamiento:
+      type: object
+      properties:
+        id:
+          type: integer
+        persona:
+          type: integer
+        punto_acceso:
+          type: integer
+        punto_nombre:
+          type: string
+        estado:
+          type: string
+          enum:
+          - Pendiente
+          - EnCurso
+          - Completada
+          - Fallida
+          - Cancelada
+        mensaje:
+          type: string
+        solicitada_por_nombre:
+          type: string
+          nullable: true
+        fecha_solicitud:
+          type: string
+          format: date-time
+        fecha_inicio:
+          type: string
+          format: date-time
+          nullable: true
+        fecha_fin:
+          type: string
+          format: date-time
+          nullable: true
+        muestra:
+          type: integer
+        total_muestras:
+          type: integer
+        indicacion:
+          type: string
+    SolicitudVerificacion:
+      type: object
+      properties:
+        id:
+          type: integer
+        persona:
+          type: integer
+        intervencion_id:
+          type: integer
+          nullable: true
+        punto_acceso:
+          type: integer
+        punto_nombre:
+          type: string
+        estado:
+          type: string
+          enum:
+          - Pendiente
+          - EnCurso
+          - Completada
+          - Fallida
+          - Cancelada
+        mensaje:
+          type: string
+        identificado:
+          type: string
+        intento:
+          type: integer
+        total_intentos:
+          type: integer
+        indicacion:
+          type: string
+        fecha_solicitud:
+          type: string
+          format: date-time
+        fecha_fin:
+          type: string
+          format: date-time
+          nullable: true
+    Persona:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        rut:
+          type: string
+          nullable: true
+        empresa:
+          type: string
+          nullable: true
+        identificador_biometrico_externo:
+          type: string
+        estado:
+          type: string
+          enum:
+          - Activo
+          - Inactivo
+          readOnly: true
+        usuario:
+          type: integer
+          description: Id de un usuario de SICMA, opcional
+          nullable: true
+        usuario_nombre:
+          type: string
+          nullable: true
+        huella_registrada_en:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        huella_registrada_por_nombre:
+          type: string
+          nullable: true
+        enrolamiento:
+          $ref: '#/components/schemas/SolicitudEnrolamiento'
+          nullable: true
+    PersonaWrite:
+      type: object
+      properties:
+        nombre:
+          type: string
+        rut:
+          type: string
+          maxLength: 20
+          description: Se normaliza; no puede repetirse
+          nullable: true
+        empresa:
+          type: string
+          maxLength: 150
+          nullable: true
+        identificador_biometrico_externo:
+          type: string
+          maxLength: 255
+          description: Si se omite, SICMA genera uno (EXT-00001). No se puede cambiar después
+        usuario:
+          type: integer
+          nullable: true
+      required:
+      - nombre
+    Habilitacion:
+      type: object
+      properties:
+        habilitada:
+          type: boolean
+        motivo:
+          type: string
+          maxLength: 255
+          description: Obligatorio al deshabilitar
+      required:
+      - habilitada
+    CambioHabilitacion:
+      type: object
+      properties:
+        habilitada:
+          type: boolean
+        motivo:
+          type: string
+        usuario_nombre:
+          type: string
+          nullable: true
+        fecha_hora:
+          type: string
+          format: date-time
+    SolicitarEnrolamiento:
+      type: object
+      properties:
+        punto_acceso:
+          type: integer
+          description: Lector donde se enrolará. Si se omite y hay un solo punto activo, se usa ese
+    BajaPersona:
+      type: object
+      properties:
+        lectores_notificados:
+          type: integer
+    PuntoAcceso:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        ubicacion:
+          type: integer
+        ubicacion_nombre:
+          type: string
+        estado:
+          type: string
+          enum:
+          - Activo
+          - Inactivo
+        tiene_clave:
+          type: boolean
+    PuntoAccesoWrite:
+      type: object
+      properties:
+        nombre:
+          type: string
+        ubicacion:
+          type: integer
+        estado:
+          type: string
+          enum:
+          - Activo
+          - Inactivo
+      required:
+      - nombre
+      - ubicacion
+    PuntoAccesoCreado:
+      allOf:
+      - $ref: '#/components/schemas/PuntoAcceso'
+      - type: object
+        properties:
+          clave_dispositivo:
+            type: string
+            description: Clave del agente. Se muestra una sola vez
+    ClavePunto:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        clave_dispositivo:
+          type: string
+    PermisoDia:
+      type: object
+      properties:
+        dia_semana:
+          type: string
+          enum:
+          - Lun
+          - Mar
+          - Mie
+          - Jue
+          - Vie
+          - Sab
+          - Dom
+        hora_inicio:
+          type: string
+          format: time
+        hora_fin:
+          type: string
+          format: time
+      required:
+      - dia_semana
+    Permiso:
+      type: object
+      properties:
+        id:
+          type: integer
+        persona:
+          type: integer
+        persona_nombre:
+          type: string
+        punto_acceso:
+          type: integer
+        punto_nombre:
+          type: string
+        vigencia_inicio:
+          type: string
+          format: date
+          nullable: true
+        vigencia_fin:
+          type: string
+          format: date
+          nullable: true
+        estado:
+          type: string
+          enum:
+          - Activo
+          - Revocado
+        dias:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermisoDia'
+    PermisoWrite:
+      type: object
+      properties:
+        persona:
+          type: integer
+        punto_acceso:
+          type: integer
+        vigencia_inicio:
+          type: string
+          format: date
+          nullable: true
+        vigencia_fin:
+          type: string
+          format: date
+          description: Igual o posterior al inicio
+          nullable: true
+        estado:
+          type: string
+          enum:
+          - Activo
+          - Revocado
+          description: Revocar es cambiar a Revocado; no se borra
+        dias:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermisoDia'
+          description: Ventanas horarias. En un PATCH se reemplazan todas
+      required:
+      - persona
+      - punto_acceso
+    EventoAcceso:
+      type: object
+      properties:
+        id:
+          type: integer
+        fecha_hora:
+          type: string
+          format: date-time
+        resultado:
+          type: string
+          enum:
+          - Permitido
+          - Denegado
+          - Error
+        motivo:
+          type: string
+        identificador_biometrico_externo:
+          type: string
+        persona:
+          type: integer
+          nullable: true
+        persona_nombre:
+          type: string
+          nullable: true
+        punto_acceso:
+          type: integer
+        punto_nombre:
+          type: string
+        ubicacion_nombre:
+          type: string
+    IntentoLector:
+      type: object
+      properties:
+        evento_id:
+          type: string
+          format: uuid
+          description: Reintentar con el mismo id no duplica el evento
+        estado:
+          type: string
+          enum:
+          - coincide
+          - sin_coincidencia
+          - error
+        identificador:
+          type: string
+          maxLength: 255
+          description: Obligatorio cuando estado es coincide. Nunca se envían datos biométricos
+        fecha_hora:
+          type: string
+          format: date-time
+          description: Si difiere más de 5 minutos hacia el futuro o más de 1 día hacia el pasado, SICMA usa su propia hora
+        motivo:
+          type: string
+          maxLength: 200
+      required:
+      - evento_id
+      - estado
+    IntentoRespuesta:
+      type: object
+      properties:
+        id:
+          type: integer
+        resultado:
+          type: string
+          enum:
+          - Permitido
+          - Denegado
+          - Error
+        motivo:
+          type: string
+        persona:
+          type: string
+          nullable: true
+        duplicado:
+          type: boolean
+    TareaLector:
+      type: object
+      properties:
+        id:
+          type: integer
+        identificador:
+          type: string
+        nombre:
+          type: string
+    ProgresoEnrolamiento:
+      type: object
+      properties:
+        muestra:
+          type: integer
+          minimum: 1
+          maximum: 20
+        total_muestras:
+          type: integer
+          minimum: 1
+          maximum: 20
+        indicacion:
+          type: string
+          maxLength: 120
+      required:
+      - muestra
+      - total_muestras
+      - indicacion
+    ProgresoVerificacion:
+      type: object
+      properties:
+        intento:
+          type: integer
+          minimum: 1
+          maximum: 20
+        total_intentos:
+          type: integer
+          minimum: 1
+          maximum: 20
+        indicacion:
+          type: string
+          maxLength: 120
+      required:
+      - intento
+      - total_intentos
+      - indicacion
+    ResultadoEnrolamiento:
+      type: object
+      properties:
+        exito:
+          type: boolean
+        mensaje:
+          type: string
+          maxLength: 255
+      required:
+      - exito
+    ResultadoVerificacion:
+      type: object
+      properties:
+        coincide:
+          type: boolean
+        identificado:
+          type: string
+          maxLength: 255
+          nullable: true
+        mensaje:
+          type: string
+          maxLength: 255
+      required:
+      - coincide
+    Decision:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum:
+          - Aprobada
+          - Rechazada
+        decisor_correo:
+          type: string
+          nullable: true
+        decisor_nombre:
+          type: string
+          nullable: true
+        observacion:
+          type: string
+          nullable: true
+        fecha_hora:
+          type: string
+          format: date-time
+    PersonalExterno:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        rut:
+          type: string
+          nullable: true
+        empresa:
+          type: string
+          nullable: true
+        identificador:
+          type: string
+        habilitada:
+          type: boolean
+        huella_registrada:
+          type: boolean
+        verificada_en:
+          type: string
+          format: date-time
+          nullable: true
+        verificacion:
+          $ref: '#/components/schemas/SolicitudVerificacion'
+          nullable: true
+    Intervencion:
+      type: object
+      properties:
+        id:
+          type: integer
+        objetivo:
+          type: string
+        descripcion:
+          type: string
+          nullable: true
+        impacto_esperado:
+          type: string
+          nullable: true
+        plan_reversa:
+          type: string
+          nullable: true
+        rack:
+          type: string
+          nullable: true
+        solicitante_nombre:
+          type: string
+          nullable: true
+        solicitante_correo:
+          type: string
+          nullable: true
+        estado:
+          type: string
+          enum:
+          - Pendiente
+          - CambiosSolicitados
+          - Aprobada
+          - Rechazada
+          - EnEjecucion
+          - Ejecutada
+          - Fallida
+          - Cancelada
+        fecha_solicitud:
+          type: string
+          format: date-time
+          nullable: true
+        fecha_inicio:
+          type: string
+          format: date-time
+          nullable: true
+        fecha_termino:
+          type: string
+          format: date-time
+          nullable: true
+        fecha_cierre:
+          type: string
+          format: date-time
+          nullable: true
+        observacion_cierre:
+          type: string
+          nullable: true
+        responsable:
+          type: integer
+          nullable: true
+        responsable_nombre:
+          type: string
+          nullable: true
+        activos:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              codigo:
+                type: string
+              nombre:
+                type: string
+        decisiones:
+          type: array
+          items:
+            $ref: '#/components/schemas/Decision'
+        agenda_enviada:
+          type: boolean
+          description: true si SICMA ya pidió al flujo agendarla en Outlook
+        personal_externo:
+          type: array
+          items:
+            $ref: '#/components/schemas/PersonalExterno'
+    Tecnico:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        email:
+          type: string
+          nullable: true
+        rol:
+          type: string
+    Asignacion:
+      type: object
+      properties:
+        tecnico:
+          type: integer
+          description: Id de un usuario activo con rol Técnico, Administrador o Administrador Privilegiado
+        fecha_inicio:
+          type: string
+          format: date-time
+        fecha_termino:
+          type: string
+          format: date-time
+          description: Posterior al inicio
+        activos:
+          type: array
+          items:
+            type: integer
+        personal_externo:
+          type: array
+          items:
+            type: integer
+          description: Ids de personas habilitadas y con huella registrada
+      required:
+      - tecnico
+      - fecha_inicio
+      - fecha_termino
+    PersonalAsignado:
+      type: object
+      properties:
+        personal_externo:
+          type: array
+          items:
+            type: integer
+      required:
+      - personal_externo
+    Cierre:
+      type: object
+      properties:
+        exitosa:
+          type: boolean
+        observacion:
+          type: string
+          maxLength: 4000
+      required:
+      - exitosa
+      - observacion
+    Cancelacion:
+      type: object
+      properties:
+        motivo:
+          type: string
+          maxLength: 4000
+      required:
+      - motivo
+    VerificarPersonal:
+      type: object
+      properties:
+        punto_acceso:
+          type: integer
+          description: Lector donde se verifica. Si se omite y hay un solo punto activo, se usa ese

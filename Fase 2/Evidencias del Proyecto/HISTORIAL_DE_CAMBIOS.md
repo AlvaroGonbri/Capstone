@@ -23,6 +23,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | SICMA-BMK Benchmarking y Estado del Arte | SICMA_BMK_v1.1.docx | 1.1 | 2026-10-26 |
 | SICMA-ESO Impacto Ético, Social y Sostenibilidad | SICMA_ESO_v1.1.docx | 1.1 | 2026-10-26 |
 | SICMA-ARQ Arquitectura del Sistema | SICMA_ARQ_v1.0.docx | 1.0 | 2026-10-26 |
+| SICMA-API API de SICMA | SICMA_API_v1.0.docx y openapi.yaml | 1.0 | 2026-10-26 |
 
 ## Decisiones de negocio que generaron cambios
 
@@ -57,7 +58,7 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | 0.2 | 2026-10-10 | La Jefatura aprueba las intervenciones (CU-20) y el Administrador asigna al técnico (CU-21). Se actualizan actores, diagrama del módulo 6, fichas y pendientes (D-01, D-14, D-42). |
 | 0.3 | 2026-10-10 | La Jefatura aprueba por Microsoft Teams con un flujo de Power Automate (CU-20). Se actualizan el actor externo, la ficha de CU-20 y el diagrama del módulo 6, y se cierra D-01. |
 | 1.0 | 2026-10-17 | Pasa de borrador a vigente. Se agrega la portada, el estado pasa a Vigente y se actualizan las referencias a las versiones vigentes de los demás documentos. Se agrega la tabla de contenido, la numeración de páginas y se completa la lista de referencias. |
-| 1.1 | 2026-10-26 | Casos de uso alineados con el código: lector SecuGen con agente, correo con IMAP para Power Automate, rol Contratistas y Administrador Privilegiado, personal externo con verificación de huella, estados de la intervención y gestión de alertas. Se redibuja el diagrama del módulo 5. |
+| 1.1 | 2026-10-26 | Casos de uso alineados con el código: lector SecuGen con agente, correo con IMAP para Power Automate, rol Contratistas y Administrador Privilegiado, personal externo con verificación de huella, estados de la intervención y gestión de alertas. Se redibuja el diagrama del módulo 5. Corrección del mismo día: CU-20 ya no menciona "cambios solicitados", porque el código no tiene ningún flujo que asigne ese estado. |
 
 ## SICMA-CLA · Diagrama de clases
 
@@ -169,3 +170,9 @@ Autores: Fidel Rodríguez y Claudio Varas. En el control de cambios de cada docu
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 2026-10-26 | Primera versión: arquitectura en cinco vistas (modelo 4+1), despliegue, seguridad, monitoreo y registro de eventos, decisiones de arquitectura y diferencias con los documentos vigentes. Se hizo con el código del repositorio al 25 de octubre (commit 59710a5d). |
+
+## SICMA-API · API de SICMA
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 1.0 | 2026-10-26 | Primera versión: autenticación, roles por endpoint, errores, canal de correo con Power Automate y ejemplos. Describe 89 operaciones en 69 rutas de las siete apps. Va con el archivo openapi.yaml (OpenAPI 3.0.3), escrito a partir del código del commit 59710a5d. |
