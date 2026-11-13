@@ -7,7 +7,7 @@
  */
 export const environment = {
   production: false,
-  apiUrl: 'http://192.168.100.102:8000/api',
+  apiUrl: 'http://localhost:8000/api',
   usarDatosSimulados: false,
   /** true solo en la app móvil (RF-PLT-02): sin acciones, tokens de solo lectura. */
   soloConsulta: false,
