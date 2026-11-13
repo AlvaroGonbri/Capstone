@@ -99,3 +99,49 @@ class UmbralesTests(TablasNoGestionadasTestCase):
             self.assertEqual(cliente.get(URL).status_code, 200)
         privilegiado = cliente_con_rol('priv', 'AdministradorPrivilegiado')
         self.assertEqual(self.definir(self.sala, 'Temperatura', 18, 27, privilegiado).status_code, 201)
+
+
+class ConexionDeSensoresTests(TablasNoGestionadasTestCase):
+    """El estado de conexión lo calcula el backend con la hora de recepción (no el navegador)."""
+
+    def setUp(self):
+        from django.utils import timezone
+
+        self.ahora = timezone.now()
+        self.sala = Ubicacion.objects.create(sala='Sala principal', zona='Zona A')
+        self.cliente = cliente_con_rol('tec', 'Tecnico')
+
+    def sensor(self, codigo, estado='Activo', intervalo=60):
+        return Sensor.objects.create(
+            codigo=codigo, tipo='ESP32', ubicacion=self.sala, estado=estado,
+            intervalo_esperado_segundos=intervalo, device_key_hash='x',
+        )
+
+    def lectura(self, sensor, recibida_hace, medida_hace=None):
+        from datetime import timedelta
+
+        Medicion.objects.create(
+            sensor=sensor, evento_id=f'{sensor.codigo}-{recibida_hace}', temperatura=22, humedad=45,
+            fecha_hora_medicion=self.ahora - timedelta(seconds=medida_hace if medida_hace is not None else recibida_hace),
+            fecha_hora_recepcion=self.ahora - timedelta(seconds=recibida_hace), origen='directo',
+        )
+
+    def conexiones(self):
+        return {s['codigo']: s['conexion'] for s in self.cliente.get('/api/sensores/').json()}
+
+    def test_estado_segun_la_ultima_lectura_recibida(self):
+        reciente, atrasado, inactivo = self.sensor('ESP-1'), self.sensor('ESP-2'), self.sensor('ESP-3', estado='Inactivo')
+        self.sensor('ESP-4')  # nunca envió lecturas
+        self.lectura(reciente, recibida_hace=120)   # 2 intervalos: dentro de la tolerancia
+        self.lectura(atrasado, recibida_hace=600)   # 10 intervalos: desconectado
+        self.lectura(inactivo, recibida_hace=10)    # dado de baja: no es una falla
+
+        self.assertEqual(self.conexiones(), {
+            'ESP-1': 'En línea', 'ESP-2': 'Sin datos', 'ESP-3': 'Inactivo', 'ESP-4': 'Sin datos',
+        })
+
+    def test_lectura_antigua_recien_recibida_cuenta_como_en_linea(self):
+        # El dispositivo reenvía lecturas guardadas mientras no tuvo red: si llegan ahora, está conectado.
+        self.lectura(self.sensor('ESP-1'), recibida_hace=5, medida_hace=3600)
+
+        self.assertEqual(self.conexiones()['ESP-1'], 'En línea')

@@ -1,9 +1,17 @@
+from datetime import timedelta
+
 from django.db import transaction
 from django.db.models import Max
 from django.utils import timezone
 from rest_framework import serializers
 
 from .models import Medicion, Sensor, Ubicacion, UmbralAmbiental
+
+# Un sensor está en línea si su última lectura llegó hace como máximo 3 intervalos de envío.
+INTERVALOS_TOLERADOS = 3
+CONEXION_EN_LINEA = 'En línea'
+CONEXION_SIN_DATOS = 'Sin datos'
+CONEXION_INACTIVO = 'Inactivo'
 
 
 class UbicacionReadSerializer(serializers.ModelSerializer):
@@ -70,6 +78,7 @@ class MedicionReadSerializer(serializers.ModelSerializer):
 class SensorReadSerializer(serializers.ModelSerializer):
     ubicacion = UbicacionReadSerializer(read_only=True)
     ultima_medicion = serializers.SerializerMethodField()
+    conexion = serializers.SerializerMethodField()
 
     class Meta:
         model = Sensor
@@ -81,12 +90,30 @@ class SensorReadSerializer(serializers.ModelSerializer):
             'intervalo_esperado_segundos',
             'ubicacion',
             'ultima_medicion',
+            'conexion',
         )
 
-    def get_ultima_medicion(self, sensor):
+    @staticmethod
+    def _ultima(sensor):
         mediciones = getattr(sensor, 'ultima_medicion_lista', [])
-        medicion = mediciones[0] if mediciones else None
+        return mediciones[0] if mediciones else None
+
+    def get_ultima_medicion(self, sensor):
+        medicion = self._ultima(sensor)
         return MedicionReadSerializer(medicion).data if medicion else None
+
+    def get_conexion(self, sensor):
+        """En línea / Sin datos / Inactivo. Usa la hora de recepción y el reloj del servidor,
+        así no depende del reloj del dispositivo ni del navegador de quien consulta."""
+        if sensor.estado != 'Activo':
+            return CONEXION_INACTIVO
+        medicion = self._ultima(sensor)
+        if medicion is None:
+            return CONEXION_SIN_DATOS
+        tolerancia = timedelta(seconds=INTERVALOS_TOLERADOS * sensor.intervalo_esperado_segundos)
+        if timezone.now() - medicion.fecha_hora_recepcion <= tolerancia:
+            return CONEXION_EN_LINEA
+        return CONEXION_SIN_DATOS
 
 
 class SensorWriteSerializer(serializers.ModelSerializer):

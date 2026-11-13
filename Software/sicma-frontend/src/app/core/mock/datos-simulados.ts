@@ -74,6 +74,7 @@ function construirSensor(
 ): EstadoSensor {
   return {
     sensorId,
+    conexion: 'En línea',
     ubicacion,
     sitio,
     rack,

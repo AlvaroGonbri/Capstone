@@ -196,8 +196,12 @@ export interface Lectura {
   registradoEn: string;
 }
 
+/** Conexión del sensor según su última lectura recibida (la calcula el backend). */
+export type ConexionSensor = 'En línea' | 'Sin datos' | 'Inactivo';
+
 export interface EstadoSensor {
   sensorId: string;
+  conexion: ConexionSensor;
   ubicacion: string;
   sitio: Sitio;
   rack: string;
@@ -255,7 +259,7 @@ export interface Arduino {
   ubicacion: string;
   sitio: Sitio;
   rack: string;
-  estado: 'conectado' | 'desconectado';
+  estado: ConexionSensor;
   ultimaLectura: string;
   temperatura: number;
   humedad: number;

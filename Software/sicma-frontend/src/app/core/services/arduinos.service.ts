@@ -21,7 +21,7 @@ export class ArduinosService {
       ubicacion: sensor.ubicacion,
       sitio: sensor.sitio,
       rack: sensor.rack,
-      estado: 'conectado',
+      estado: sensor.conexion,
       ultimaLectura: sensor.actualizadoEn,
       temperatura: sensor.temperatura,
       humedad: sensor.humedad,

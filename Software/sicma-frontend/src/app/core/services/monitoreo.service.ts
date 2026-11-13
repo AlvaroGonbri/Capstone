@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Alerta, EstadoSensor, Sitio, UmbralZona, Umbrales } from '../models';
+import { Alerta, ConexionSensor, EstadoSensor, Sitio, UmbralZona, Umbrales } from '../models';
 import { SENSORES, UMBRALES } from '../mock/datos-simulados';
 import { evaluarLectura } from './umbrales.util';
 
@@ -18,6 +18,7 @@ interface SensorApi {
   codigo: string;
   ubicacion: UbicacionApi;
   ultima_medicion: MedicionApi | null;
+  conexion: ConexionSensor;
 }
 
 interface MedicionApi {
@@ -146,6 +147,7 @@ export class MonitoreoService {
 
     return {
       sensorId: sensor.codigo,
+      conexion: sensor.conexion,
       ubicacion: ubicacion.zona || ubicacion.sala,
       sitio: obtenerSitio(ubicacion.sala),
       rack: ubicacion.rack || 'sin rack',

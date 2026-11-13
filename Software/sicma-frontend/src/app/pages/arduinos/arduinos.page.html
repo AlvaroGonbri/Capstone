@@ -27,7 +27,7 @@
                   <ion-card-title>{{ arduino.nombre }}</ion-card-title>
                   <ion-note class="mono">{{ arduino.id }} · {{ arduino.ubicacion }}</ion-note>
                 </div>
-                <ion-badge [color]="arduino.estado === 'conectado' ? 'success' : 'medium'">
+                <ion-badge [color]="arduino.estado === 'En línea' ? 'success' : arduino.estado === 'Sin datos' ? 'danger' : 'medium'">
                   {{ arduino.estado }}
                 </ion-badge>
               </div>

@@ -37,6 +37,10 @@
                     <h3>{{ sensor.ubicacion }}</h3>
                   </div>
                   <div class="sensor-estado">
+                    @if (sensor.conexion !== 'En línea') {
+                      <!-- La lectura mostrada es la última recibida, no una actual -->
+                      <ion-badge [color]="sensor.conexion === 'Sin datos' ? 'danger' : 'medium'">{{ sensor.conexion }}</ion-badge>
+                    }
                     <ion-badge [color]="sensor.nivel | colorNivel">{{ sensor.nivel }}</ion-badge>
                     <ion-note>Sitio {{ sensor.sitio }} · rack {{ sensor.rack }} · {{ sensor.actualizadoEn | date: 'dd/MM HH:mm' }}</ion-note>
                   </div>
