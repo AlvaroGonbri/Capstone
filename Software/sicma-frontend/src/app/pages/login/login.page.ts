@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { PantallaIngresoComponent } from '../../shared/pantalla-ingreso.component';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -17,6 +18,7 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-login',
   imports: [
+    PantallaIngresoComponent,
     ReactiveFormsModule,
     RouterLink,
     IonButton,

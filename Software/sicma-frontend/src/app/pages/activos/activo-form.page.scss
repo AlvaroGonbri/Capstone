@@ -1,0 +1,41 @@
+.formulario-activo {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.rejilla-campos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 16px;
+  padding: 16px 18px 4px;
+}
+
+@media (min-width: 768px) {
+  .rejilla-campos {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ancho-completo {
+    grid-column: 1 / -1;
+  }
+}
+
+.nota-formulario {
+  display: block;
+  margin: 0 2px 12px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.barra-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 0 24px;
+
+  ion-button {
+    margin: 0;
+    min-width: 180px;
+    height: 40px;
+  }
+}

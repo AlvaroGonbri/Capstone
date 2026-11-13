@@ -1,11 +1,14 @@
 import { DatePipe } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { addIcons } from 'ionicons';
+import { warningOutline } from 'ionicons/icons';
 import {
   IonBadge,
   IonButton,
   IonButtons,
   IonContent,
+  IonIcon,
   IonItem,
   IonLabel,
   IonList,
@@ -47,6 +50,7 @@ type FiltroEstado = 'todos' | EstadoInventario;
     IonButton,
     IonButtons,
     IonContent,
+    IonIcon,
     IonItem,
     IonLabel,
     IonList,
@@ -126,6 +130,7 @@ export class ActivosPage {
   });
 
   constructor() {
+    addIcons({ warningOutline });
     this.catalogos.ubicaciones().subscribe((lista) => this.ubicaciones.set(lista));
     this.inventario.tipos().subscribe((lista) => this.tipos.set(lista));
     this.cargar();
@@ -149,6 +154,32 @@ export class ActivosPage {
 
   protected colorSeveridad(severidad: Alerta['severidad']): string {
     return severidad === 'Critica' || severidad === 'Alta' ? 'danger' : severidad === 'Advertencia' ? 'warning' : 'medium';
+  }
+
+  // ------------------------------------------------- presentación
+  /** Las alertas de Zabbix se muestran resumidas; el detalle se despliega a pedido. */
+  protected readonly alertasDesplegadas = signal(false);
+
+  protected readonly alertasPorSeveridad = computed(() => {
+    const conteo = new Map<string, number>();
+    for (const a of this.alertas()) {
+      conteo.set(a.severidad, (conteo.get(a.severidad) ?? 0) + 1);
+    }
+    return [...conteo.entries()].map(([severidad, cantidad]) => ({
+      severidad: severidad as Alerta['severidad'],
+      cantidad,
+    }));
+  });
+
+  protected colorCriticidad(criticidad: string): string {
+    switch (criticidad) {
+      case 'Baja':
+        return 'success';
+      case 'Media':
+        return 'warning';
+      default:
+        return 'danger';
+    }
   }
 
   protected cambiarIncluirRetirados(valor: boolean): void {

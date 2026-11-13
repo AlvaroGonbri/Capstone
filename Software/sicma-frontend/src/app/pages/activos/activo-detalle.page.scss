@@ -1,0 +1,151 @@
+.cabecera-activo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+
+  &__icono {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    background: var(--sicma-primario-suave);
+    color: var(--ion-color-primary);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+
+    svg {
+      width: 26px;
+      height: 26px;
+    }
+  }
+
+  &__texto {
+    min-width: 0;
+
+    p {
+      margin: 4px 0 0;
+      font-size: 0.82rem;
+      color: var(--sicma-tenue);
+    }
+  }
+
+  &__titulo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+
+    h2 {
+      margin: 0;
+      font-family: var(--sicma-mono);
+      font-size: 1.45rem;
+      font-weight: 500;
+      color: var(--sicma-tinta);
+    }
+  }
+}
+
+.columnas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 16px;
+  align-items: start;
+}
+
+@media (min-width: 992px) {
+  .columnas {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.a-la-derecha {
+  margin-left: auto;
+}
+
+.texto-normal {
+  font-weight: 400 !important;
+}
+
+ion-badge {
+  text-transform: capitalize;
+}
+
+ion-segment {
+  margin-bottom: 8px;
+}
+
+/* Línea de tiempo de eventos de Zabbix */
+.linea-tiempo {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    position: relative;
+    display: flex;
+    gap: 12px;
+    padding: 10px 0 10px 24px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 2px;
+      top: 14px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--sicma-neutro);
+      box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--sicma-neutro);
+    }
+
+    &:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 28px;
+      bottom: -8px;
+      width: 2px;
+      background: var(--sicma-linea-suave);
+    }
+
+    &[data-color='danger']::before {
+      background: var(--sicma-critico);
+      box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--sicma-critico);
+    }
+    &[data-color='warning']::before {
+      background: var(--sicma-advertencia);
+      box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--sicma-advertencia);
+    }
+  }
+
+  &__texto {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    b {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--sicma-tinta);
+    }
+
+    small {
+      font-size: 0.75rem;
+      color: var(--sicma-tenue);
+    }
+  }
+
+  &__estado {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+
+    ion-note {
+      font-size: 0.72rem;
+    }
+  }
+}

@@ -5,6 +5,9 @@ import {
   IonBackButton,
   IonButton,
   IonButtons,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
   IonContent,
   IonHeader,
   IonInput,
@@ -46,6 +49,9 @@ import {
     IonBackButton,
     IonButton,
     IonButtons,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
     IonContent,
     IonHeader,
     IonInput,
@@ -61,6 +67,7 @@ import {
     IonToolbar,
   ],
   templateUrl: './activo-form.page.html',
+  styleUrl: './activo-form.page.scss',
 })
 export class ActivoFormPage {
   /** Presente al editar (/activos/:id/editar); ausente al registrar (/activos/nuevo). */

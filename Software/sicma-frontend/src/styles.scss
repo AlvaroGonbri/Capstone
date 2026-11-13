@@ -1,3 +1,11 @@
+/* Tipografías locales (sin depender de Google Fonts: funcionan también en la app móvil sin red) */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+
 /* Estilos base de Ionic */
 @import '@ionic/angular/css/core.css';
 @import '@ionic/angular/css/normalize.css';
@@ -10,11 +18,16 @@
 @import '@ionic/angular/css/text-transformation.css';
 @import '@ionic/angular/css/flex-utils.css';
 
-/* Modo oscuro segun la preferencia del sistema */
-@import '@ionic/angular/css/palettes/dark.system.css';
+/*
+ * Rediseño visual "consola de operaciones".
+ * El tema es claro: se quitó la paleta oscura automática (dark.system.css) porque los
+ * colores de esta identidad están pensados para fondo claro. Para volver a activarla,
+ * basta con importar de nuevo '@ionic/angular/css/palettes/dark.system.css'.
+ */
 
 /* ------------------------------------------------- Identidad de SICMA */
 :root {
+  /* Marca */
   --ion-color-primary: #0e7c86;
   --ion-color-primary-rgb: 14, 124, 134;
   --ion-color-primary-contrast: #ffffff;
@@ -22,36 +35,550 @@
   --ion-color-primary-shade: #0c6d76;
   --ion-color-primary-tint: #268992;
 
-  --sicma-normal: #2e7d4f;
-  --sicma-advertencia: #b8730f;
-  --sicma-critico: #b3332f;
+  /* Estados (mismos tonos que el mockup) */
+  --ion-color-success: #1d7f46;
+  --ion-color-success-rgb: 29, 127, 70;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #1a703e;
+  --ion-color-success-tint: #348c59;
+
+  --ion-color-warning: #a35f00;
+  --ion-color-warning-rgb: 163, 95, 0;
+  --ion-color-warning-contrast: #ffffff;
+  --ion-color-warning-contrast-rgb: 255, 255, 255;
+  --ion-color-warning-shade: #8f5400;
+  --ion-color-warning-tint: #ac6f1a;
+
+  --ion-color-danger: #bd3328;
+  --ion-color-danger-rgb: 189, 51, 40;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #a62d23;
+  --ion-color-danger-tint: #c4473e;
+
+  --ion-color-medium: #55626e;
+  --ion-color-medium-rgb: 85, 98, 110;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #4b5661;
+  --ion-color-medium-tint: #66727d;
+
+  --ion-color-tertiary: #2f5e9e;
+  --ion-color-tertiary-rgb: 47, 94, 158;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #29538b;
+  --ion-color-tertiary-tint: #446ea8;
+
+  /* Tokens propios */
+  --sicma-fondo: #f3f5f7;
+  --sicma-superficie: #ffffff;
+  --sicma-linea: #e2e7ec;
+  --sicma-linea-suave: #eef1f4;
+  --sicma-tinta: #0f1b24;
+  --sicma-tinta-2: #3c4a56;
+  --sicma-tenue: #6b7884;
+  --sicma-consola: #0f1a22;
+  --sicma-consola-2: #1a2731;
+  --sicma-consola-texto: #b8c4cd;
+  --sicma-primario-suave: #e3f2f3;
+
+  --sicma-normal: #1d7f46;
+  --sicma-normal-suave: #e4f3ea;
+  --sicma-advertencia: #a35f00;
+  --sicma-advertencia-suave: #fdf0d8;
+  --sicma-critico: #bd3328;
+  --sicma-critico-suave: #fbe6e3;
+  --sicma-neutro: #55626e;
+  --sicma-neutro-suave: #eceff2;
+  --sicma-info: #2f5e9e;
+  --sicma-info-suave: #e6eef9;
+
+  --sicma-radio: 10px;
+  --sicma-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+
+  /* Ionic global */
+  --ion-font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ion-background-color: var(--sicma-fondo);
+  --ion-background-color-rgb: 243, 245, 247;
+  --ion-text-color: var(--sicma-tinta);
+  --ion-text-color-rgb: 15, 27, 36;
+  --ion-toolbar-background: var(--sicma-superficie);
+  --ion-toolbar-color: var(--sicma-tinta);
+  --ion-toolbar-border-color: var(--sicma-linea);
+  --ion-item-background: var(--sicma-superficie);
+  --ion-item-border-color: var(--sicma-linea-suave);
+  --ion-card-background: var(--sicma-superficie);
+  --ion-border-color: var(--sicma-linea);
+  --ion-placeholder-color: #9aa5ae;
 }
 
-/* ------------------------------------------------- Utilidades comunes */
+html {
+  color-scheme: light;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+code,
+.mono {
+  font-family: var(--sicma-mono);
+}
+
+/* ------------------------------------------------- Barra superior */
+ion-header {
+  box-shadow: none;
+}
+
+ion-header ion-toolbar {
+  --min-height: 64px;
+  --border-width: 0 0 1px 0;
+  --border-color: var(--sicma-linea);
+  --padding-start: 12px;
+  --padding-end: 16px;
+}
+
+ion-toolbar[color='primary'] {
+  /* Las barras antiguas de color se ven como la nueva barra blanca */
+  --ion-color-base: var(--sicma-superficie) !important;
+  --ion-color-contrast: var(--sicma-tinta) !important;
+}
+
+ion-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+ion-toolbar ion-buttons[slot='end'] ion-button,
+ion-toolbar ion-buttons[slot='primary'] ion-button {
+  --border-radius: 8px !important;
+  --padding-start: 14px !important;
+  --padding-end: 14px !important;
+  --background: var(--ion-color-primary) !important;
+  --background-hover: var(--ion-color-primary-shade) !important;
+  --background-hover-opacity: 1 !important;
+  --color: #fff !important;
+  --color-hover: #fff !important;
+  height: 36px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+ion-toolbar ion-buttons[slot='start'] ion-button,
+ion-toolbar ion-back-button,
+ion-toolbar ion-menu-button {
+  --background: transparent;
+  --color: var(--sicma-tinta-2);
+}
+
+ion-back-button {
+  --color: var(--sicma-tinta-2);
+  text-transform: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* ------------------------------------------------- Contenido */
+ion-content {
+  --background: var(--sicma-fondo);
+}
+
 .contenido-limitado {
-  max-width: 1080px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding-inline: 12px;
+  padding: 20px 24px 32px;
 }
 
+@media (max-width: 767px) {
+  .contenido-limitado {
+    padding: 12px 12px 24px;
+  }
+}
+
+/* Tarjetas */
+ion-card {
+  margin: 0 0 16px;
+  border: 1px solid var(--sicma-linea);
+  border-radius: var(--sicma-radio);
+  box-shadow: none;
+  color: var(--sicma-tinta);
+  overflow: hidden;
+}
+
+ion-card[button],
+ion-card.ion-activatable {
+  transition: border-color 0.15s ease;
+}
+
+ion-card[button]:hover {
+  border-color: #c9d2d9;
+}
+
+ion-card-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--sicma-linea-suave);
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+ion-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--sicma-tinta);
+}
+
+ion-card-subtitle {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--sicma-tenue);
+}
+
+ion-card-content {
+  color: var(--sicma-tinta-2);
+  font-size: 0.875rem;
+}
+
+ion-card-content.ion-no-padding > ion-list,
+ion-card > ion-list {
+  margin: 0;
+}
+
+/* Listas: dentro de .contenido-limitado se ven como una tarjeta */
+.contenido-limitado > ion-list,
+section > ion-list {
+  border: 1px solid var(--sicma-linea);
+  border-radius: var(--sicma-radio);
+  overflow: hidden;
+  padding: 0;
+  margin: 0 0 16px;
+  background: var(--sicma-superficie);
+}
+
+ion-list {
+  background: transparent;
+}
+
+ion-item {
+  --min-height: 52px;
+  --padding-start: 18px;
+  --inner-padding-end: 14px;
+  --border-color: var(--sicma-linea-suave);
+  --background-hover: #f7f9fa;
+  --background-hover-opacity: 1;
+  --color: var(--sicma-tinta);
+  font-size: 0.875rem;
+}
+
+ion-item:last-child {
+  --border-width: 0;
+  --inner-border-width: 0;
+}
+
+ion-label h2,
+ion-label h3 {
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  color: var(--sicma-tinta) !important;
+  margin-bottom: 3px !important;
+}
+
+ion-label p {
+  font-size: 0.8rem !important;
+  color: var(--sicma-tenue) !important;
+  line-height: 1.45 !important;
+}
+
+ion-note {
+  color: var(--sicma-tenue);
+  font-size: 0.8rem;
+}
+
+/* ------------------------------------------------- Chips de estado (ion-badge) */
+ion-badge {
+  --padding-start: 9px;
+  --padding-end: 9px;
+  --padding-top: 4px;
+  --padding-bottom: 4px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  vertical-align: middle;
+}
+
+ion-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+ion-badge.ion-color-success {
+  --ion-color-base: var(--sicma-normal-suave) !important;
+  --ion-color-contrast: var(--sicma-normal) !important;
+}
+ion-badge.ion-color-warning {
+  --ion-color-base: var(--sicma-advertencia-suave) !important;
+  --ion-color-contrast: var(--sicma-advertencia) !important;
+}
+ion-badge.ion-color-danger {
+  --ion-color-base: var(--sicma-critico-suave) !important;
+  --ion-color-contrast: var(--sicma-critico) !important;
+}
+ion-badge.ion-color-medium {
+  --ion-color-base: var(--sicma-neutro-suave) !important;
+  --ion-color-contrast: var(--sicma-neutro) !important;
+}
+ion-badge.ion-color-primary {
+  --ion-color-base: var(--sicma-primario-suave) !important;
+  --ion-color-contrast: var(--ion-color-primary) !important;
+}
+ion-badge.ion-color-tertiary {
+  --ion-color-base: var(--sicma-info-suave) !important;
+  --ion-color-contrast: var(--sicma-info) !important;
+}
+
+/* ------------------------------------------------- Segmentos (pestañas tipo píldora) */
+ion-segment {
+  --background: #e9edf0;
+  border-radius: 9px;
+  padding: 3px;
+  width: auto;
+  display: inline-flex;
+  max-width: 100%;
+  margin: 0 0 16px;
+}
+
+ion-segment-button {
+  --indicator-color: transparent;
+  --indicator-height: 0;
+  --background-checked: var(--sicma-superficie);
+  --color: var(--sicma-tinta-2);
+  --color-checked: var(--sicma-tinta);
+  --border-radius: 7px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  min-height: 32px;
+  min-width: auto;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: 7px;
+}
+
+ion-segment-button::part(native) {
+  border-radius: 7px;
+}
+
+ion-segment-button.segment-button-checked {
+  box-shadow: 0 1px 2px rgba(15, 27, 36, 0.1);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------- Botones */
+ion-button {
+  --border-radius: 8px;
+  --box-shadow: none;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+ion-button[size='small'] {
+  --border-radius: 7px;
+  font-size: 0.78rem;
+  height: 32px;
+}
+
+ion-button[fill='outline'] {
+  --border-width: 1px;
+  --border-color: var(--sicma-linea);
+  --color: var(--sicma-tinta);
+  --background-hover: #f3f5f7;
+}
+
+ion-button[fill='outline'].ion-color-danger {
+  --border-color: #f0c8c3;
+}
+
+/* ------------------------------------------------- Campos de formulario */
+ion-input,
+ion-textarea {
+  --highlight-color-focused: var(--ion-color-primary);
+  --placeholder-color: #9aa5ae;
+  --placeholder-opacity: 1;
+  font-size: 0.9rem;
+}
+
+ion-input .label-text-wrapper,
+ion-textarea .label-text-wrapper,
+ion-select::part(label) {
+  font-size: 0.8rem;
+  color: var(--sicma-tenue);
+  font-weight: 500;
+  transform: none !important;
+  margin-bottom: 6px;
+}
+
+ion-input .native-wrapper,
+ion-textarea .native-wrapper {
+  border: 1px solid var(--sicma-linea);
+  border-radius: 8px;
+  background: var(--sicma-superficie);
+  padding: 0 10px;
+  min-height: 38px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+ion-textarea .native-wrapper {
+  padding: 8px 10px;
+}
+
+ion-input.has-focus .native-wrapper,
+ion-textarea.has-focus .native-wrapper {
+  border-color: var(--ion-color-primary);
+  box-shadow: 0 0 0 3px var(--sicma-primario-suave);
+}
+
+ion-input.ion-touched.ion-invalid .native-wrapper {
+  border-color: var(--ion-color-danger);
+}
+
+ion-input .input-highlight,
+ion-textarea .textarea-highlight {
+  display: none;
+}
+
+ion-input .input-bottom,
+ion-textarea .textarea-bottom {
+  border-top: 0 !important;
+  padding-top: 4px;
+}
+
+ion-select {
+  --padding-start: 0;
+  --padding-end: 0;
+  font-size: 0.9rem;
+}
+
+ion-select::part(container) {
+  border: 1px solid var(--sicma-linea);
+  border-radius: 8px;
+  background: var(--sicma-superficie);
+  min-height: 38px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+ion-select::part(icon) {
+  position: absolute;
+  right: 12px;
+  bottom: 13px;
+}
+
+ion-select {
+  position: relative;
+}
+
+/* Los ítems que solo contienen un campo no dibujan su propia línea */
+ion-item:has(> ion-input[labelPlacement='stacked']),
+ion-item:has(> ion-textarea[labelPlacement='stacked']),
+ion-item:has(> ion-select[labelPlacement='stacked']),
+ion-item:has(> ion-toggle):not(:has(ion-label)) {
+  --background: transparent;
+  --border-width: 0;
+  --inner-border-width: 0;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --min-height: 0;
+  margin-bottom: 12px;
+}
+
+ion-toggle {
+  --track-background-checked: var(--ion-color-primary);
+  --handle-background-checked: #fff;
+  font-size: 0.875rem;
+  color: var(--sicma-tinta-2);
+}
+
+ion-checkbox {
+  --checkbox-background-checked: var(--ion-color-primary);
+  --border-color-checked: var(--ion-color-primary);
+  --border-radius: 5px;
+}
+
+ion-searchbar {
+  --background: var(--sicma-superficie);
+  --box-shadow: none;
+  --border-radius: 8px;
+  --icon-color: var(--sicma-tenue);
+  --placeholder-color: #9aa5ae;
+  --placeholder-opacity: 1;
+  padding: 0 !important;
+  margin: 0 0 14px;
+}
+
+ion-searchbar .searchbar-input-container {
+  border: 1px solid var(--sicma-linea);
+  border-radius: 8px;
+}
+
+ion-searchbar .searchbar-input {
+  font-size: 0.875rem !important;
+  min-height: 40px !important;
+  box-shadow: none !important;
+}
+
+ion-skeleton-text {
+  --background: #e7ebef;
+  border-radius: 5px;
+}
+
+/* ------------------------------------------------- Utilidades comunes (se mantienen sus nombres) */
 .rejilla-tarjetas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.rejilla-tarjetas > ion-card {
+  margin: 0;
 }
 
 .dato-grande {
-  font-size: 2rem;
+  font-size: 2.3rem;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
+  color: var(--sicma-tinta);
 }
 
 .etiqueta-menor {
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  opacity: 0.7;
+  color: var(--sicma-tenue);
 }
 
 .estado-normal {
@@ -66,6 +593,148 @@
 
 .vacio {
   text-align: center;
-  padding: 40px 16px;
-  opacity: 0.65;
+  padding: 36px 16px;
+  color: var(--sicma-tenue);
+  font-size: 0.875rem;
+}
+
+.vacio::before {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 10px;
+  opacity: 0.55;
+  background: no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa5ae' stroke-width='1.5'%3E%3Crect x='3' y='4' width='18' height='7' rx='1.5'/%3E%3Crect x='3' y='13' width='18' height='7' rx='1.5'/%3E%3C/svg%3E");
+}
+
+/* Encabezado de sección dentro de una página */
+.titulo-seccion {
+  margin: 8px 0 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sicma-tenue);
+}
+
+/* Aviso suave reutilizable */
+.aviso {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  background: var(--sicma-neutro-suave);
+  color: var(--sicma-tinta-2);
+}
+.aviso--critico {
+  background: var(--sicma-critico-suave);
+  color: var(--sicma-critico);
+}
+.aviso--advertencia {
+  background: var(--sicma-advertencia-suave);
+  color: var(--sicma-advertencia);
+}
+.aviso--normal {
+  background: var(--sicma-normal-suave);
+  color: var(--sicma-normal);
+}
+
+/* Lista de datos en grilla: etiqueta arriba, valor abajo */
+.grilla-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 16px 22px;
+  padding: 16px 18px;
+  margin: 0;
+}
+.grilla-datos > div {
+  min-width: 0;
+}
+.grilla-datos dt,
+.grilla-datos .dato-etiqueta {
+  font-size: 0.75rem;
+  color: var(--sicma-tenue);
+  margin-bottom: 3px;
+}
+.grilla-datos dd,
+.grilla-datos .dato-valor {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--sicma-tinta);
+  overflow-wrap: anywhere;
+}
+.grilla-datos .ancho-completo {
+  grid-column: 1 / -1;
+}
+
+/* Popovers y alertas de Ionic */
+ion-popover {
+  --border-radius: 10px;
+  --box-shadow: 0 12px 32px -12px rgba(15, 27, 36, 0.35);
+}
+
+ion-alert {
+  --border-radius: 12px !important;
+}
+
+/* ------------------------------------------------- Estructura */
+ion-split-pane {
+  --side-width: 248px;
+  --side-min-width: 248px;
+  --side-max-width: 248px;
+  --border: 0;
+}
+
+ion-header.header-md,
+.header-md {
+  box-shadow: none;
+}
+.header-md::after {
+  display: none;
+}
+
+ion-card-content p.dato-grande,
+p.dato-grande {
+  font-size: 2.3rem;
+  font-weight: 700;
+  margin: 10px 0 4px;
+}
+
+/* Campo con botón al final (p. ej. mostrar contraseña): el borde envuelve ambos */
+ion-input .input-end:not(:empty) {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  /* Misma altura que el campo. El botón del toggle vive en shadow DOM y trae
+     márgenes propios que no se pueden quitar desde aquí: se recortan. */
+  height: 40px;
+  overflow: hidden;
+  padding-right: 2px;
+  border: 1px solid var(--sicma-linea);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: var(--sicma-superficie);
+}
+
+ion-input:has(.input-end:not(:empty)) .native-wrapper {
+  box-sizing: border-box;
+  min-height: 40px;
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+}
+
+ion-input.has-focus .input-end:not(:empty) {
+  border-color: var(--ion-color-primary);
+}
+
+ion-input-password-toggle ion-button {
+  --color: var(--sicma-tenue);
+  margin: 0;
 }

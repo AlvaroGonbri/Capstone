@@ -6,7 +6,6 @@ import {
   IonCard,
   IonCardContent,
   IonCardHeader,
-  IonCardSubtitle,
   IonCardTitle,
   IonContent,
   IonInput,
@@ -45,7 +44,6 @@ const VARIABLES: Array<{ variable: VariableAmbiental; minimo: CampoUmbral; maxim
     IonCard,
     IonCardContent,
     IonCardHeader,
-    IonCardSubtitle,
     IonCardTitle,
     IonContent,
     IonInput,
@@ -226,6 +224,21 @@ export class MonitoreoPage {
         return `${x},${y}`;
       })
       .join(' ');
+  }
+
+  /**
+   * Posición (en %) del rango permitido y de la lectura dentro de una barra.
+   * Solo es presentación: usa los mismos umbrales con que ya se evalúa el sensor.
+   */
+  protected barra(valor: number, minimo: number | null, maximo: number | null) {
+    if (minimo === null || maximo === null) {
+      return null;
+    }
+    const margen = Math.max((maximo - minimo) * 0.8, 1);
+    const desde = Math.min(minimo - margen, valor - 1);
+    const hasta = Math.max(maximo + margen, valor + 1);
+    const pos = (v: number) => ((v - desde) / (hasta - desde)) * 100;
+    return { inicio: pos(minimo), fin: pos(maximo), marca: pos(valor) };
   }
 
   // ------------------------------------------------- gestión de alertas

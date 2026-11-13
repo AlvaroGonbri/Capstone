@@ -1,56 +1,82 @@
-<ion-app>
-  <ion-split-pane contentId="contenido-principal" when="lg" [disabled]="!auth.autenticado()">
-    <ion-menu contentId="contenido-principal" type="overlay" [disabled]="!auth.autenticado()">
-      <ion-header>
-        <ion-toolbar color="primary">
-          <ion-title>SICMA</ion-title>
-        </ion-toolbar>
-      </ion-header>
-
+<ion-app [class.con-pestanas]="pestanasVisibles()">
+  <ion-split-pane contentId="contenido-principal" when="lg" [disabled]="!auth.autenticado() || auth.soloConsulta">
+    <ion-menu
+      contentId="contenido-principal"
+      type="overlay"
+      class="menu-consola"
+      [disabled]="!auth.autenticado() || pestanasVisibles()"
+    >
       <ion-content>
-        <div class="menu-usuario">
-          <p class="menu-usuario__nombre">{{ auth.usuario()?.nombre }}</p>
-          <ion-note>{{ auth.usuario()?.rol }}</ion-note>
+        <div class="marca">
+          <div class="marca__logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="3" width="16" height="6" rx="1" />
+              <rect x="4" y="15" width="16" height="6" rx="1" />
+              <path d="M8 6h.01M8 18h.01M12 9v6" />
+            </svg>
+          </div>
+          <div>
+            <p class="marca__nombre">SICMA</p>
+            <p class="marca__sub">Control y monitoreo de activos</p>
+          </div>
         </div>
 
-        <ion-list lines="none">
-          @if (auth.puedeModificar('administrador', 'administradorprivilegiado')) {
-            <ion-menu-toggle autoHide="false">
-              <ion-item
-                routerLink="/usuarios"
-                routerLinkActive="item-activo"
-                detail="false"
-                button
-              >
-                <ion-icon slot="start" name="people-outline" aria-hidden="true"></ion-icon>
-                <ion-label>Usuarios</ion-label>
-              </ion-item>
-            </ion-menu-toggle>
+        <nav class="menu-navegacion" aria-label="Secciones">
+          @for (seccion of secciones(); track seccion.titulo) {
+            <p class="menu-grupo">{{ seccion.titulo }}</p>
+            <ion-list lines="none">
+              @for (item of seccion.items; track item.ruta) {
+                <ion-menu-toggle autoHide="false">
+                  <ion-item
+                    [routerLink]="item.ruta"
+                    routerLinkActive="item-activo"
+                    detail="false"
+                    button
+                  >
+                    <ion-icon slot="start" [name]="item.icono" aria-hidden="true"></ion-icon>
+                    <ion-label>{{ item.titulo }}</ion-label>
+                  </ion-item>
+                </ion-menu-toggle>
+              }
+            </ion-list>
           }
-          @for (item of menu(); track item.ruta) {
-            <ion-menu-toggle autoHide="false">
-              <ion-item
-                [routerLink]="item.ruta"
-                routerLinkActive="item-activo"
-                detail="false"
-                button
-              >
-                <ion-icon slot="start" [name]="item.icono" aria-hidden="true"></ion-icon>
-                <ion-label>{{ item.titulo }}</ion-label>
-              </ion-item>
-            </ion-menu-toggle>
-          }
-        </ion-list>
+        </nav>
 
-        <ion-list lines="none" class="menu-pie">
-          <ion-item button detail="false" (click)="salir()">
-            <ion-icon slot="start" name="log-out-outline" aria-hidden="true"></ion-icon>
-            <ion-label>Cerrar sesion</ion-label>
-          </ion-item>
-        </ion-list>
+        <div class="menu-usuario">
+          <div class="menu-usuario__avatar" aria-hidden="true">{{ iniciales() }}</div>
+          <div class="menu-usuario__datos">
+            <p class="menu-usuario__nombre">{{ auth.usuario()?.nombre }}</p>
+            <p class="menu-usuario__rol">{{ auth.usuario()?.rol }}</p>
+          </div>
+          <ion-button
+            fill="clear"
+            class="menu-usuario__salir"
+            (click)="salir()"
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+          >
+            <ion-icon slot="icon-only" name="log-out-outline" aria-hidden="true"></ion-icon>
+          </ion-button>
+        </div>
       </ion-content>
     </ion-menu>
 
     <ion-router-outlet id="contenido-principal"></ion-router-outlet>
   </ion-split-pane>
+
+  @if (pestanasVisibles()) {
+    <!-- App móvil (solo consulta): navegación inferior por pestañas -->
+    <nav class="pestanas" aria-label="Secciones">
+      @for (item of pestanas(); track item.ruta) {
+        <a class="pestanas__item" [routerLink]="item.ruta" routerLinkActive="activa">
+          <ion-icon [name]="item.icono" aria-hidden="true"></ion-icon>
+          <span>{{ item.tituloCorto ?? item.titulo }}</span>
+        </a>
+      }
+      <button type="button" class="pestanas__item" (click)="salir()">
+        <ion-icon name="log-out-outline" aria-hidden="true"></ion-icon>
+        <span>Salir</span>
+      </button>
+    </nav>
+  }
 </ion-app>

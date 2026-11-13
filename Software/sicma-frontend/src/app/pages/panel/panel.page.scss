@@ -1,23 +1,154 @@
-ion-card-content p.dato-grande {
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1.15;
+.kpis {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
 }
 
-ion-card-content p.etiqueta-menor {
-  font-size: 0.78rem;
+.kpi {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 16px;
+    bottom: 16px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--sicma-normal);
+  }
+
+  &--primario::before {
+    background: var(--ion-color-primary);
+  }
+  &--advertencia::before {
+    background: var(--sicma-advertencia);
+  }
+  &--critico::before {
+    background: var(--sicma-critico);
+  }
+
+  ion-card-content {
+    padding: 16px 18px;
+  }
+
+  &__titulo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--sicma-tinta-2);
+  }
+
+  &__icono {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    font-size: 1rem;
+    background: var(--sicma-neutro-suave);
+    color: var(--sicma-neutro);
+
+    &--normal {
+      background: var(--sicma-normal-suave);
+      color: var(--sicma-normal);
+    }
+    &--advertencia {
+      background: var(--sicma-advertencia-suave);
+      color: var(--sicma-advertencia);
+    }
+    &--critico {
+      background: var(--sicma-critico-suave);
+      color: var(--sicma-critico);
+    }
+    &--primario {
+      background: var(--sicma-primario-suave);
+      color: var(--ion-color-primary);
+    }
+  }
+
+  &__detalle {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--sicma-tenue);
+  }
+
+  p.dato-grande {
+    margin: 12px 0 4px;
+  }
 }
 
 .dato-grande .de {
   font-size: 1.1rem;
   font-weight: 500;
-  opacity: 0.55;
+  letter-spacing: 0;
+  color: var(--sicma-tenue);
 }
 
-ion-card-content p {
-  margin: 0 0 4px;
+.columnas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 16px;
+  align-items: start;
 }
 
-ion-badge {
+@media (min-width: 992px) {
+  .columnas {
+    grid-template-columns: 1.4fr 1fr;
+  }
+}
+
+.ver-todo {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+  text-decoration: none;
+}
+
+.fila-alerta {
+  --border-color: var(--sicma-linea-suave);
+  border-left: 3px solid var(--sicma-advertencia);
+}
+.fila-alerta.nivel-critico {
+  border-left-color: var(--sicma-critico);
+}
+
+.fila-alerta ion-badge {
   text-transform: capitalize;
+}
+
+/* Teléfono: KPI en grilla de 2 × 2 */
+@media (max-width: 767px) {
+  .kpis {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .kpi ion-card-content {
+    padding: 12px 12px 12px 14px;
+  }
+
+  .kpi__titulo {
+    font-size: 0.75rem;
+    gap: 6px;
+  }
+
+  .kpi__icono {
+    width: 24px;
+    height: 24px;
+    font-size: 0.85rem;
+  }
+
+  .kpi p.dato-grande {
+    font-size: 1.8rem;
+    margin: 8px 0 2px;
+  }
+
+  .kpi__detalle {
+    font-size: 0.72rem;
+  }
 }

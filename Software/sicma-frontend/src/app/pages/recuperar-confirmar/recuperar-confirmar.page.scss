@@ -1,38 +1,56 @@
 .recuperacion {
-  max-width: 420px;
-  margin: 0 auto;
-  padding-block: 8vh 24px;
+  margin-top: 18px;
 
-  &__marca {
-    text-align: center;
-    margin-bottom: 28px;
+  ion-list {
+    background: transparent;
+    padding: 0;
+  }
 
-    h1 {
-      margin: 0;
-      font-size: 2.6rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      color: var(--ion-color-primary);
-    }
+  &__ayuda,
+  &__nota {
+    display: block;
+    line-height: 1.5;
+    font-size: 0.82rem;
+    color: var(--sicma-tenue);
+  }
 
-    p {
-      margin: 6px 0 0;
-      font-size: 0.9rem;
-      opacity: 0.7;
-    }
+  &__ayuda {
+    margin: 0 0 16px;
   }
 
   &__nota {
-    display: block;
-    margin-top: 28px;
-    font-size: 0.78rem;
-    line-height: 1.5;
+    margin-top: 18px;
+    font-size: 0.76rem;
     text-align: center;
   }
 
   &__error,
   &__mensaje {
-    margin: 12px 4px;
-    font-size: 0.88rem;
+    margin: 4px 0 12px;
+    padding: 9px 11px;
+    border-radius: 7px;
+    font-size: 0.82rem;
+    background: var(--sicma-neutro-suave);
+  }
+
+  ion-text[color='danger'] p {
+    background: var(--sicma-critico-suave);
+  }
+
+  ion-text[color='success'] p {
+    background: var(--sicma-normal-suave);
+  }
+
+  ion-text[color='warning'] p {
+    background: var(--sicma-advertencia-suave);
+  }
+
+  ion-button[type='submit'],
+  ion-button[type='button'] {
+    height: 42px;
+  }
+
+  ion-button[fill='clear'] {
+    --color: var(--ion-color-primary);
   }
 }

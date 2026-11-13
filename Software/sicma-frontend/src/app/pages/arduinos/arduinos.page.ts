@@ -9,8 +9,6 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonContent,
-  IonItem,
-  IonLabel,
   IonNote,
   IonSpinner,
 } from '@ionic/angular';
@@ -32,8 +30,6 @@ import { EncabezadoComponent } from '../../shared/encabezado.component';
     IonCardHeader,
     IonCardTitle,
     IonContent,
-    IonItem,
-    IonLabel,
     IonNote,
     IonSpinner,
   ],

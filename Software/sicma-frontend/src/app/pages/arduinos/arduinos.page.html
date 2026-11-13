@@ -1,10 +1,10 @@
-<app-encabezado titulo="Arduinos"></app-encabezado>
+<app-encabezado titulo="Arduinos" seccion="Inventario"></app-encabezado>
 
 <ion-content>
   <div class="contenido-limitado">
     <div class="intro">
       <h2>Controladores ambientales</h2>
-      <p>Última lectura de cada dispositivo y los umbrales de la zona donde está instalado.</p>
+      <p>Última lectura de cada dispositivo y los umbrales de la zona donde está instalado. Los dispositivos se registran en Catálogos › Dispositivos IoT.</p>
     </div>
 
     @if (cargando()) {
@@ -17,9 +17,15 @@
           <ion-card>
             <ion-card-header>
               <div class="encabezado-tarjeta">
-                <div>
+                <div class="icono-dispositivo" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                    <path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" />
+                  </svg>
+                </div>
+                <div class="titulo-dispositivo">
                   <ion-card-title>{{ arduino.nombre }}</ion-card-title>
-                  <ion-note>{{ arduino.id }} · {{ arduino.ubicacion }}</ion-note>
+                  <ion-note class="mono">{{ arduino.id }} · {{ arduino.ubicacion }}</ion-note>
                 </div>
                 <ion-badge [color]="arduino.estado === 'conectado' ? 'success' : 'medium'">
                   {{ arduino.estado }}
@@ -27,30 +33,34 @@
               </div>
             </ion-card-header>
             <ion-card-content>
-              <p class="lectura">
-                Última lectura:
-                <strong>{{ arduino.temperatura }} °C · {{ arduino.humedad }} %</strong>
-              </p>
-              <p class="ubicacion">
-                Sitio {{ arduino.sitio }} · rack {{ arduino.rack }} ·
-                {{ arduino.ultimaLectura | date: 'dd/MM/yyyy HH:mm' }}
-              </p>
+              <div class="lecturas">
+                <div>
+                  <p class="etiqueta-menor">Temperatura</p>
+                  <p class="valor">{{ arduino.temperatura }}<span>°C</span></p>
+                </div>
+                <div>
+                  <p class="etiqueta-menor">Humedad</p>
+                  <p class="valor">{{ arduino.humedad }}<span>%</span></p>
+                </div>
+              </div>
 
-              <h3>Umbrales de la zona</h3>
-              <ion-item lines="none">
-                <ion-label>Temperatura</ion-label>
-                <ion-note slot="end">
-                  {{ rango(arduino.umbrales?.temperaturaMinima ?? null, arduino.umbrales?.temperaturaMaxima ?? null, '°C') }}
-                </ion-note>
-              </ion-item>
-              <ion-item lines="none">
-                <ion-label>Humedad</ion-label>
-                <ion-note slot="end">
-                  {{ rango(arduino.umbrales?.humedadMinima ?? null, arduino.umbrales?.humedadMaxima ?? null, '%') }}
-                </ion-note>
-              </ion-item>
+              <dl class="grilla-datos">
+                <div>
+                  <dt>Rango temperatura</dt>
+                  <dd class="mono">{{ rango(arduino.umbrales?.temperaturaMinima ?? null, arduino.umbrales?.temperaturaMaxima ?? null, '°C') }}</dd>
+                </div>
+                <div>
+                  <dt>Rango humedad</dt>
+                  <dd class="mono">{{ rango(arduino.umbrales?.humedadMinima ?? null, arduino.umbrales?.humedadMaxima ?? null, '%') }}</dd>
+                </div>
+                <div class="ancho-completo">
+                  <dt>Última lectura</dt>
+                  <dd>{{ arduino.ultimaLectura | date: 'dd/MM/yyyy HH:mm' }} · Sitio {{ arduino.sitio }} · rack {{ arduino.rack }}</dd>
+                </div>
+              </dl>
+
               <ion-button fill="clear" size="small" routerLink="/monitoreo" fragment="umbrales">
-                Ver o cambiar umbrales por zona
+                Ver o cambiar umbrales por zona →
               </ion-button>
             </ion-card-content>
           </ion-card>

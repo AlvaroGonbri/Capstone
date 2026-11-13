@@ -1,41 +1,76 @@
 .nota {
   display: block;
-  padding: 8px 16px;
-  font-size: 0.8rem;
+  padding: 2px 2px 12px;
+  font-size: 0.78rem;
+  line-height: 1.5;
 }
 
 .rejilla-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 4px 16px;
+  gap: 12px 16px;
   align-items: end;
 }
 
 .acciones {
   display: flex;
-  gap: 4px;
+  gap: 6px;
+
+  ion-button {
+    margin: 0;
+  }
 }
 
+/* Alta rápida de tipos y estados */
 .fila-tipo {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   gap: 12px;
-  padding: 8px 16px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--sicma-linea);
+  border-radius: var(--sicma-radio);
+  background: var(--sicma-superficie);
+
+  ion-input,
+  ion-select {
+    flex: 1 1 200px;
+  }
+
+  ion-button {
+    margin: 0 0 1px;
+  }
 }
 
+ion-list ion-item ion-input {
+  max-width: 360px;
+}
+
+ion-badge {
+  text-transform: capitalize;
+}
+
+/* Aviso de clave nueva del dispositivo */
 .clave {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin: 12px 16px;
-  padding: 12px;
-  border-left: 4px solid var(--ion-color-warning);
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--ion-color-warning) 12%, transparent);
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid #e9d27a;
+  border-radius: 8px;
+  background: #fffbe6;
+  color: #5c4a00;
   font-size: 0.85rem;
 
   code {
-    font-size: 1rem;
+    align-self: flex-start;
+    padding: 2px 8px;
+    border: 1px solid #e9d27a;
+    border-radius: 5px;
+    background: #fff;
+    font-size: 0.95rem;
     word-break: break-all;
     user-select: all;
   }

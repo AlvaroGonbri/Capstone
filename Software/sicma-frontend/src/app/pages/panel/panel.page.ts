@@ -12,11 +12,17 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonNote,
   IonSkeletonText,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { alertCircleOutline, arrowForwardOutline, thermometerOutline } from 'ionicons/icons';
+import {
+  alertCircleOutline,
+  arrowForwardOutline,
+  buildOutline,
+  cubeOutline,
+  fingerPrintOutline,
+  thermometerOutline,
+} from 'ionicons/icons';
 import { catchError, forkJoin, of } from 'rxjs';
 import { ActivoInventario, EstadoSensor, EventoAcceso, Intervencion } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
@@ -25,6 +31,7 @@ import { InventarioService } from '../../core/services/inventario.service';
 import {
   ESTADOS_CERRADOS,
   IntervencionesService,
+  colorEstadoIntervencion,
   etiquetaEstadoIntervencion,
   tituloIntervencion,
 } from '../../core/services/intervenciones.service';
@@ -52,7 +59,6 @@ const DESDE_AYER = () => new Date(Date.now() - 86_400_000).toISOString().slice(0
     IonItem,
     IonLabel,
     IonList,
-    IonNote,
     IonSkeletonText,
   ],
   templateUrl: './panel.page.html',
@@ -100,9 +106,17 @@ export class PanelPage {
   );
   protected readonly etiquetaIntervencion = etiquetaEstadoIntervencion;
   protected readonly tituloIntervencion = tituloIntervencion;
+  protected readonly colorIntervencion = colorEstadoIntervencion;
 
   constructor() {
-    addIcons({ alertCircleOutline, thermometerOutline, arrowForwardOutline });
+    addIcons({
+      alertCircleOutline,
+      thermometerOutline,
+      arrowForwardOutline,
+      cubeOutline,
+      buildOutline,
+      fingerPrintOutline,
+    });
 
     forkJoin({
       activos: this.inventarioService.listar(),

@@ -1,30 +1,202 @@
-.menu-usuario {
-  padding: 20px 20px 8px;
+/* ------------------------------------------------- Menú lateral tipo consola */
+.menu-consola {
+  --width: 248px;
+  --background: var(--sicma-consola);
+
+  ion-content {
+    --background: var(--sicma-consola);
+    --color: var(--sicma-consola-texto);
+  }
+
+  ion-content::part(scroll) {
+    display: flex;
+    flex-direction: column;
+    padding: 18px 12px 14px;
+  }
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 8px 18px;
+
+  &__logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: var(--ion-color-primary);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+
+    svg {
+      width: 19px;
+      height: 19px;
+    }
+  }
+
+  p {
+    margin: 0;
+  }
 
   &__nombre {
-    margin: 0 0 2px;
-    font-size: 1rem;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+
+  &__sub {
+    color: #7f8e99;
+    font-size: 0.68rem;
+    margin-top: 1px !important;
+  }
+}
+
+.menu-navegacion ion-list {
+  padding: 0;
+  background: transparent;
+}
+
+.menu-grupo {
+  margin: 14px 10px 6px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6c7b86;
+}
+
+.menu-navegacion ion-item {
+  --background: transparent;
+  --background-hover: #fff;
+  --background-hover-opacity: 0.05;
+  --color: var(--sicma-consola-texto);
+  --min-height: 38px;
+  --padding-start: 10px;
+  --inner-padding-end: 8px;
+  --border-radius: 7px;
+  --border-width: 0;
+  --inner-border-width: 0;
+  font-size: 0.86rem;
+  font-weight: 500;
+  margin-bottom: 2px;
+  border-radius: 7px;
+
+  ion-icon {
+    color: inherit;
+    font-size: 1.1rem;
+    margin-inline-end: 12px;
+  }
+}
+
+.menu-navegacion ion-item.item-activo {
+  --background: var(--sicma-consola-2);
+  --color: #fff;
+  box-shadow: inset 3px 0 0 var(--ion-color-primary);
+
+  ion-icon {
+    color: #8fd9df;
+  }
+}
+
+.menu-usuario {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 4px 0 8px;
+  border-top: 1px solid #23313b;
+
+  &__avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #26414a;
+    color: #9fe0e5;
+    display: grid;
+    place-items: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  &__datos {
+    min-width: 0;
+    flex: 1;
+  }
+
+  p {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__nombre {
+    color: #fff;
+    font-size: 0.82rem;
     font-weight: 600;
   }
 
-  ion-note {
-    font-size: 0.8rem;
+  &__rol {
+    color: #7f8e99;
+    font-size: 0.72rem;
     text-transform: capitalize;
   }
-}
 
-ion-item.item-activo {
-  --background: rgba(var(--ion-color-primary-rgb), 0.12);
-  --color: var(--ion-color-primary);
-  font-weight: 600;
-
-  ion-icon {
-    color: var(--ion-color-primary);
+  &__salir {
+    --color: #7f8e99;
+    --color-hover: #fff;
+    --background: transparent;
+    margin: 0;
   }
 }
 
-.menu-pie {
-  margin-top: 12px;
-  border-top: 1px solid var(--ion-color-step-150, #e0e0e0);
-  padding-top: 8px;
+/* ------------------------------------------------- Pestañas inferiores (app móvil) */
+$alto-pestanas: 58px;
+
+.con-pestanas ion-split-pane {
+  bottom: calc(#{$alto-pestanas} + env(safe-area-inset-bottom));
+}
+
+.pestanas {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  height: calc(#{$alto-pestanas} + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--sicma-superficie);
+  border-top: 1px solid var(--sicma-linea);
+
+  &__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: var(--sicma-tenue);
+    text-decoration: none;
+    cursor: pointer;
+
+    ion-icon {
+      font-size: 1.3rem;
+    }
+
+    &.activa {
+      color: var(--ion-color-primary);
+      font-weight: 600;
+    }
+  }
 }

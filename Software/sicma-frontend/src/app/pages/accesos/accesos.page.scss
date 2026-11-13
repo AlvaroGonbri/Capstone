@@ -1,9 +1,18 @@
-ion-item.denegado {
-  --background: rgba(179, 51, 47, 0.06);
+/* Filas del registro: el color va en el borde, no en todo el fondo */
+.lista-eventos ion-item {
+  border-left: 3px solid var(--sicma-normal);
+}
+.lista-eventos ion-item.denegado {
+  border-left-color: var(--sicma-critico);
+}
+.lista-eventos ion-item.falla {
+  border-left-color: var(--sicma-advertencia);
+  --background: #fffcf6;
 }
 
 .motivo {
-  font-style: italic;
+  font-family: var(--sicma-mono);
+  font-size: 0.75rem !important;
 }
 
 .derecha {
@@ -13,63 +22,140 @@ ion-item.denegado {
   gap: 4px;
 
   ion-note {
-    font-size: 0.74rem;
+    font-family: var(--sicma-mono);
+    font-size: 0.72rem;
     font-variant-numeric: tabular-nums;
   }
 }
 
 .nota {
   display: block;
-  padding: 8px 16px;
-  font-size: 0.8rem;
+  padding: 2px 2px 10px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+
+  a {
+    color: var(--ion-color-primary);
+    font-weight: 600;
+  }
 }
 
 .rejilla-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 4px 16px;
+  gap: 12px 16px;
   align-items: end;
 }
 
-.filtros {
-  padding: 8px 16px;
+.tarjeta-filtros {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--sicma-linea);
+  border-radius: var(--sicma-radio);
+  background: var(--sicma-superficie);
+
+  ion-searchbar {
+    margin: 0;
+  }
 }
 
 .acciones {
   display: flex;
-  gap: 4px;
-  margin-top: 8px;
+  gap: 6px;
+  margin-top: 4px;
+
+  ion-button {
+    margin: 0;
+  }
 }
 
 .etiqueta {
-  margin: 16px 0 4px;
-  font-size: 0.85rem;
+  margin: 16px 0 8px;
+  font-size: 0.78rem;
+  color: var(--sicma-tenue);
 }
 
+/* Días del permiso como píldoras */
 .dias {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 20px;
+  gap: 6px;
+  margin-bottom: 12px;
+
+  ion-checkbox {
+    --size: 16px;
+    padding: 6px 12px;
+    border: 1px solid var(--sicma-linea);
+    border-radius: 999px;
+    background: var(--sicma-superficie);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  ion-checkbox.checkbox-checked {
+    border-color: var(--ion-color-primary);
+    background: var(--sicma-primario-suave);
+    color: var(--ion-color-primary);
+  }
 }
 
 .id {
   font-weight: 400;
-  color: var(--ion-color-medium);
+  font-family: var(--sicma-mono);
+  font-size: 0.78rem;
+  color: var(--sicma-tenue);
+}
+
+.dos-columnas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 16px;
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  .dos-columnas {
+    grid-template-columns: minmax(0, 1fr) 420px;
+  }
+
+  .columna-formulario {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .dos-columnas > ion-list,
+  .dos-columnas > .vacio {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+
+.dos-columnas > ion-list {
+  border: 1px solid var(--sicma-linea);
+  border-radius: var(--sicma-radio);
+  overflow: hidden;
+  background: var(--sicma-superficie);
 }
 
 .clave {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin: 12px 16px;
-  padding: 12px;
-  border-left: 4px solid var(--ion-color-warning);
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--ion-color-warning) 12%, transparent);
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid #e9d27a;
+  border-radius: 8px;
+  background: #fffbe6;
+  color: #5c4a00;
   font-size: 0.85rem;
 
   code {
-    font-size: 1rem;
+    align-self: flex-start;
+    padding: 2px 8px;
+    border: 1px solid #e9d27a;
+    border-radius: 5px;
+    background: #fff;
+    font-size: 0.95rem;
     word-break: break-all;
     user-select: all;
   }

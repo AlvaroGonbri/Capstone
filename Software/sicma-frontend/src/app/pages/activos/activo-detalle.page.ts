@@ -74,6 +74,7 @@ const CAMPOS: Record<string, string> = {
     IonToolbar,
   ],
   templateUrl: './activo-detalle.page.html',
+  styleUrl: './activo-detalle.page.scss',
 })
 export class ActivoDetallePage {
   /** Id del inventario. Llega desde la ruta gracias a withComponentInputBinding(). */

@@ -1,9 +1,6 @@
-<ion-content class="ion-padding">
+<ion-content>
+  <app-pantalla-ingreso titulo="Nueva contraseña">
   <div class="recuperacion">
-    <header class="recuperacion__marca">
-      <h1>SICMA</h1>
-      <p>Nueva contraseña</p>
-    </header>
 
     @if (actualizado()) {
       <ion-text color="success">
@@ -68,4 +65,5 @@
       La contraseña debe tener al menos 8 caracteres y cumplir las reglas de seguridad.
     </ion-note>
   </div>
+  </app-pantalla-ingreso>
 </ion-content>

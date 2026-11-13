@@ -1,7 +1,7 @@
-<app-encabezado titulo="Panel"></app-encabezado>
+<app-encabezado titulo="Panel" seccion="Operación"></app-encabezado>
 
 <ion-content>
-  <div class="contenido-limitado ion-padding-vertical">
+  <div class="contenido-limitado">
     @if (cargando()) {
       <div class="rejilla-tarjetas">
         @for (i of [1, 2, 3, 4]; track i) {
@@ -14,106 +14,132 @@
         }
       </div>
     } @else {
-      <div class="rejilla-tarjetas">
-        <ion-card routerLink="/activos" button>
+      <div class="rejilla-tarjetas kpis">
+        <ion-card routerLink="/activos" button class="kpi" [class.kpi--critico]="resumen().activosEnFalla > 0">
           <ion-card-content>
-            <p class="etiqueta-menor">Activos operativos</p>
+            <div class="kpi__titulo">
+              <span class="kpi__icono kpi__icono--normal"><ion-icon name="cube-outline" aria-hidden="true"></ion-icon></span>
+              Activos operativos
+            </div>
             <p class="dato-grande">
-              {{ resumen().activosOperativos }}<span class="de">/{{ resumen().activosTotales }}</span>
+              {{ resumen().activosOperativos }}<span class="de"> / {{ resumen().activosTotales }}</span>
             </p>
-            <ion-note>{{ resumen().activosEnFalla }} en falla</ion-note>
+            <p class="kpi__detalle">{{ resumen().activosEnFalla }} en falla</p>
           </ion-card-content>
         </ion-card>
 
-        <ion-card routerLink="/monitoreo" button>
+        <ion-card
+          routerLink="/monitoreo"
+          button
+          class="kpi"
+          [class.kpi--critico]="resumen().sensoresEnAlerta > 0"
+          [class.kpi--normal]="resumen().sensoresEnAlerta === 0"
+        >
           <ion-card-content>
-            <p class="etiqueta-menor">Sensores en alerta</p>
+            <div class="kpi__titulo">
+              <span class="kpi__icono" [class.kpi__icono--critico]="resumen().sensoresEnAlerta > 0" [class.kpi__icono--normal]="resumen().sensoresEnAlerta === 0">
+                <ion-icon name="thermometer-outline" aria-hidden="true"></ion-icon>
+              </span>
+              Sensores en alerta
+            </div>
             <p
               class="dato-grande"
               [class.estado-critico]="resumen().sensoresEnAlerta > 0"
-              [class.estado-normal]="resumen().sensoresEnAlerta === 0"
             >
               {{ resumen().sensoresEnAlerta }}
             </p>
-            <ion-note>sobre umbral de temperatura o humedad</ion-note>
+            <p class="kpi__detalle">sobre umbral de temperatura o humedad</p>
           </ion-card-content>
         </ion-card>
 
         @if (veAccesos) {
-          <ion-card routerLink="/accesos" button>
+          <ion-card routerLink="/accesos" button class="kpi" [class.kpi--advertencia]="resumen().accesosDenegadosHoy > 0">
             <ion-card-content>
-              <p class="etiqueta-menor">Accesos de hoy</p>
+              <div class="kpi__titulo">
+                <span class="kpi__icono kpi__icono--advertencia"><ion-icon name="finger-print-outline" aria-hidden="true"></ion-icon></span>
+                Accesos de hoy
+              </div>
               <p class="dato-grande">{{ resumen().accesosHoy }}</p>
-              <ion-note>{{ resumen().accesosDenegadosHoy }} denegados</ion-note>
+              <p class="kpi__detalle">{{ resumen().accesosDenegadosHoy }} denegados</p>
             </ion-card-content>
           </ion-card>
         }
 
-        <ion-card routerLink="/intervenciones" button>
+        <ion-card routerLink="/intervenciones" button class="kpi kpi--primario">
           <ion-card-content>
-            <p class="etiqueta-menor">Intervenciones abiertas</p>
+            <div class="kpi__titulo">
+              <span class="kpi__icono kpi__icono--primario"><ion-icon name="build-outline" aria-hidden="true"></ion-icon></span>
+              Intervenciones abiertas
+            </div>
             <p class="dato-grande">{{ resumen().intervencionesAbiertas }}</p>
-            <ion-note>planificadas y en curso</ion-note>
+            <p class="kpi__detalle">planificadas y en curso</p>
           </ion-card-content>
         </ion-card>
       </div>
 
-      <ion-card>
-        <ion-card-header>
-          <ion-card-title>Alertas ambientales</ion-card-title>
-        </ion-card-header>
-        <ion-card-content class="ion-no-padding">
-          @if (alertas().length === 0) {
-            <p class="vacio">Todas las salas dentro de rango.</p>
-          } @else {
-            <ion-list lines="full">
-              @for (sensor of alertas(); track sensor.sensorId) {
-                <ion-item routerLink="/monitoreo" button detail="true">
-                  <ion-icon
-                    slot="start"
-                    name="alert-circle-outline"
-                    [color]="sensor.nivel | colorNivel"
-                    aria-hidden="true"
-                  ></ion-icon>
-                  <ion-label>
-                    <h3>{{ sensor.ubicacion }} · rack {{ sensor.rack }}</h3>
-                    <p>
-                      {{ sensor.temperatura }} °C y {{ sensor.humedad }} % ·
-                      {{ sensor.actualizadoEn | date: 'HH:mm' }}
-                    </p>
-                  </ion-label>
-                  <ion-badge slot="end" [color]="sensor.nivel | colorNivel">
-                    {{ sensor.nivel }}
-                  </ion-badge>
-                </ion-item>
-              }
-            </ion-list>
-          }
-        </ion-card-content>
-      </ion-card>
+      <div class="columnas">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Alertas ambientales</ion-card-title>
+            @if (alertas().length > 0) {
+              <ion-badge color="danger">{{ alertas().length }}</ion-badge>
+            }
+            <a class="ver-todo" routerLink="/monitoreo">Ver monitoreo <ion-icon name="arrow-forward-outline" aria-hidden="true"></ion-icon></a>
+          </ion-card-header>
+          <ion-card-content class="ion-no-padding">
+            @if (alertas().length === 0) {
+              <p class="vacio">Todas las salas dentro de rango.</p>
+            } @else {
+              <ion-list lines="full">
+                @for (sensor of alertas(); track sensor.sensorId) {
+                  <ion-item routerLink="/monitoreo" button detail="true" class="fila-alerta" [class]="'nivel-' + sensor.nivel">
+                    <ion-icon
+                      slot="start"
+                      name="alert-circle-outline"
+                      [color]="sensor.nivel | colorNivel"
+                      aria-hidden="true"
+                    ></ion-icon>
+                    <ion-label>
+                      <h3>{{ sensor.ubicacion }} · rack {{ sensor.rack }}</h3>
+                      <p>
+                        <span class="mono">{{ sensor.temperatura }} °C · {{ sensor.humedad }} %</span> ·
+                        {{ sensor.actualizadoEn | date: 'dd/MM HH:mm' }}
+                      </p>
+                    </ion-label>
+                    <ion-badge slot="end" [color]="sensor.nivel | colorNivel">
+                      {{ sensor.nivel }}
+                    </ion-badge>
+                  </ion-item>
+                }
+              </ion-list>
+            }
+          </ion-card-content>
+        </ion-card>
 
-      <ion-card>
-        <ion-card-header>
-          <ion-card-title>Trabajos abiertos</ion-card-title>
-        </ion-card-header>
-        <ion-card-content class="ion-no-padding">
-          @if (trabajosAbiertos().length === 0) {
-            <p class="vacio">Sin intervenciones pendientes.</p>
-          } @else {
-            <ion-list lines="full">
-              @for (trabajo of trabajosAbiertos(); track trabajo.id) {
-                <ion-item routerLink="/intervenciones" button detail="true">
-                  <ion-label>
-                    <h3>{{ tituloIntervencion(trabajo) }}</h3>
-                    <p>{{ trabajo.impacto_esperado || trabajo.objetivo }}</p>
-                  </ion-label>
-                  <ion-note slot="end">{{ etiquetaIntervencion(trabajo.estado) }}</ion-note>
-                </ion-item>
-              }
-            </ion-list>
-          }
-        </ion-card-content>
-      </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Trabajos abiertos</ion-card-title>
+            <a class="ver-todo" routerLink="/intervenciones">Intervenciones <ion-icon name="arrow-forward-outline" aria-hidden="true"></ion-icon></a>
+          </ion-card-header>
+          <ion-card-content class="ion-no-padding">
+            @if (trabajosAbiertos().length === 0) {
+              <p class="vacio">Sin intervenciones pendientes.</p>
+            } @else {
+              <ion-list lines="full">
+                @for (trabajo of trabajosAbiertos(); track trabajo.id) {
+                  <ion-item routerLink="/intervenciones" button detail="true">
+                    <ion-label>
+                      <h3>{{ tituloIntervencion(trabajo) }}</h3>
+                      <p>{{ trabajo.impacto_esperado || trabajo.objetivo }}</p>
+                    </ion-label>
+                    <ion-badge slot="end" [color]="colorIntervencion(trabajo.estado)">{{ etiquetaIntervencion(trabajo.estado) }}</ion-badge>
+                  </ion-item>
+                }
+              </ion-list>
+            }
+          </ion-card-content>
+        </ion-card>
+      </div>
     }
   </div>
 </ion-content>

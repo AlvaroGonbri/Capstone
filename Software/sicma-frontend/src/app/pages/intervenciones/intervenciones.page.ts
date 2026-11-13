@@ -162,6 +162,23 @@ export class IntervencionesPage {
     this.filtro.set(valor as Filtro);
   }
 
+  /** Pasos del flujo, solo para mostrar el avance (no cambia los estados). */
+  protected readonly pasos = ['Solicitada', 'Aprobada', 'En ejecución', 'Cerrada'];
+
+  protected pasoActual(estado: Intervencion['estado']): number {
+    switch (estado) {
+      case 'Pendiente':
+      case 'CambiosSolicitados':
+        return 0;
+      case 'Aprobada':
+        return 1;
+      case 'EnEjecucion':
+        return 2;
+      default:
+        return 3;
+    }
+  }
+
   protected alternar(i: Intervencion): void {
     if (this.seleccionada() === i.id) {
       this.seleccionada.set(null);

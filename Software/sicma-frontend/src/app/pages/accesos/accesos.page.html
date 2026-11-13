@@ -1,4 +1,4 @@
-<app-encabezado titulo="Accesos"></app-encabezado>
+<app-encabezado titulo="Accesos" seccion="Seguridad"></app-encabezado>
 
 <ion-content>
   <div class="contenido-limitado">
@@ -15,7 +15,7 @@
 
     @switch (pestana()) {
       @case ('registro') {
-        <form class="rejilla-form filtros" [formGroup]="filtros" (ngSubmit)="buscar()">
+        <form class="rejilla-form filtros tarjeta-filtros" [formGroup]="filtros" (ngSubmit)="buscar()">
           <ion-input label="Desde" labelPlacement="stacked" type="date" formControlName="desde"></ion-input>
           <ion-input label="Hasta" labelPlacement="stacked" type="date" formControlName="hasta"></ion-input>
           <ion-select label="Resultado" labelPlacement="stacked" interface="popover" formControlName="resultado">
@@ -45,9 +45,9 @@
           <p class="vacio">Sin intentos de acceso para estos filtros.</p>
         } @else {
           <ion-note class="nota">{{ eventos().length }} intentos{{ eventos().length === 500 ? ' (los 500 más recientes; acota los filtros)' : '' }}</ion-note>
-          <ion-list lines="full">
+          <ion-list lines="full" class="lista-eventos">
             @for (e of eventos(); track e.id) {
-              <ion-item [class.denegado]="e.resultado !== 'Permitido'">
+              <ion-item [class.denegado]="e.resultado === 'Denegado'" [class.falla]="e.resultado === 'Error'">
                 <ion-icon slot="start" name="finger-print-outline" [color]="colorResultado(e.resultado)" aria-hidden="true"></ion-icon>
                 <ion-label>
                   <h3>{{ e.persona_nombre || 'Persona no identificada' }}</h3>
@@ -75,7 +75,8 @@
             <ion-button size="small" fill="clear" (click)="claveNueva.set(null)">Ya la copié</ion-button>
           </div>
         }
-        <ion-card>
+        <div class="dos-columnas">
+        <ion-card class="columna-formulario">
           <ion-card-header><ion-card-title>Nuevo lector</ion-card-title></ion-card-header>
           <ion-card-content>
             <form class="rejilla-form" [formGroup]="formPunto" (ngSubmit)="crearPunto()">
@@ -104,10 +105,12 @@
             <p class="vacio">No hay lectores registrados.</p>
           }
         </ion-list>
+        </div>
       }
 
       @case ('permisos') {
-        <ion-card>
+        <div class="dos-columnas">
+        <ion-card class="columna-formulario">
           <ion-card-header><ion-card-title>Nuevo permiso</ion-card-title></ion-card-header>
           <ion-card-content>
             <form [formGroup]="formPermiso" (ngSubmit)="crearPermiso()">
@@ -157,6 +160,7 @@
             <p class="vacio">No hay permisos registrados.</p>
           }
         </ion-list>
+        </div>
       }
     }
   </div>

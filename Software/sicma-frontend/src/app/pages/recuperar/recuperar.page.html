@@ -1,9 +1,6 @@
-<ion-content class="ion-padding">
+<ion-content>
+  <app-pantalla-ingreso titulo="Recuperar contraseña">
   <div class="recuperacion">
-    <header class="recuperacion__marca">
-      <h1>SICMA</h1>
-      <p>Recuperación de contraseña</p>
-    </header>
 
     @if (enviado()) {
       <ion-text color="success">
@@ -68,4 +65,5 @@
       Si la dirección no existe o no puede recibir mensajes, no llegará ningún correo.
     </ion-note>
   </div>
+  </app-pantalla-ingreso>
 </ion-content>

@@ -151,3 +151,55 @@ h4 {
     grid-template-columns: 1fr;
   }
 }
+
+/* ------------------------------------------------- Ajustes del rediseño */
+.nota {
+  padding: 2px 2px 12px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.rejilla-form {
+  gap: 12px 16px;
+}
+
+.insignias ion-badge {
+  white-space: nowrap;
+}
+
+.detalle {
+  margin: -1px 0 12px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-color: var(--ion-color-primary);
+}
+
+.datos {
+  gap: 8px 16px;
+  font-size: 0.85rem;
+
+  dt {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--sicma-tenue);
+  }
+
+  dd {
+    color: var(--sicma-tinta);
+  }
+}
+
+h4 {
+  margin: 18px 0 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--sicma-linea-suave);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sicma-tinta);
+}
+
+.enrolamiento {
+  border: 1px solid var(--sicma-linea);
+  border-left-width: 3px;
+  border-radius: 10px;
+}

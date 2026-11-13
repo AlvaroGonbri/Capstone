@@ -1,4 +1,4 @@
-<app-encabezado titulo="Usuarios"></app-encabezado>
+<app-encabezado titulo="Usuarios" seccion="Seguridad"></app-encabezado>
 
 <ion-content>
   <div class="contenido-limitado">
@@ -30,7 +30,12 @@
       }
     </form>
 
-    <ion-button (click)="nuevo()">Nuevo usuario</ion-button>
+    <div class="dos-columnas">
+    <div class="columna-lista">
+    <div class="barra-lista">
+      <h2 class="titulo-seccion">Cuentas</h2>
+      <ion-button size="small" (click)="nuevo()">Nuevo usuario</ion-button>
+    </div>
 
     @if (error()) {
       <ion-text color="danger"><p>{{ error() }}</p></ion-text>
@@ -60,8 +65,9 @@
         </ion-item>
       }
     </ion-list>
+    </div>
 
-    <form [formGroup]="formulario" (ngSubmit)="guardar()">
+    <form class="columna-formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
       <h2>{{ editando() ? 'Editar usuario' : 'Crear usuario' }}</h2>
       <ion-item><ion-input label="Usuario" labelPlacement="stacked" formControlName="username"></ion-input></ion-item>
       <ion-item><ion-input label="Correo" type="email" labelPlacement="stacked" formControlName="email"></ion-input></ion-item>
@@ -89,5 +95,6 @@
         @if (guardando()) { <ion-spinner name="crescent"></ion-spinner> } @else { Guardar }
       </ion-button>
     </form>
+    </div>
   </div>
 </ion-content>

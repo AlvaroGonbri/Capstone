@@ -1,9 +1,6 @@
-<ion-content class="ion-padding">
+<ion-content>
+  <app-pantalla-ingreso titulo="Ingresar">
   <div class="ingreso">
-    <header class="ingreso__marca">
-      <h1>SICMA</h1>
-      <p>Sistema Integrado de Control y Monitoreo de Activos</p>
-    </header>
 
     <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
       <ion-list lines="full">
@@ -63,4 +60,5 @@
       Usa las credenciales de tu cuenta SICMA.
     </ion-note>
   </div>
+  </app-pantalla-ingreso>
 </ion-content>

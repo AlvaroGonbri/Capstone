@@ -1,4 +1,4 @@
-<app-encabezado titulo="Activos">
+<app-encabezado titulo="Activos" seccion="Inventario">
   @if (puedeEditar) {
     <ion-buttons slot="end" acciones>
       <ion-button routerLink="/activos/nuevo">Nuevo activo</ion-button>
@@ -42,26 +42,38 @@
 
     @if (alertas().length > 0) {
       <section class="alertas-infra" role="alert">
-        <h2>Alertas de infraestructura abiertas ({{ alertas().length }})</h2>
-        @for (alerta of alertas(); track alerta.id) {
-          <div class="alerta">
-            <ion-badge [color]="colorSeveridad(alerta.severidad)">{{ alerta.severidad }}</ion-badge>
-            <span>
-              <strong>{{ alerta.condicion }}</strong>
-              <small>desde {{ alerta.fecha_apertura | date: 'dd/MM HH:mm' }} · evento Zabbix {{ alerta.evento_zabbix }}</small>
-            </span>
-            @if (alerta.ultima_gestion; as g) {
-              <small class="gestion">{{ g.accion }} por {{ g.usuario || '—' }} a las {{ g.fecha_hora | date: 'HH:mm' }}</small>
-            }
-            @if (puedeGestionarAlertas) {
-              <span class="acciones-alerta">
-                @if (alerta.estado === 'Nueva') {
-                  <ion-button size="small" fill="outline" (click)="reconocerAlerta(alerta)">Reconocer</ion-button>
+        <div class="alertas-infra__resumen">
+          <ion-icon name="warning-outline" aria-hidden="true"></ion-icon>
+          <strong>{{ alertas().length }} {{ alertas().length === 1 ? 'alerta' : 'alertas' }} de infraestructura abiertas</strong>
+          @for (s of alertasPorSeveridad(); track s.severidad) {
+            <ion-badge [color]="colorSeveridad(s.severidad)">{{ s.cantidad }} {{ s.severidad }}</ion-badge>
+          }
+          <ion-button size="small" fill="outline" class="alertas-infra__boton" (click)="alertasDesplegadas.set(!alertasDesplegadas())"
+            [attr.aria-expanded]="alertasDesplegadas()">
+            {{ alertasDesplegadas() ? 'Ocultar' : (puedeGestionarAlertas ? 'Ver y gestionar' : 'Ver detalle') }}
+          </ion-button>
+        </div>
+        @if (alertasDesplegadas()) {
+          @for (alerta of alertas(); track alerta.id) {
+            <div class="alerta" [attr.data-severidad]="colorSeveridad(alerta.severidad)">
+              <ion-badge [color]="colorSeveridad(alerta.severidad)">{{ alerta.severidad }}</ion-badge>
+              <span class="alerta__texto">
+                <strong>{{ alerta.condicion }}</strong>
+                <small>desde {{ alerta.fecha_apertura | date: 'dd/MM HH:mm' }} · evento Zabbix <span class="mono">{{ alerta.evento_zabbix }}</span></small>
+                @if (alerta.ultima_gestion; as g) {
+                  <small class="gestion">{{ g.accion }} por {{ g.usuario || '—' }} a las {{ g.fecha_hora | date: 'HH:mm' }}</small>
                 }
-                <ion-button size="small" fill="clear" (click)="cerrarAlerta(alerta)">Cerrar</ion-button>
               </span>
-            }
-          </div>
+              @if (puedeGestionarAlertas) {
+                <span class="acciones-alerta">
+                  @if (alerta.estado === 'Nueva') {
+                    <ion-button size="small" fill="outline" (click)="reconocerAlerta(alerta)">Reconocer</ion-button>
+                  }
+                  <ion-button size="small" fill="clear" (click)="cerrarAlerta(alerta)">Cerrar</ion-button>
+                </span>
+              }
+            </div>
+          }
         }
       </section>
     }
@@ -114,29 +126,43 @@
       } @else if (filtrados().length === 0) {
         <p class="vacio">Ningún activo coincide con la búsqueda.</p>
       } @else {
-        <ion-list lines="full">
+        <div class="tabla-activos" role="table" aria-label="Activos">
+          <div class="tabla-activos__cabecera" role="row">
+            <span role="columnheader">Activo</span>
+            <span role="columnheader">Tipo</span>
+            <span role="columnheader">Ubicación</span>
+            <span role="columnheader">Responsable</span>
+            <span role="columnheader">Criticidad</span>
+            <span role="columnheader">Zabbix</span>
+            <span role="columnheader">Estado</span>
+          </div>
           @for (activo of filtrados(); track activo.id) {
-            <ion-item [routerLink]="['/activos', activo.id]" button detail="true">
-              <ion-label>
-                <h3>{{ activo.nombre }}</h3>
-                <p>{{ activo.codigo }} · {{ activo.tipo || 'Sin tipo' }} · {{ activo.ubicacion_nombre }}</p>
-                <p>
-                  Responsable: {{ activo.responsable_nombre || 'sin asignar' }} · Criticidad {{ activo.criticidad }}
-                  @if (host(activo); as h) {
-                    · Zabbix: <ion-badge [color]="colorZabbix(h)">{{ h.estado }}</ion-badge>
-                    @if (h.problemasActivos) { {{ h.problemasActivos }} problema(s) }
-                  }
-                </p>
-              </ion-label>
-              <ion-badge slot="end" [color]="colorEstado(activo.estado)">{{ etiquetaEstado(activo.estado) }}</ion-badge>
-            </ion-item>
+            <a class="tabla-activos__fila" role="row" [routerLink]="['/activos', activo.id]">
+              <span role="cell" class="celda-activo">
+                <b>{{ activo.nombre }}</b>
+                <small class="mono">{{ activo.codigo }}</small>
+              </span>
+              <span role="cell" class="celda-secundaria" data-etiqueta="Tipo">{{ activo.tipo || 'Sin tipo' }}</span>
+              <span role="cell" class="celda-secundaria" data-etiqueta="Ubicación">{{ activo.ubicacion_nombre }}</span>
+              <span role="cell" class="celda-secundaria" data-etiqueta="Responsable">{{ activo.responsable_nombre || 'sin asignar' }}</span>
+              <span role="cell" data-etiqueta="Criticidad"><ion-badge [color]="colorCriticidad(activo.criticidad)">{{ activo.criticidad }}</ion-badge></span>
+              <span role="cell" data-etiqueta="Zabbix">
+                @if (host(activo); as h) {
+                  <ion-badge [color]="colorZabbix(h)">{{ h.estado }}</ion-badge>
+                  @if (h.problemasActivos) { <small class="problemas">{{ h.problemasActivos }} problema(s)</small> }
+                } @else {
+                  <small class="celda-secundaria">—</small>
+                }
+              </span>
+              <span role="cell" data-etiqueta="Estado"><ion-badge [color]="colorEstado(activo.estado)">{{ etiquetaEstado(activo.estado) }}</ion-badge></span>
+            </a>
           }
-        </ion-list>
+        </div>
       }
 
       @if (sinInventariar().length > 0) {
         <section class="sin-inventariar">
-          <h2>Monitoreados por Zabbix sin inventariar ({{ sinInventariar().length }})</h2>
+          <h2 class="titulo-seccion">Monitoreados por Zabbix sin inventariar ({{ sinInventariar().length }})</h2>
           <ion-list lines="full">
             @for (host of sinInventariar(); track host.id) {
               <ion-item>

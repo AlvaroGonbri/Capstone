@@ -1,4 +1,4 @@
-<app-encabezado titulo="Intervenciones"></app-encabezado>
+<app-encabezado titulo="Intervenciones" seccion="Operación"></app-encabezado>
 
 <ion-content>
   <div class="contenido-limitado">
@@ -32,9 +32,10 @@
     } @else if (filtradas().length === 0) {
       <p class="vacio">Sin intervenciones para este filtro.</p>
     } @else {
-      <ion-list lines="full">
+      <ion-list lines="none" class="lista-intervenciones">
         @for (i of filtradas(); track i.id) {
-          <ion-item button detail="false" (click)="alternar(i)" [attr.aria-expanded]="seleccionada() === i.id">
+          <ion-item button detail="false" class="tarjeta-intervencion" [class.elegida]="seleccionada() === i.id"
+            (click)="alternar(i)" [attr.aria-expanded]="seleccionada() === i.id">
             <ion-label>
               <h3>{{ titulo(i) }}</h3>
               <p class="descripcion">Servicios afectados: {{ i.impacto_esperado || '—' }}</p>
@@ -49,6 +50,17 @@
 
           @if (seleccionada() === i.id) {
             <ion-card class="detalle">
+              <div class="detalle-cabecera">
+                <h3>{{ titulo(i) }}</h3>
+                <ion-badge [color]="colorEstado(i.estado)">{{ etiquetaEstado(i.estado) }}</ion-badge>
+                <span class="detalle-cabecera__servicios">Servicios afectados: {{ i.impacto_esperado || '—' }}</span>
+              </div>
+              <ol class="pasos" aria-label="Avance de la intervención">
+                @for (paso of pasos; track paso; let n = $index) {
+                  <li [class.hecho]="n < pasoActual(i.estado) || (n === pasoActual(i.estado) && n === pasos.length - 1)"
+                    [class.actual]="n === pasoActual(i.estado) && n < pasos.length - 1">{{ paso }}</li>
+                }
+              </ol>
               <ion-card-content>
                 <dl class="datos">
                   <dt>Solicitante</dt><dd>{{ i.solicitante_nombre || '—' }} ({{ i.solicitante_correo || 'sin correo' }})</dd>
@@ -224,6 +236,11 @@
               </ion-card-content>
             </ion-card>
           }
+        }
+        @if (seleccionada() === null) {
+          <div class="sin-seleccion">
+            <p class="vacio">Elige una intervención para ver su detalle y sus acciones.</p>
+          </div>
         }
       </ion-list>
     }

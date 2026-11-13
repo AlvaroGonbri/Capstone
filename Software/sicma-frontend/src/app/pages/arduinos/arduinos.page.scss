@@ -1,75 +1,112 @@
 .intro {
-  padding: 18px 16px 8px;
-
-  h2,
-  p {
-    margin: 0;
-  }
+  margin-bottom: 16px;
 
   h2 {
-    font-size: 1.2rem;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
   }
 
   p {
-    margin-top: 4px;
-    color: var(--ion-color-medium);
+    margin: 4px 0 0;
+    font-size: 0.8rem;
+    color: var(--sicma-tenue);
   }
-}
-
-.mensaje {
-  display: block;
-  padding: 8px 16px;
-  color: var(--ion-color-primary);
 }
 
 .rejilla-arduinos {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 16px;
-  padding: 8px 16px 24px;
+
+  ion-card {
+    margin: 0;
+  }
 }
 
 .encabezado-tarjeta {
   display: flex;
-  align-items: start;
-  justify-content: space-between;
+  align-items: center;
   gap: 12px;
+  width: 100%;
 
-  ion-note {
-    display: block;
-    margin-top: 4px;
+  ion-badge {
+    margin-left: auto;
+    text-transform: capitalize;
   }
 }
 
-.lectura,
-.ubicacion {
-  margin: 0;
+.icono-dispositivo {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: var(--sicma-primario-suave);
+  color: var(--ion-color-primary);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
 }
 
-.lectura {
-  font-size: 1rem;
+.titulo-dispositivo {
+  min-width: 0;
+
+  ion-note {
+    display: block;
+    font-size: 0.75rem;
+    margin-top: 2px;
+  }
 }
 
-.lectura strong {
-  font-size: 1.35rem;
+ion-card-content {
+  padding: 4px 18px 10px;
 }
 
-.ubicacion {
-  margin-top: 4px;
-  color: var(--ion-color-medium);
-  font-size: 0.78rem;
+.lecturas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 12px 0 4px;
+
+  p {
+    margin: 0;
+  }
 }
 
-h3 {
-  margin: 20px 0 4px;
-  font-size: 0.95rem;
+.valor {
+  font-size: 2rem !important;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--sicma-tinta);
+  font-variant-numeric: tabular-nums;
+
+  span {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--sicma-tenue);
+    margin-left: 3px;
+    letter-spacing: 0;
+  }
 }
 
-ion-item {
+.grilla-datos {
+  padding: 12px 0 4px;
+  margin-top: 8px;
+  border-top: 1px solid var(--sicma-linea-suave);
+  grid-template-columns: 1fr 1fr;
+}
+
+ion-button[fill='clear'] {
   --padding-start: 0;
-  --inner-padding-end: 0;
+  margin-left: 0;
+  --color: var(--ion-color-primary);
 }
 
-ion-button {
-  margin: 18px 0 0;
+.mensaje {
+  display: block;
+  padding: 16px 0;
 }
