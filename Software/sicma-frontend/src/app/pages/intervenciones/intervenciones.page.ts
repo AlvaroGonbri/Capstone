@@ -1,7 +1,8 @@
-import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   IonBadge,
   IonButton,
@@ -23,7 +24,7 @@ import {
   IonText,
   IonTextarea,
 } from '@ionic/angular';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import {
   ActivoInventario,
   EstadoIntervencion,
@@ -44,6 +45,7 @@ import {
 } from '../../core/services/intervenciones.service';
 import { InventarioService, mensajeErrorApi } from '../../core/services/inventario.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
+import { iniciales } from '../../shared/texto.util';
 
 type Filtro = 'abiertas' | 'Pendiente' | 'Aprobada' | 'EnEjecucion' | 'cerradas' | 'todas';
 
@@ -63,6 +65,7 @@ function aEntradaLocal(iso: string | null): string {
   selector: 'app-intervenciones',
   imports: [
     DatePipe,
+    NgTemplateOutlet,
     ReactiveFormsModule,
     RouterLink,
     EncabezadoComponent,
@@ -98,7 +101,19 @@ export class IntervencionesPage {
 
   /** RF-INT-05: asigna y cancela el Administrador. RF-INT-06: ejecuta el técnico asignado. */
   protected readonly esAdmin = this.auth.puedeModificar('administrador', 'administradorprivilegiado');
+  /** El técnico solo recibe sus intervenciones asignadas (lo filtra el backend). */
+  protected readonly esTecnico = this.auth.tieneRol('tecnico');
+  /** App móvil (solo consulta): solo las pestañas Abiertas, Por aprobar y Cerradas. */
+  protected readonly movil = this.auth.soloConsulta;
+  /** ?id=N (desde el buscador o el Panel): esa intervención se abre al cargar la lista. */
+  private readonly pedida = toSignal(
+    inject(ActivatedRoute).queryParamMap.pipe(map((p) => Number(p.get('id')) || null)),
+    { initialValue: null },
+  );
+  private abiertaPorEnlace: number | null = null;
   private readonly usuarioId = this.auth.usuario()?.id ?? null;
+  /** Hora actual, renovada cada 30 s: habilita "Iniciar" al llegar la hora asignada sin recargar. */
+  private readonly ahora = signal(Date.now());
 
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -109,6 +124,8 @@ export class IntervencionesPage {
   protected readonly filtro = signal<Filtro>('abiertas');
   protected readonly seleccionada = signal<number | null>(null);
   protected readonly enviando = signal(false);
+  /** "Cancelar intervención" abre el campo del motivo; se confirma en la barra de abajo. */
+  protected readonly cancelando = signal(false);
   /** Personal externo elegido para la intervención abierta (se guarda al asignar o con "Guardar personal"). */
   protected readonly personalElegido = signal<PersonalIntervencion[]>([]);
   protected readonly resultadosPersonal = signal<PersonaAutorizada[]>([]);
@@ -120,6 +137,19 @@ export class IntervencionesPage {
   protected readonly etiquetaEstado = etiquetaEstadoIntervencion;
   protected readonly colorEstado = colorEstadoIntervencion;
   protected readonly titulo = tituloIntervencion;
+  protected readonly iniciales = iniciales;
+
+  /** Cantidad por pestaña: "Abiertas 2 · Por aprobar 1 · …". */
+  protected readonly conteo = computed(() => {
+    const lista = this.intervenciones();
+    const porEstado = (estado: EstadoIntervencion) => lista.filter((i) => i.estado === estado).length;
+    return {
+      abiertas: lista.filter((i) => !ESTADOS_CERRADOS.includes(i.estado)).length,
+      Pendiente: porEstado('Pendiente'),
+      Aprobada: porEstado('Aprobada'),
+      EnEjecucion: porEstado('EnEjecucion'),
+    };
+  });
 
   protected readonly filtradas = computed(() => {
     const f = this.filtro();
@@ -146,12 +176,33 @@ export class IntervencionesPage {
   });
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.detenerVerificacion());
+    const reloj = setInterval(() => this.ahora.set(Date.now()), 30_000);
+    inject(DestroyRef).onDestroy(() => {
+      this.detenerVerificacion();
+      clearInterval(reloj);
+    });
     this.cargar();
     if (this.esAdmin) {
       this.cargarTecnicos();
       this.inventario.listar().subscribe({ next: (lista) => this.activos.set(lista), error: () => undefined });
     }
+
+    // Abre la intervención del enlace en su pestaña (Abiertas o Cerradas) y la deja a la vista.
+    effect(() => {
+      const id = this.pedida();
+      const intervencion = this.intervenciones().find((i) => i.id === id);
+      if (id === null || id === this.abiertaPorEnlace || !intervencion) {
+        return;
+      }
+      untracked(() => {
+        this.abiertaPorEnlace = id;
+        this.filtro.set(ESTADOS_CERRADOS.includes(intervencion.estado) ? 'cerradas' : 'abiertas');
+        if (this.seleccionada() !== id) {
+          this.alternar(intervencion);
+        }
+        setTimeout(() => document.getElementById(`intervencion-${id}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150);
+      });
+    });
   }
 
   private cargarTecnicos(): void {
@@ -186,6 +237,7 @@ export class IntervencionesPage {
     }
     this.seleccionada.set(i.id);
     this.mensaje.set(null);
+    this.cancelando.set(false);
     // El formulario de Forms no pide término: se sugiere el inicio + 2 horas.
     const terminoSugerido = i.fecha_inicio
       ? new Date(new Date(i.fecha_inicio).getTime() + DURACION_SUGERIDA_MS).toISOString()
@@ -219,6 +271,16 @@ export class IntervencionesPage {
 
   protected puedeCancelar(estado: EstadoIntervencion): boolean {
     return (this.esAdmin || this.esJefatura) && (estado === 'Pendiente' || estado === 'Aprobada');
+  }
+
+  /** Si el usuario tiene alguna acción sobre la intervención (la barra de abajo se muestra solo entonces). */
+  protected tieneAcciones(i: Intervencion): boolean {
+    return (
+      this.puedeCancelar(i.estado) ||
+      (this.esAdmin && i.estado === 'Aprobada') ||
+      (i.estado === 'Aprobada' && !!i.responsable && this.puedeEjecutar(i)) ||
+      (i.estado === 'EnEjecucion' && this.puedeEjecutar(i))
+    );
   }
 
   protected asignar(i: Intervencion): void {
@@ -341,6 +403,20 @@ export class IntervencionesPage {
       error: () => undefined,
     });
     this.verificando.update((v) => (v && v.solicitud.intervencion_id === id ? null : v));
+  }
+
+  /**
+   * El técnico inicia solo dentro del horario asignado; el Administrador, en cualquier momento.
+   * El backend aplica la misma regla: esto solo evita un intento que sería rechazado.
+   */
+  protected fueraDeHorario(i: Intervencion): 'antes' | 'despues' | null {
+    if (this.esAdmin || !i.fecha_inicio || !i.fecha_termino) {
+      return null;
+    }
+    const ahora = this.ahora();
+    if (ahora < new Date(i.fecha_inicio).getTime()) return 'antes';
+    if (ahora > new Date(i.fecha_termino).getTime()) return 'despues';
+    return null;
   }
 
   protected iniciar(i: Intervencion): void {

@@ -12,4 +12,6 @@ export const environment = {
   soloConsulta: true,
   refrescoMonitoreoMs: 30_000,
   refrescoInfraestructuraMs: 60_000,
+  /** La app móvil es solo consulta: no ofrece "Nueva intervención". */
+  formularioIntervencionUrl: '',
 };

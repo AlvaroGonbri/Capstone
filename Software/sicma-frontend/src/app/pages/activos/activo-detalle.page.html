@@ -1,16 +1,16 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/activos" text="Activos"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Ficha de activo</ion-title>
-    @if (puedeEditar && activo()) {
-      <ion-buttons slot="end">
+<app-encabezado titulo="Ficha de activo" seccion="Inventario / Activos" volver="/activos">
+  @if (enlaceNuevaIntervencion() || (puedeEditar && activo())) {
+    <ion-buttons slot="end" acciones>
+      <!-- Abre el Forms de solicitudes con el rack completado; se sigue aprobando en Teams -->
+      @if (enlaceNuevaIntervencion(); as enlace) {
+        <ion-button fill="outline" [href]="enlace" target="_blank" rel="noopener noreferrer">Nueva intervención</ion-button>
+      }
+      @if (puedeEditar && activo()) {
         <ion-button [routerLink]="['/activos', id(), 'editar']">Editar</ion-button>
-      </ion-buttons>
-    }
-  </ion-toolbar>
-</ion-header>
+      }
+    </ion-buttons>
+  }
+</app-encabezado>
 
 <ion-content>
   <div class="contenido-limitado">
@@ -31,6 +31,7 @@
           <div class="cabecera-activo__titulo">
             <h2>{{ a.nombre }}</h2>
             <ion-badge [color]="colorEstado(a.estado)">{{ etiquetaEstado(a.estado) }}</ion-badge>
+            <ion-badge [color]="colorCriticidad(a.criticidad)">Criticidad {{ etiquetaCriticidad(a.criticidad).toLowerCase() }}</ion-badge>
           </div>
           <p><span class="mono">{{ a.codigo }}</span> · {{ a.tipo || 'Sin tipo' }} · {{ a.ubicacion_nombre }}</p>
         </div>
@@ -47,7 +48,7 @@
               <div><dt>Tipo</dt><dd>{{ a.tipo || '—' }}</dd></div>
               <div><dt>Marca / modelo</dt><dd>{{ a.marca || '—' }} / {{ a.modelo || '—' }}</dd></div>
               <div><dt>Número de serie</dt><dd class="mono">{{ a.numero_serie }}</dd></div>
-              <div><dt>Criticidad</dt><dd>{{ a.criticidad }}</dd></div>
+              <div><dt>Criticidad</dt><dd>{{ etiquetaCriticidad(a.criticidad) }}</dd></div>
               <div><dt>Alta</dt><dd>{{ a.fecha_alta | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
               <div class="ancho-completo"><dt>Ubicación</dt><dd>{{ a.ubicacion_nombre }}</dd></div>
               <div class="ancho-completo">

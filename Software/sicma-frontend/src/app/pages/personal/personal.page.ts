@@ -4,10 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   IonBadge,
   IonButton,
-  IonCard,
-  IonCardContent,
-  IonCardHeader,
-  IonCardTitle,
+  IonButtons,
   IonContent,
   IonInput,
   IonItem,
@@ -27,6 +24,7 @@ import { AccesosService } from '../../core/services/accesos.service';
 import { AuthService } from '../../core/services/auth.service';
 import { mensajeErrorApi } from '../../core/services/inventario.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
+import { iniciales } from '../../shared/texto.util';
 
 const ENROLAMIENTO_ABIERTO = ['Pendiente', 'EnCurso'];
 const CONSULTA_ENROLAMIENTO_MS = 1000;
@@ -43,10 +41,7 @@ const CONSULTA_ENROLAMIENTO_MS = 1000;
     EncabezadoComponent,
     IonBadge,
     IonButton,
-    IonCard,
-    IonCardContent,
-    IonCardHeader,
-    IonCardTitle,
+    IonButtons,
     IonContent,
     IonInput,
     IonItem,
@@ -75,6 +70,9 @@ export class PersonalPage {
   protected readonly puntos = signal<PuntoAcceso[]>([]);
   protected readonly busqueda = signal('');
   protected readonly seleccionada = signal<PersonaAutorizada | null>(null);
+  /** El panel lateral muestra el formulario de alta ("+ Registrar persona") en vez de una ficha. */
+  protected readonly modoAlta = signal(false);
+  protected readonly iniciales = iniciales;
   protected readonly historial = signal<CambioHabilitacion[]>([]);
   protected readonly mensaje = signal<{ texto: string; error: boolean } | null>(null);
   /** Solicitud en curso de la persona abierta: se consulta cada 2 s hasta que el agente responde. */
@@ -129,6 +127,7 @@ export class PersonalPage {
       return;
     }
     this.detenerConsulta();
+    this.modoAlta.set(false);
     this.seleccionada.set(p);
     this.mensaje.set(null);
     this.formEdicion.reset({ nombre: p.nombre, rut: p.rut ?? '', empresa: p.empresa ?? '' });
@@ -145,6 +144,18 @@ export class PersonalPage {
     this.seleccionada.set(null);
   }
 
+  protected abrirAlta(): void {
+    this.cerrar();
+    this.formAlta.reset();
+    this.mensaje.set(null);
+    this.modoAlta.set(true);
+  }
+
+  protected cerrarAlta(): void {
+    this.modoAlta.set(false);
+    this.mensaje.set(null);
+  }
+
   // ----------------------------------------------------------------- ficha
 
   protected registrar(): void {
@@ -159,7 +170,8 @@ export class PersonalPage {
       'Persona registrada. Ahora enrola su huella con la persona frente al lector.',
       (persona) => {
         this.formAlta.reset();
-        this.abrir(persona);
+        this.abrir(persona); // cierra el alta y abre su ficha para enrolar la huella
+        this.mensaje.set({ texto: 'Persona registrada. Ahora enrola su huella con la persona frente al lector.', error: false });
       },
     );
   }

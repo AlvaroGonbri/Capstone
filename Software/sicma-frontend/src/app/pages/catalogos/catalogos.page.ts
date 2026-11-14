@@ -4,15 +4,9 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   IonBadge,
   IonButton,
-  IonCard,
-  IonCardContent,
-  IonCardHeader,
-  IonCardTitle,
   IonContent,
   IonInput,
-  IonItem,
   IonLabel,
-  IonList,
   IonNote,
   IonSegment,
   IonSegmentButton,
@@ -26,6 +20,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { CatalogosService, nombreUbicacion } from '../../core/services/catalogos.service';
 import { COLORES_ESTADO, InventarioService, mensajeErrorApi } from '../../core/services/inventario.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
+import { copiarTexto } from '../../shared/texto.util';
 
 type Pestana = 'ubicaciones' | 'sensores' | 'tipos' | 'estados';
 
@@ -37,15 +32,9 @@ type Pestana = 'ubicaciones' | 'sensores' | 'tipos' | 'estados';
     EncabezadoComponent,
     IonBadge,
     IonButton,
-    IonCard,
-    IonCardContent,
-    IonCardHeader,
-    IonCardTitle,
     IonContent,
     IonInput,
-    IonItem,
     IonLabel,
-    IonList,
     IonNote,
     IonSegment,
     IonSegmentButton,
@@ -76,8 +65,31 @@ export class CatalogosPage {
   );
   protected readonly coloresEstado = COLORES_ESTADO;
 
+  /** Códigos de los dispositivos IoT instalados en cada ubicación (columna Sensores). */
+  protected readonly sensoresPorUbicacion = computed(() => {
+    const mapa = new Map<number, string[]>();
+    for (const s of this.sensores()) {
+      mapa.set(s.ubicacion.id, [...(mapa.get(s.ubicacion.id) ?? []), s.codigo]);
+    }
+    return mapa;
+  });
+
+  /** "Zona ambiental · Rack 1 · Posición 1": la ubicación sin la sala (que va destacada aparte). */
+  protected restoUbicacion(u: UbicacionCatalogo): string {
+    return [u.zona, u.rack, u.posicion].filter(Boolean).join(' › ');
+  }
+
   /** Clave del dispositivo recién creada o regenerada: se muestra una sola vez. */
   protected readonly claveNueva = signal<{ codigo: string; clave: string } | null>(null);
+  protected readonly claveCopiada = signal(false);
+
+  protected async copiarClave(clave: string): Promise<void> {
+    const copiada = await copiarTexto(clave);
+    this.claveCopiada.set(copiada);
+    if (!copiada) {
+      this.mensaje.set({ texto: 'El navegador no permitió copiar: selecciona la clave y cópiala a mano.', error: true });
+    }
+  }
 
   protected readonly editandoUbicacion = signal<number | null>(null);
   protected readonly formUbicacion = this.fb.group({
@@ -191,6 +203,7 @@ export class CatalogosPage {
     this.catalogos.crearSensor({ ...v, codigo: v.codigo.trim(), ubicacion: v.ubicacion!, estado: 'Activo' }).subscribe({
       next: (creado) => {
         this.claveNueva.set({ codigo: creado.codigo, clave: creado.clave_dispositivo });
+        this.claveCopiada.set(false);
         this.mensaje.set({ texto: 'Dispositivo registrado.', error: false });
         this.nuevoSensor();
         this.cargar();
@@ -212,7 +225,10 @@ export class CatalogosPage {
       return;
     }
     this.catalogos.regenerarClave(s.id).subscribe({
-      next: ({ codigo, clave_dispositivo }) => this.claveNueva.set({ codigo, clave: clave_dispositivo }),
+      next: ({ codigo, clave_dispositivo }) => {
+        this.claveNueva.set({ codigo, clave: clave_dispositivo });
+        this.claveCopiada.set(false);
+      },
       error: () => this.mensaje.set({ texto: 'No fue posible generar la clave.', error: true }),
     });
   }

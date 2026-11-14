@@ -78,11 +78,16 @@ ion-card-content {
 }
 
 .valor {
+  margin-bottom: 8px !important;
   font-size: 2rem !important;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--sicma-tinta);
   font-variant-numeric: tabular-nums;
+
+  &.estado-critico {
+    color: var(--sicma-critico);
+  }
 
   span {
     font-size: 0.95rem;

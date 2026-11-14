@@ -2,19 +2,22 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
-  IonBadge, IonButton, IonContent, IonInput, IonItem, IonLabel, IonList, IonNote,
+  IonBadge, IonButton, IonButtons, IonContent, IonIcon, IonInput, IonItem, IonNote,
   IonSelect, IonSelectOption, IonSpinner, IonText, IonToggle,
 } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { lockClosedOutline } from 'ionicons/icons';
 import { RolGestion, UsuarioGestion } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
+import { claseRol, etiquetaRol } from '../../core/services/roles.util';
 import { DatosUsuario, UsuariosService } from '../../core/services/usuarios.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
 
 @Component({
   selector: 'app-usuarios',
   imports: [
-    ReactiveFormsModule, DatePipe, EncabezadoComponent, IonBadge, IonButton, IonContent,
-    IonInput, IonItem, IonLabel, IonList, IonNote, IonSelect, IonSelectOption,
+    ReactiveFormsModule, DatePipe, EncabezadoComponent, IonBadge, IonButton, IonButtons, IonContent,
+    IonIcon, IonInput, IonItem, IonNote, IonSelect, IonSelectOption,
     IonSpinner, IonText, IonToggle,
   ],
   templateUrl: './usuarios.page.html',
@@ -28,11 +31,16 @@ export class UsuariosPage {
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly editando = signal<number | null>(null);
+  /** El formulario se abre al lado de la tabla al elegir una cuenta o con "+ Nuevo usuario". */
+  protected readonly panelAbierto = signal(false);
   /** Solo el Administrador Privilegiado gestiona cuentas de administración y la seguridad de las sesiones. */
   protected readonly esPrivilegiado = inject(AuthService).puedeModificar('administradorprivilegiado');
   protected readonly roles: RolGestion[] = (
     ['Administrador', 'AdministradorPrivilegiado', 'Jefatura', 'Tecnico', 'Auditor', 'Contratistas'] as RolGestion[]
   ).filter((r) => this.esPrivilegiado || (r !== 'Administrador' && r !== 'AdministradorPrivilegiado'));
+
+  protected readonly etiquetaRol = etiquetaRol;
+  protected readonly claseRol = claseRol;
 
   protected esCuentaAdministracion(usuario: UsuarioGestion): boolean {
     return usuario.rol === 'administrador' || usuario.rol === 'administradorprivilegiado';
@@ -61,6 +69,7 @@ export class UsuariosPage {
   });
 
   constructor() {
+    addIcons({ lockClosedOutline });
     this.cargar();
     this.cargarPolitica();
     if (!this.esPrivilegiado) {
@@ -112,6 +121,16 @@ export class UsuariosPage {
   }
 
   protected nuevo(): void {
+    this.reiniciarFormulario();
+    this.panelAbierto.set(true);
+  }
+
+  protected cerrarPanel(): void {
+    this.reiniciarFormulario();
+    this.panelAbierto.set(false);
+  }
+
+  private reiniciarFormulario(): void {
     this.editando.set(null);
     this.formulario.reset({
       username: '', email: '', first_name: '', last_name: '', password: '',
@@ -123,9 +142,11 @@ export class UsuariosPage {
 
   protected editar(usuario: UsuarioGestion): void {
     if (!this.puedeEditarCuenta(usuario)) {
+      this.panelAbierto.set(false);
       this.error.set('Solo un Administrador Privilegiado puede modificar cuentas de administración.');
       return;
     }
+    this.panelAbierto.set(true);
     this.editando.set(usuario.id);
     this.formulario.reset({
       username: usuario.username, email: usuario.email, first_name: usuario.first_name,
@@ -157,7 +178,7 @@ export class UsuariosPage {
           return existe ? lista.map((item) => item.id === usuario.id ? usuario : item) : [...lista, usuario];
         });
         this.guardando.set(false);
-        this.nuevo();
+        this.cerrarPanel();
       },
       error: (error: { error?: Record<string, string | string[]> }) => {
         this.guardando.set(false);

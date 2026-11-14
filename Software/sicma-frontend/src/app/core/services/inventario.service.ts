@@ -141,6 +141,22 @@ export class InventarioService {
 
 export const CRITICIDADES: Criticidad[] = ['Baja', 'Media', 'Alta', 'Critica'];
 
+/** Color del chip de criticidad, el mismo en la lista, la ficha y el formulario. */
+export function colorCriticidad(criticidad: string): string {
+  switch (criticidad) {
+    case 'Baja':
+      return 'success';
+    case 'Media':
+      return 'warning';
+    default:
+      return 'danger';
+  }
+}
+
+export function etiquetaCriticidad(criticidad: string): string {
+  return criticidad === 'Critica' ? 'Crítica' : criticidad;
+}
+
 /** Colores de Ionic que acepta un estado (los mismos que valida el backend). */
 export const COLORES_ESTADO = ['primary', 'secondary', 'tertiary', 'success', 'warning', 'danger', 'medium', 'dark'];
 

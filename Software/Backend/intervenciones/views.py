@@ -31,13 +31,21 @@ def _intervenciones():
     )
 
 
+def _visibles(request):
+    """El técnico solo ve las intervenciones que tiene asignadas; los demás roles de lectura ven todas."""
+    intervenciones = _intervenciones()
+    if rol_de(request.user) == 'tecnico':
+        intervenciones = intervenciones.filter(responsable=request.user)
+    return intervenciones
+
+
 class IntervencionListView(APIView):
     """GET: intervenciones, de la más reciente a la más antigua. Filtros ?estado= y ?activo=."""
     permission_classes = [RolePermission]
     allowed_roles = READ_ROLES
 
     def get(self, request, format=None):
-        intervenciones = _intervenciones().order_by('-id')
+        intervenciones = _visibles(request).order_by('-id')
         estado = request.query_params.get('estado')
         if estado:
             if estado not in ESTADOS_INTERVENCION:
@@ -56,7 +64,7 @@ class IntervencionDetailView(APIView):
     allowed_roles = READ_ROLES
 
     def get(self, request, pk, format=None):
-        return Response(IntervencionSerializer(get_object_or_404(_intervenciones(), pk=pk)).data)
+        return Response(IntervencionSerializer(get_object_or_404(_visibles(request), pk=pk)).data)
 
 
 class TecnicosView(APIView):
@@ -151,11 +159,12 @@ class PersonalView(AccionIntervencionView):
 
 
 class IniciarView(SoloTecnicoAsignadoMixin, AccionIntervencionView):
-    """POST: el técnico registra el inicio (RF-INT-06)."""
+    """POST: el técnico registra el inicio (RF-INT-06), solo dentro del horario asignado.
+    El Administrador puede iniciarla en cualquier momento."""
 
     def ejecutar(self, request, intervencion, datos):
         self.verificar_tecnico(request, intervencion)
-        servicio.iniciar(intervencion)
+        servicio.iniciar(intervencion, exigir_horario=rol_de(request.user) == 'tecnico')
 
 
 class CerrarView(SoloTecnicoAsignadoMixin, AccionIntervencionView):

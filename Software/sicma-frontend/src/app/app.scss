@@ -102,6 +102,32 @@
   }
 }
 
+/* Contadores y avisos del menú: intervenciones abiertas, alertas de Zabbix, algo que revisar en Monitoreo */
+.menu-contador {
+  min-width: 20px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #26353f;
+  color: #c9d4db;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+
+  &--alerta {
+    background: var(--sicma-critico);
+    color: #fff;
+  }
+}
+
+.menu-punto {
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #e5a33a;
+}
+
 .menu-usuario {
   margin-top: auto;
   display: flex;

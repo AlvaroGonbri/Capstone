@@ -1,31 +1,51 @@
-/* Filas del registro: el color va en el borde, no en todo el fondo */
-.lista-eventos ion-item {
-  border-left: 3px solid var(--sicma-normal);
+/* Registro: tabla con el color del resultado en el borde izquierdo de cada fila */
+.tabla-registro {
+  --columnas: 150px minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.4fr) 130px;
+
+  .tabla__fila {
+    border-left: 3px solid var(--sicma-normal);
+
+    &[data-resultado='Denegado'] {
+      border-left-color: var(--sicma-critico);
+    }
+
+    &[data-resultado='Error'] {
+      border-left-color: var(--sicma-advertencia);
+      background: #fffcf6;
+    }
+  }
 }
-.lista-eventos ion-item.denegado {
-  border-left-color: var(--sicma-critico);
+
+.celda-fecha {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+
+  small {
+    font-size: 0.7rem;
+    color: var(--sicma-tenue);
+  }
 }
-.lista-eventos ion-item.falla {
-  border-left-color: var(--sicma-advertencia);
-  --background: #fffcf6;
+
+.lugar {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--sicma-tenue);
 }
 
 .motivo {
+  display: block;
   font-family: var(--sicma-mono);
-  font-size: 0.75rem !important;
+  font-size: 0.75rem;
 }
 
-.derecha {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-
-  ion-note {
-    font-family: var(--sicma-mono);
-    font-size: 0.72rem;
-    font-variant-numeric: tabular-nums;
-  }
+.repeticiones {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sicma-advertencia);
 }
 
 .nota {
@@ -75,35 +95,104 @@
   color: var(--sicma-tenue);
 }
 
-/* Días del permiso como píldoras */
+/* Días del permiso como píldoras (estilo .pildora en styles.scss) */
 .dias {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 12px;
+}
 
-  ion-checkbox {
-    --size: 16px;
-    padding: 6px 12px;
+/* Resumen del registro: 4 indicadores arriba de los filtros */
+.resumen-accesos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 16px;
     border: 1px solid var(--sicma-linea);
-    border-radius: 999px;
+    border-left: 3px solid var(--sicma-linea);
+    border-radius: var(--sicma-radio);
     background: var(--sicma-superficie);
-    font-size: 0.8rem;
-    font-weight: 600;
-  }
 
-  ion-checkbox.checkbox-checked {
-    border-color: var(--ion-color-primary);
-    background: var(--sicma-primario-suave);
-    color: var(--ion-color-primary);
+    span {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--sicma-tinta-2);
+    }
+
+    b {
+      font-size: 1.7rem;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      color: var(--sicma-tinta);
+    }
+
+    small {
+      font-size: 0.75rem;
+      color: var(--sicma-tenue);
+    }
+
+    &--normal {
+      border-left-color: var(--sicma-normal);
+    }
+    &--critico {
+      border-left-color: var(--sicma-critico);
+    }
+    &--advertencia {
+      border-left-color: var(--sicma-advertencia);
+    }
   }
 }
 
-.id {
-  font-weight: 400;
-  font-family: var(--sicma-mono);
-  font-size: 0.78rem;
-  color: var(--sicma-tenue);
+/* Lector: ícono, nombre con su id y estado siempre visible */
+.lector {
+  &__icono {
+    width: 36px;
+    height: 36px;
+    margin-right: 12px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    background: var(--sicma-primario-suave);
+    color: var(--ion-color-primary);
+    font-size: 1.1rem;
+  }
+
+  &__id {
+    margin-left: 4px;
+    padding: 1px 6px;
+    border: 1px solid var(--sicma-linea);
+    border-radius: 5px;
+    font-family: var(--sicma-mono);
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--sicma-tenue);
+  }
+
+  ion-badge {
+    margin-right: 6px;
+  }
+
+  ion-button {
+    margin-left: 4px;
+  }
+}
+
+.clave__acciones {
+  display: flex;
+  gap: 6px;
+
+  ion-button {
+    margin: 0;
+  }
 }
 
 .dos-columnas {

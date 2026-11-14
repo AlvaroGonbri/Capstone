@@ -27,20 +27,37 @@
                   <ion-card-title>{{ arduino.nombre }}</ion-card-title>
                   <ion-note class="mono">{{ arduino.id }} · {{ arduino.ubicacion }}</ion-note>
                 </div>
-                <ion-badge [color]="arduino.estado === 'En línea' ? 'success' : arduino.estado === 'Sin datos' ? 'danger' : 'medium'">
+                <ion-badge [color]="arduino.estado === 'En línea' ? 'success' : 'medium'">
                   {{ arduino.estado }}
                 </ion-badge>
               </div>
             </ion-card-header>
             <ion-card-content>
+              <!-- Sin datos o inactivo: los valores son de la última lectura y se muestran en gris -->
+              @let actual = arduino.estado === 'En línea';
+              @let u = arduino.umbrales;
               <div class="lecturas">
                 <div>
                   <p class="etiqueta-menor">Temperatura</p>
-                  <p class="valor">{{ arduino.temperatura }}<span>°C</span></p>
+                  <p class="valor" [class.estado-critico]="fuera(arduino.temperatura, u?.temperaturaMinima, u?.temperaturaMaxima)"
+                    [class.lectura-desactualizada]="!actual">{{ arduino.temperatura }}<span>°C</span></p>
+                  @if (barra(arduino.temperatura, u?.temperaturaMinima ?? null, u?.temperaturaMaxima ?? null); as b) {
+                    <div class="barra-rango" aria-hidden="true">
+                      <span class="barra-rango__ok" [style.left.%]="b.inicio" [style.width.%]="b.fin - b.inicio"></span>
+                      <span class="barra-rango__marca" [style.left.%]="b.marca"></span>
+                    </div>
+                  }
                 </div>
                 <div>
                   <p class="etiqueta-menor">Humedad</p>
-                  <p class="valor">{{ arduino.humedad }}<span>%</span></p>
+                  <p class="valor" [class.estado-critico]="fuera(arduino.humedad, u?.humedadMinima, u?.humedadMaxima)"
+                    [class.lectura-desactualizada]="!actual">{{ arduino.humedad }}<span>%</span></p>
+                  @if (barra(arduino.humedad, u?.humedadMinima ?? null, u?.humedadMaxima ?? null); as b) {
+                    <div class="barra-rango" aria-hidden="true">
+                      <span class="barra-rango__ok" [style.left.%]="b.inicio" [style.width.%]="b.fin - b.inicio"></span>
+                      <span class="barra-rango__marca" [style.left.%]="b.marca"></span>
+                    </div>
+                  }
                 </div>
               </div>
 
@@ -55,7 +72,10 @@
                 </div>
                 <div class="ancho-completo">
                   <dt>Última lectura</dt>
-                  <dd>{{ arduino.ultimaLectura | date: 'dd/MM/yyyy HH:mm' }} · Sitio {{ arduino.sitio }} · rack {{ arduino.rack }}</dd>
+                  <dd>
+                    {{ arduino.ultimaLectura | date: 'dd/MM/yyyy HH:mm' }} · <b>{{ arduino.ultimaLectura | hace }}</b>
+                    · Sitio {{ arduino.sitio }} · rack {{ arduino.rack }}
+                  </dd>
                 </div>
               </dl>
 
@@ -65,7 +85,7 @@
             </ion-card-content>
           </ion-card>
         } @empty {
-          <p class="mensaje">No hay controladores con lecturas registradas.</p>
+          <p class="vacio"><b>No hay controladores con lecturas</b>Regístralos en Catálogos › Dispositivos IoT y espera su primera lectura.</p>
         }
       </div>
     }

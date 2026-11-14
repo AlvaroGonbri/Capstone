@@ -57,12 +57,6 @@ export const ACTIVOS: Activo[] = [
   { id: 14, codigo: 'ACT-0014', nombre: 'Lector biometrico puerta principal', tipo: 'otro', marca: 'ZKTeco', modelo: 'SpeedFace V5L', numeroSerie: 'ZKT-V5L-6640', sitio: 'A', rack: 'sin rack', unidadRack: 0, estado: 'operativo', responsable: 'Alvaro Gonzalez', fechaAdquisicion: '2025-06-14' },
 ];
 
-function serieTemperatura(base: number): number[] {
-  return Array.from({ length: 12 }, (_, i) =>
-    Number((base + Math.sin(i / 2) * 0.8 + (i > 8 ? (i - 8) * 0.25 : 0)).toFixed(1)),
-  );
-}
-
 function construirSensor(
   sensorId: string,
   ubicacion: string,
@@ -73,6 +67,7 @@ function construirSensor(
   minutos: number,
 ): EstadoSensor {
   return {
+    id: Number(sensorId.slice(-4)),
     sensorId,
     conexion: 'En línea',
     ubicacion,
@@ -82,7 +77,6 @@ function construirSensor(
     humedad,
     ...evaluarLectura(temperatura, humedad, UMBRALES),
     actualizadoEn: haceMinutos(minutos),
-    historial: serieTemperatura(temperatura - 0.9),
     umbrales: UMBRALES,
   };
 }

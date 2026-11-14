@@ -120,6 +120,7 @@ class AlertasAmbientalesTests(TablasNoGestionadasTestCase):
         tecnico = cliente_con_rol('tec', 'Tecnico')
         abiertas = tecnico.get('/api/alertas/').json()
         self.assertEqual([(a['sensor_codigo'], a['ubicacion']) for a in abiertas], [('arduino-01', self.zona.id)])
+        self.assertEqual((abiertas[0]['host'], abiertas[0]['problema']), (None, abiertas[0]['condicion']))
 
         url = f'/api/alertas/responsables/{self.zona.id}/'
         self.assertEqual(tecnico.put(url, {'correos': ['x@sicma.test']}, format='json').status_code, 403)
@@ -195,6 +196,14 @@ class EventosZabbixTests(TablasNoGestionadasTestCase):
         self.enviar()
         alertas = cliente_con_rol('aud', 'Auditor').get('/api/alertas/', {'origen': 'Zabbix'}).json()
         self.assertEqual([(a['condicion'], a['evento_zabbix']) for a in alertas], [('router01: MySQL Router caído', '51350')])
+        # El Panel agrupa y cuenta por servidor: el host y el problema llegan por separado.
+        self.assertEqual((alertas[0]['host'], alertas[0]['problema']), ('router01', 'MySQL Router caído'))
+
+    def test_alerta_sin_host_conserva_la_condicion_como_problema(self):
+        Alerta.objects.create(origen='Zabbix', condicion='Problema sin host', severidad='Alta', estado='Nueva',
+                              fecha_apertura=timezone.now())
+        alerta = cliente_con_rol('aud', 'Auditor').get('/api/alertas/').json()[0]
+        self.assertEqual((alerta['host'], alerta['problema']), (None, 'Problema sin host'))
 
 
 

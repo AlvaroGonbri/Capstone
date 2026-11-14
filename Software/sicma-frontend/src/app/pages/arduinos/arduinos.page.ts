@@ -14,8 +14,9 @@ import {
 } from '@ionic/angular';
 import { Arduino } from '../../core/models';
 import { ArduinosService } from '../../core/services/arduinos.service';
-import { rangoTexto } from '../../core/services/umbrales.util';
+import { posicionesBarra, rangoTexto, respectoDelRango } from '../../core/services/umbrales.util';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
+import { HacePipe } from '../../shared/hace.pipe';
 
 @Component({
   selector: 'app-arduinos',
@@ -23,6 +24,7 @@ import { EncabezadoComponent } from '../../shared/encabezado.component';
     DatePipe,
     RouterLink,
     EncabezadoComponent,
+    HacePipe,
     IonBadge,
     IonButton,
     IonCard,
@@ -43,6 +45,12 @@ export class ArduinosPage {
   protected readonly error = signal<string | null>(null);
   protected readonly arduinos = signal<Arduino[]>([]);
   protected readonly rango = rangoTexto;
+  protected readonly barra = posicionesBarra;
+
+  /** Fuera de rango según los umbrales de su zona (solo presentación; la evaluación la hace el backend). */
+  protected fuera(valor: number, minimo: number | null | undefined, maximo: number | null | undefined): boolean {
+    return respectoDelRango(valor, minimo ?? null, maximo ?? null) !== null;
+  }
 
   constructor() {
     this.servicio.listar().subscribe({

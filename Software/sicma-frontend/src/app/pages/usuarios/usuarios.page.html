@@ -1,100 +1,158 @@
-<app-encabezado titulo="Usuarios" seccion="Seguridad"></app-encabezado>
+<app-encabezado titulo="Usuarios" seccion="Seguridad">
+  <ion-buttons slot="end" acciones>
+    <ion-button (click)="nuevo()">+ Nuevo usuario</ion-button>
+  </ion-buttons>
+</app-encabezado>
 
 <ion-content>
   <div class="contenido-limitado">
+    <!-- Política de contraseñas en una franja -->
     <form class="politica" [formGroup]="formularioPolitica" (ngSubmit)="guardarPolitica()">
-      <h2>Política de contraseñas</h2>
-      <ion-item>
-        <ion-input
-          label="Vigencia máxima (días)"
-          labelPlacement="stacked"
-          type="number"
-          min="0"
-          max="365"
-          formControlName="max_age_days"
-          helperText="0 = las contraseñas no expiran. Se puede eximir a cada cuenta en su ficha."
-        ></ion-input>
-      </ion-item>
-      @if (errorPolitica()) {
-        <ion-text color="danger"><p>{{ errorPolitica() }}</p></ion-text>
-      }
-      @if (mensajePolitica()) {
-        <ion-text color="success"><p role="status">{{ mensajePolitica() }}</p></ion-text>
-      }
+      <div class="politica__texto">
+        <ion-icon name="lock-closed-outline" aria-hidden="true"></ion-icon>
+        <div>
+          <h2>Política de contraseñas</h2>
+          <p>0 = no expiran. Se puede eximir a cada cuenta en su ficha.</p>
+        </div>
+      </div>
+      <ion-input
+        class="politica__campo"
+        label="Vigencia máxima (días)"
+        labelPlacement="stacked"
+        type="number"
+        min="0"
+        max="365"
+        formControlName="max_age_days"
+      ></ion-input>
       @if (esPrivilegiado) {
         <ion-button type="submit" size="small" [disabled]="guardandoPolitica()">
           @if (guardandoPolitica()) { <ion-spinner name="crescent"></ion-spinner> } @else { Guardar política }
         </ion-button>
       } @else {
-        <ion-note>Solo un Administrador Privilegiado puede cambiar la política y los tiempos de sesión.</ion-note>
+        <ion-note class="politica__nota">Solo un Administrador Privilegiado puede cambiar la política y los tiempos de sesión.</ion-note>
+      }
+      @if (errorPolitica()) {
+        <ion-text color="danger" class="politica__mensaje"><p>{{ errorPolitica() }}</p></ion-text>
+      }
+      @if (mensajePolitica()) {
+        <ion-text color="success" class="politica__mensaje"><p role="status">{{ mensajePolitica() }}</p></ion-text>
       }
     </form>
 
-    <div class="dos-columnas">
-    <div class="columna-lista">
-    <div class="barra-lista">
-      <h2 class="titulo-seccion">Cuentas</h2>
-      <ion-button size="small" (click)="nuevo()">Nuevo usuario</ion-button>
-    </div>
+    <div class="disposicion-panel">
+      <div>
+        @if (error() && !panelAbierto()) {
+          <ion-text color="danger"><p>{{ error() }}</p></ion-text>
+        }
 
-    @if (error()) {
-      <ion-text color="danger"><p>{{ error() }}</p></ion-text>
-    }
-
-    <ion-list>
-      @for (usuario of usuarios(); track usuario.id) {
-        <ion-item [button]="puedeEditarCuenta(usuario)" (click)="editar(usuario)">
-          <ion-label>
-            <h2>{{ usuario.first_name }} {{ usuario.last_name }}</h2>
-            <p>{{ usuario.username }} · {{ usuario.email || 'Sin correo' }}</p>
-            <p>{{ usuario.inactivity_timeout_minutes }} minutos de inactividad</p>
-            @if (usuario.password_expired) {
-              <p><ion-text color="danger">Contraseña vencida</ion-text></p>
-            } @else if (usuario.password_never_expires) {
-              <p>La contraseña nunca expira</p>
-            } @else if (usuario.password_expires_at) {
-              <p>Contraseña vence el {{ usuario.password_expires_at | date: 'dd-MM-yyyy' }}</p>
-            } @else {
-              <p>Contraseña sin expiración (política global)</p>
+        @if (cargando()) {
+          <ion-spinner name="crescent"></ion-spinner>
+        } @else {
+          <div class="tabla tabla-usuarios" role="table" aria-label="Cuentas">
+            <div class="tabla__cabecera" role="row">
+              <span role="columnheader">Cuenta</span>
+              <span role="columnheader">Rol</span>
+              <span role="columnheader">Inactividad</span>
+              <span role="columnheader">Contraseña</span>
+              <span role="columnheader"><span class="oculto">Abrir</span></span>
+            </div>
+            @for (usuario of usuarios(); track usuario.id) {
+              <button
+                type="button"
+                class="tabla__fila"
+                role="row"
+                [class.elegida]="editando() === usuario.id"
+                [class.inactiva]="!usuario.is_active"
+                (click)="editar(usuario)"
+              >
+                <span role="cell" class="celda-principal">
+                  <span class="texto">
+                    <b class="mono">{{ usuario.username }}</b>
+                    <small>
+                      {{ (usuario.first_name + ' ' + usuario.last_name).trim() || 'Sin nombre' }} · {{ usuario.email || 'sin correo' }}
+                    </small>
+                  </span>
+                </span>
+                <span role="cell" class="celda-fin celda-rol">
+                  <span [class]="claseRol(usuario.rol)">{{ etiquetaRol(usuario.rol, true) }}</span>
+                  @if (!usuario.is_active) { <ion-badge color="medium">Inactiva</ion-badge> }
+                </span>
+                <span role="cell" class="celda-secundaria celda-opcional mono">{{ usuario.inactivity_timeout_minutes }} min</span>
+                <span role="cell" class="celda-secundaria">
+                  @if (usuario.password_expired) {
+                    <ion-text color="danger">vencida</ion-text>
+                  } @else if (usuario.password_never_expires) {
+                    no expira
+                  } @else if (usuario.password_expires_at) {
+                    vence {{ usuario.password_expires_at | date: 'dd-MM-yyyy' }}
+                  } @else {
+                    sin expiración
+                  }
+                </span>
+                <span role="cell" class="celda-chevron">
+                  @if (puedeEditarCuenta(usuario)) { › } @else { <small class="solo-privilegiado">Solo Privilegiado</small> }
+                </span>
+              </button>
+            } @empty {
+              <p class="vacio"><b>No hay cuentas</b>Crea la primera con «+ Nuevo usuario».</p>
             }
-          </ion-label>
-          @if (!puedeEditarCuenta(usuario)) { <ion-note slot="end">Solo Privilegiado</ion-note> }
-          <ion-badge slot="end" [color]="usuario.is_active ? 'success' : 'medium'">
-            {{ usuario.rol || 'Sin rol' }}
-          </ion-badge>
-        </ion-item>
-      }
-    </ion-list>
-    </div>
+          </div>
+        }
+      </div>
 
-    <form class="columna-formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
-      <h2>{{ editando() ? 'Editar usuario' : 'Crear usuario' }}</h2>
-      <ion-item><ion-input label="Usuario" labelPlacement="stacked" formControlName="username"></ion-input></ion-item>
-      <ion-item><ion-input label="Correo" type="email" labelPlacement="stacked" formControlName="email"></ion-input></ion-item>
-      <ion-item><ion-input label="Nombre" labelPlacement="stacked" formControlName="first_name"></ion-input></ion-item>
-      <ion-item><ion-input label="Apellido" labelPlacement="stacked" formControlName="last_name"></ion-input></ion-item>
-      <ion-item><ion-input label="Contraseña (obligatoria al crear)" type="password" labelPlacement="stacked" formControlName="password"></ion-input></ion-item>
-      <ion-item>
-        <ion-select label="Rol" labelPlacement="stacked" formControlName="role">
-          @for (rol of roles; track rol) { <ion-select-option [value]="rol">{{ rol }}</ion-select-option> }
-        </ion-select>
-      </ion-item>
-      <ion-item>
-        <ion-input label="Inactividad (minutos)" type="number" labelPlacement="stacked" formControlName="inactivity_timeout_minutes"></ion-input>
-      </ion-item>
-      <ion-item>
-        <ion-toggle formControlName="password_never_expires" justify="space-between">
-          La contraseña nunca expira
-        </ion-toggle>
-      </ion-item>
-      <ion-item>
-        <ion-label>Cuenta activa</ion-label>
-        <ion-select formControlName="is_active"><ion-select-option [value]="true">Sí</ion-select-option><ion-select-option [value]="false">No</ion-select-option></ion-select>
-      </ion-item>
-      <ion-button type="submit" [disabled]="guardando()">
-        @if (guardando()) { <ion-spinner name="crescent"></ion-spinner> } @else { Guardar }
-      </ion-button>
-    </form>
+      <!-- Formulario lateral: se abre al elegir una cuenta o con "+ Nuevo usuario" -->
+      @if (panelAbierto()) {
+        <form class="panel-lateral" [formGroup]="formulario" (ngSubmit)="guardar()">
+          <div class="panel-lateral__cabecera">
+            <h2>{{ editando() ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+            <button type="button" class="panel-lateral__cerrar" (click)="cerrarPanel()" aria-label="Cerrar">✕</button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            @if (error()) {
+              <ion-text color="danger"><p class="error-formulario">{{ error() }}</p></ion-text>
+            }
+            <ion-item><ion-input label="Usuario" labelPlacement="stacked" formControlName="username"></ion-input></ion-item>
+            <ion-item><ion-input label="Correo" type="email" labelPlacement="stacked" formControlName="email"></ion-input></ion-item>
+            <div class="par">
+              <ion-item><ion-input label="Nombre" labelPlacement="stacked" formControlName="first_name"></ion-input></ion-item>
+              <ion-item><ion-input label="Apellido" labelPlacement="stacked" formControlName="last_name"></ion-input></ion-item>
+            </div>
+            <ion-item>
+              <ion-input
+                [label]="editando() ? 'Contraseña' : 'Contraseña *'"
+                type="password"
+                labelPlacement="stacked"
+                formControlName="password"
+                [placeholder]="editando() ? 'Dejar vacío para no cambiarla' : ''"
+              ></ion-input>
+            </ion-item>
+            <div class="par">
+              <ion-item>
+                <ion-select label="Rol" labelPlacement="stacked" interface="popover" formControlName="role">
+                  @for (rol of roles; track rol) { <ion-select-option [value]="rol">{{ etiquetaRol(rol) }}</ion-select-option> }
+                </ion-select>
+              </ion-item>
+              <ion-item>
+                <ion-input label="Inactividad (min)" type="number" labelPlacement="stacked" formControlName="inactivity_timeout_minutes"></ion-input>
+              </ion-item>
+            </div>
+            <ion-item>
+              <ion-toggle formControlName="password_never_expires" justify="space-between">
+                La contraseña nunca expira
+              </ion-toggle>
+            </ion-item>
+            <ion-item>
+              <ion-toggle formControlName="is_active" justify="space-between">Cuenta activa</ion-toggle>
+            </ion-item>
+            <div class="acciones-form">
+              <ion-button fill="outline" color="medium" (click)="cerrarPanel()">Cancelar</ion-button>
+              <ion-button type="submit" [disabled]="guardando()">
+                @if (guardando()) { <ion-spinner name="crescent"></ion-spinner> } @else { Guardar }
+              </ion-button>
+            </div>
+          </div>
+        </form>
+      }
     </div>
   </div>
 </ion-content>

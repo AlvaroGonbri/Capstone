@@ -31,12 +31,16 @@
     </div>
 
     <ion-segment [value]="filtroEstado()" scrollable (ionChange)="filtroEstado.set($any($event.detail).value)">
-      <ion-segment-button value="todos"><ion-label>Todos</ion-label></ion-segment-button>
+      <ion-segment-button value="todos"><ion-label>Todos<span class="contador">{{ activos().length }}</span></ion-label></ion-segment-button>
       @for (e of estados(); track e.id) {
-        <ion-segment-button [value]="e.nombre"><ion-label>{{ e.etiqueta }}</ion-label></ion-segment-button>
+        <ion-segment-button [value]="e.nombre">
+          <ion-label>{{ e.etiqueta }}<span class="contador">{{ conteoPorEstado().get(e.nombre) ?? 0 }}</span></ion-label>
+        </ion-segment-button>
       }
       @if (incluirRetirados()) {
-        <ion-segment-button value="Retirado"><ion-label>{{ etiquetaEstado('Retirado') }}</ion-label></ion-segment-button>
+        <ion-segment-button value="Retirado">
+          <ion-label>{{ etiquetaEstado('Retirado') }}<span class="contador">{{ conteoPorEstado().get('Retirado') ?? 0 }}</span></ion-label>
+        </ion-segment-button>
       }
     </ion-segment>
 
@@ -47,6 +51,11 @@
           <strong>{{ alertas().length }} {{ alertas().length === 1 ? 'alerta' : 'alertas' }} de infraestructura abiertas</strong>
           @for (s of alertasPorSeveridad(); track s.severidad) {
             <ion-badge [color]="colorSeveridad(s.severidad)">{{ s.cantidad }} {{ s.severidad }}</ion-badge>
+          }
+          @if (ultimaAlerta(); as u) {
+            <span class="alertas-infra__ultima">
+              Última: {{ u.condicion }} · {{ (u.fecha_ultima_ocurrencia ?? u.fecha_apertura) | hace }}
+            </span>
           }
           <ion-button size="small" fill="outline" class="alertas-infra__boton" (click)="alertasDesplegadas.set(!alertasDesplegadas())"
             [attr.aria-expanded]="alertasDesplegadas()">
@@ -127,16 +136,20 @@
         <p class="vacio">Ningún activo coincide con la búsqueda.</p>
       } @else {
         <div class="tabla-activos" role="table" aria-label="Activos">
+          <!-- Encabezado fijo al desplazarse; cada columna ordena al hacer clic (otro clic invierte el orden) -->
           <div class="tabla-activos__cabecera" role="row">
-            <span role="columnheader">Activo</span>
-            <span role="columnheader">Tipo</span>
-            <span role="columnheader">Ubicación</span>
-            <span role="columnheader">Responsable</span>
-            <span role="columnheader">Criticidad</span>
-            <span role="columnheader">Zabbix</span>
-            <span role="columnheader">Estado</span>
+            @for (c of columnas; track c.columna) {
+              <span role="columnheader" [attr.aria-sort]="sentido(c.columna)">
+                <button type="button" class="orden" [class.activa]="orden().columna === c.columna" (click)="ordenarPor(c.columna)">
+                  {{ c.titulo }}
+                  <span class="orden__flecha" aria-hidden="true">
+                    @if (orden().columna === c.columna) { {{ orden().asc ? '↓' : '↑' }} }
+                  </span>
+                </button>
+              </span>
+            }
           </div>
-          @for (activo of filtrados(); track activo.id) {
+          @for (activo of visibles(); track activo.id) {
             <a class="tabla-activos__fila" role="row" [routerLink]="['/activos', activo.id]">
               <span role="cell" class="celda-activo">
                 <b>{{ activo.nombre }}</b>
@@ -145,7 +158,7 @@
               <span role="cell" class="celda-secundaria" data-etiqueta="Tipo">{{ activo.tipo || 'Sin tipo' }}</span>
               <span role="cell" class="celda-secundaria" data-etiqueta="Ubicación">{{ activo.ubicacion_nombre }}</span>
               <span role="cell" class="celda-secundaria" data-etiqueta="Responsable">{{ activo.responsable_nombre || 'sin asignar' }}</span>
-              <span role="cell" data-etiqueta="Criticidad"><ion-badge [color]="colorCriticidad(activo.criticidad)">{{ activo.criticidad }}</ion-badge></span>
+              <span role="cell" data-etiqueta="Criticidad"><ion-badge [color]="colorCriticidad(activo.criticidad)">{{ etiquetaCriticidad(activo.criticidad) }}</ion-badge></span>
               <span role="cell" data-etiqueta="Zabbix">
                 @if (host(activo); as h) {
                   <ion-badge [color]="colorZabbix(h)">{{ h.estado }}</ion-badge>
@@ -158,6 +171,17 @@
             </a>
           }
         </div>
+        @if (paginas() > 1) {
+          <nav class="paginacion" aria-label="Páginas de activos">
+            <ion-button size="small" fill="outline" color="medium" [disabled]="paginaActual() === 0" (click)="irAPagina(paginaActual() - 1)">
+              ‹ Anterior
+            </ion-button>
+            <span>Página {{ paginaActual() + 1 }} de {{ paginas() }}</span>
+            <ion-button size="small" fill="outline" color="medium" [disabled]="paginaActual() >= paginas() - 1" (click)="irAPagina(paginaActual() + 1)">
+              Siguiente ›
+            </ion-button>
+          </nav>
+        }
       }
 
       @if (sinInventariar().length > 0) {

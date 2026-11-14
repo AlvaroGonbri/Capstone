@@ -2,7 +2,7 @@
 
 <ion-content>
   <div class="contenido-limitado">
-    <ion-segment [value]="pestana()" (ionChange)="cambiarPestana($event.detail.value)">
+    <ion-segment [value]="pestana()" scrollable (ionChange)="cambiarPestana($event.detail.value)">
       <ion-segment-button value="ubicaciones"><ion-label>Ubicaciones y zonas</ion-label></ion-segment-button>
       <ion-segment-button value="sensores"><ion-label>Dispositivos IoT</ion-label></ion-segment-button>
       <ion-segment-button value="tipos"><ion-label>Tipos de activo</ion-label></ion-segment-button>
@@ -16,51 +16,72 @@
       <ion-text [color]="m.error ? 'danger' : 'success'"><p class="nota" role="status">{{ m.texto }}</p></ion-text>
     }
 
+    <!-- Cada pestaña: tabla a la izquierda y, para el Administrador, su formulario a la derecha -->
     @switch (pestana()) {
       @case ('ubicaciones') {
-        @if (esAdmin) {
-          <ion-card>
-            <ion-card-header><ion-card-title>{{ editandoUbicacion() ? 'Editar ubicación' : 'Nueva ubicación' }}</ion-card-title></ion-card-header>
-            <ion-card-content>
-              <form class="rejilla-form" [formGroup]="formUbicacion" (ngSubmit)="guardarUbicacion()">
-                <ion-input label="Sala *" labelPlacement="stacked" formControlName="sala"></ion-input>
-                <ion-input label="Zona" labelPlacement="stacked" formControlName="zona"></ion-input>
+        <div [class.disposicion-panel]="esAdmin">
+          <div>
+            <div class="tabla tabla-ubicaciones" role="table" aria-label="Ubicaciones">
+              <div class="tabla__cabecera" role="row">
+                <span role="columnheader">Ubicación</span>
+                <span role="columnheader">ID</span>
+                <span role="columnheader">Sensores</span>
+                <span role="columnheader">Estado</span>
+                <span role="columnheader">@if (esAdmin) { Acciones }</span>
+              </div>
+              @for (u of ubicaciones(); track u.id) {
+                <div class="tabla__fila" role="row" [class.elegida]="editandoUbicacion() === u.id">
+                  <span role="cell" class="celda-ubicacion">
+                    <b>{{ u.sala }}</b>@if (restoUbicacion(u)) { <span class="resto"> › {{ restoUbicacion(u) }}</span> }
+                  </span>
+                  <span role="cell" class="celda-secundaria celda-opcional mono">{{ u.id }}</span>
+                  <span role="cell" class="celda-secundaria mono">{{ (sensoresPorUbicacion().get(u.id) ?? []).join(', ') || '—' }}</span>
+                  <span role="cell" class="celda-fin">
+                    <ion-badge [color]="u.activa ? 'success' : 'medium'">{{ u.activa ? 'Activa' : 'Desactivada' }}</ion-badge>
+                  </span>
+                  <span role="cell" class="celda-acciones">
+                    @if (esAdmin) {
+                      <ion-button size="small" fill="outline" (click)="editarUbicacion(u)">Editar</ion-button>
+                      <ion-button size="small" fill="outline" [color]="u.activa ? 'danger' : 'success'" (click)="cambiarEstadoUbicacion(u)">
+                        {{ u.activa ? 'Desactivar' : 'Reactivar' }}
+                      </ion-button>
+                    }
+                  </span>
+                </div>
+              } @empty {
+                <p class="vacio"><b>No hay ubicaciones registradas</b>Crea la primera sala con el formulario «Nueva ubicación».</p>
+              }
+            </div>
+            <ion-note class="nota">Los umbrales y los responsables de alerta de cada zona se definen en Monitoreo.</ion-note>
+          </div>
+
+          @if (esAdmin) {
+            <form class="panel-lateral" [formGroup]="formUbicacion" (ngSubmit)="guardarUbicacion()">
+              <div class="panel-lateral__cabecera">
+                <h2>{{ editandoUbicacion() ? 'Editar ubicación' : 'Nueva ubicación' }}</h2>
+                @if (editandoUbicacion()) {
+                  <button type="button" class="panel-lateral__cerrar" (click)="nuevaUbicacion()" aria-label="Cancelar la edición">✕</button>
+                }
+              </div>
+              <div class="panel-lateral__cuerpo rejilla-panel">
+                <ion-input class="ancho-completo" label="Sala *" labelPlacement="stacked" formControlName="sala"></ion-input>
+                <ion-input class="ancho-completo" label="Zona" labelPlacement="stacked" formControlName="zona"></ion-input>
                 <ion-input label="Rack" labelPlacement="stacked" formControlName="rack"></ion-input>
                 <ion-input label="Posición" labelPlacement="stacked" formControlName="posicion"></ion-input>
-                <ion-select label="Dentro de" labelPlacement="stacked" interface="popover" formControlName="ubicacion_padre">
+                <ion-select class="ancho-completo" label="Dentro de" labelPlacement="stacked" interface="popover" formControlName="ubicacion_padre">
                   <ion-select-option [value]="null">— (nivel superior)</ion-select-option>
                   @for (u of ubicacionesActivas(); track u.id) {
                     @if (u.id !== editandoUbicacion()) { <ion-select-option [value]="u.id">{{ nombreUbicacion(u) }}</ion-select-option> }
                   }
                 </ion-select>
-                <div class="acciones">
+                <div class="acciones ancho-completo">
+                  @if (editandoUbicacion()) { <ion-button size="small" fill="outline" color="medium" (click)="nuevaUbicacion()">Cancelar</ion-button> }
                   <ion-button type="submit" size="small">{{ editandoUbicacion() ? 'Guardar' : 'Crear' }}</ion-button>
-                  @if (editandoUbicacion()) { <ion-button size="small" fill="clear" (click)="nuevaUbicacion()">Cancelar</ion-button> }
                 </div>
-              </form>
-            </ion-card-content>
-          </ion-card>
-        }
-        <ion-list lines="full">
-          @for (u of ubicaciones(); track u.id) {
-            <ion-item>
-              <ion-label>
-                <h3>{{ nombreUbicacion(u) }}</h3>
-                <p>ID {{ u.id }}</p>
-              </ion-label>
-              @if (!u.activa) { <ion-badge slot="end" color="medium">desactivada</ion-badge> }
-              @if (esAdmin) {
-                <ion-button slot="end" size="small" fill="clear" (click)="editarUbicacion(u)">Editar</ion-button>
-                <ion-button slot="end" size="small" fill="clear" [color]="u.activa ? 'danger' : 'success'" (click)="cambiarEstadoUbicacion(u)">
-                  {{ u.activa ? 'Desactivar' : 'Reactivar' }}
-                </ion-button>
-              }
-            </ion-item>
-          } @empty {
-            <p class="vacio">No hay ubicaciones registradas.</p>
+              </div>
+            </form>
           }
-        </ion-list>
-        <ion-note class="nota">Los umbrales y los responsables de alerta de cada zona se definen en Monitoreo.</ion-note>
+        </div>
       }
 
       @case ('sensores') {
@@ -69,126 +90,202 @@
             <strong>Clave del dispositivo {{ c.codigo }}:</strong>
             <code>{{ c.clave }}</code>
             <span>Cópiala ahora en el firmware (cabecera X-Device-Key). SICMA guarda solo su hash y no la volverá a mostrar.</span>
-            <ion-button size="small" fill="clear" (click)="claveNueva.set(null)">Ya la copié</ion-button>
+            <div class="clave__acciones">
+              <ion-button size="small" fill="outline" (click)="copiarClave(c.clave)">{{ claveCopiada() ? 'Copiada ✓' : 'Copiar' }}</ion-button>
+              <ion-button size="small" fill="clear" (click)="claveNueva.set(null)">Ya la copié</ion-button>
+            </div>
           </div>
         }
-        @if (esAdmin) {
-          <ion-card>
-            <ion-card-header><ion-card-title>{{ editandoSensor() ? 'Editar dispositivo' : 'Nuevo dispositivo' }}</ion-card-title></ion-card-header>
-            <ion-card-content>
-              <form class="rejilla-form" [formGroup]="formSensor" (ngSubmit)="guardarSensor()">
+        <div [class.disposicion-panel]="esAdmin">
+          <div class="tabla tabla-sensores" role="table" aria-label="Dispositivos IoT">
+            <div class="tabla__cabecera" role="row">
+              <span role="columnheader">Dispositivo</span>
+              <span role="columnheader">Zona</span>
+              <span role="columnheader">Última lectura</span>
+              <span role="columnheader">Estado</span>
+              <span role="columnheader">@if (esAdmin) { Acciones }</span>
+            </div>
+            @for (s of sensores(); track s.id) {
+              <div class="tabla__fila" role="row" [class.elegida]="editandoSensor() === s.id">
+                <span role="cell" class="celda-principal">
+                  <span class="texto">
+                    <b class="mono">{{ s.codigo }}</b>
+                    <small>{{ s.tipo }} · cada {{ s.intervalo_esperado_segundos }} s</small>
+                  </span>
+                </span>
+                <span role="cell" class="celda-secundaria celda-opcional">{{ nombreUbicacion(s.ubicacion) }}</span>
+                <span role="cell" class="celda-secundaria">
+                  @if (s.ultima_medicion; as m) {
+                    {{ m.fecha_hora_medicion | date: 'dd/MM HH:mm' }} · <span class="mono">{{ m.temperatura }} °C · {{ m.humedad }} %</span>
+                  } @else { Sin lecturas }
+                </span>
+                <span role="cell" class="celda-fin">
+                  <ion-badge [color]="s.estado === 'Activo' ? 'success' : 'medium'">{{ s.estado }}</ion-badge>
+                </span>
+                <span role="cell" class="celda-acciones">
+                  @if (esAdmin) {
+                    <ion-button size="small" fill="outline" (click)="editarSensor(s)">Editar</ion-button>
+                    <ion-button size="small" fill="outline" (click)="regenerarClave(s)">Nueva clave</ion-button>
+                    <ion-button size="small" fill="outline" [color]="s.estado === 'Activo' ? 'danger' : 'success'" (click)="cambiarEstadoSensor(s)">
+                      {{ s.estado === 'Activo' ? 'Desactivar' : 'Reactivar' }}
+                    </ion-button>
+                  }
+                </span>
+              </div>
+            } @empty {
+              <p class="vacio"><b>No hay dispositivos registrados</b>Registra el primero con el formulario «Nuevo dispositivo».</p>
+            }
+          </div>
+
+          @if (esAdmin) {
+            <form class="panel-lateral" [formGroup]="formSensor" (ngSubmit)="guardarSensor()">
+              <div class="panel-lateral__cabecera">
+                <h2>{{ editandoSensor() ? 'Editar dispositivo' : 'Nuevo dispositivo' }}</h2>
+                @if (editandoSensor()) {
+                  <button type="button" class="panel-lateral__cerrar" (click)="nuevoSensor()" aria-label="Cancelar la edición">✕</button>
+                }
+              </div>
+              <div class="panel-lateral__cuerpo rejilla-panel">
                 <ion-input label="Código *" labelPlacement="stacked" formControlName="codigo" placeholder="esp32-02"></ion-input>
                 <ion-input label="Tipo *" labelPlacement="stacked" formControlName="tipo"></ion-input>
-                <ion-select label="Zona *" labelPlacement="stacked" interface="popover" formControlName="ubicacion">
+                <ion-select class="ancho-completo" label="Zona *" labelPlacement="stacked" interface="popover" formControlName="ubicacion">
                   @for (u of ubicacionesActivas(); track u.id) { <ion-select-option [value]="u.id">{{ nombreUbicacion(u) }}</ion-select-option> }
                 </ion-select>
-                <ion-input label="Intervalo esperado (s) *" labelPlacement="stacked" type="number" formControlName="intervalo_esperado_segundos"></ion-input>
-                <div class="acciones">
+                <ion-input class="ancho-completo" label="Intervalo esperado (s) *" labelPlacement="stacked" type="number"
+                  formControlName="intervalo_esperado_segundos"></ion-input>
+                <div class="acciones ancho-completo">
+                  @if (editandoSensor()) { <ion-button size="small" fill="outline" color="medium" (click)="nuevoSensor()">Cancelar</ion-button> }
                   <ion-button type="submit" size="small">{{ editandoSensor() ? 'Guardar' : 'Registrar' }}</ion-button>
-                  @if (editandoSensor()) { <ion-button size="small" fill="clear" (click)="nuevoSensor()">Cancelar</ion-button> }
                 </div>
-              </form>
-            </ion-card-content>
-          </ion-card>
-        }
-        <ion-list lines="full">
-          @for (s of sensores(); track s.id) {
-            <ion-item>
-              <ion-label>
-                <h3>{{ s.codigo }} · {{ s.tipo }}</h3>
-                <p>{{ nombreUbicacion(s.ubicacion) }} · cada {{ s.intervalo_esperado_segundos }} s</p>
-                <p>
-                  @if (s.ultima_medicion; as m) {
-                    Última lectura {{ m.fecha_hora_medicion | date: 'dd/MM HH:mm' }}: {{ m.temperatura }} °C · {{ m.humedad }} %
-                  } @else { Sin lecturas }
-                </p>
-              </ion-label>
-              <ion-badge slot="end" [color]="s.estado === 'Activo' ? 'success' : 'medium'">{{ s.estado }}</ion-badge>
-              @if (esAdmin) {
-                <ion-button slot="end" size="small" fill="clear" (click)="editarSensor(s)">Editar</ion-button>
-                <ion-button slot="end" size="small" fill="clear" (click)="regenerarClave(s)">Nueva clave</ion-button>
-                <ion-button slot="end" size="small" fill="clear" [color]="s.estado === 'Activo' ? 'danger' : 'success'" (click)="cambiarEstadoSensor(s)">
-                  {{ s.estado === 'Activo' ? 'Desactivar' : 'Reactivar' }}
-                </ion-button>
-              }
-            </ion-item>
-          } @empty {
-            <p class="vacio">No hay dispositivos registrados.</p>
+              </div>
+            </form>
           }
-        </ion-list>
+        </div>
       }
 
       @case ('tipos') {
-        @if (esAdmin) {
-          <form class="fila-tipo" [formGroup]="formTipo" (ngSubmit)="crearTipo()">
-            <ion-input label="Nuevo tipo" labelPlacement="stacked" formControlName="nombre" placeholder="PDU"></ion-input>
-            <ion-button type="submit" size="small">Agregar</ion-button>
-          </form>
-        }
-        <ion-list lines="full">
-          @for (t of tipos(); track t.id) {
-            <ion-item>
-              @if (esAdmin) {
-                <ion-input [value]="t.nombre" aria-label="Nombre del tipo" (ionChange)="renombrarTipo(t, $any($event.detail).value)"></ion-input>
-              } @else {
-                <ion-label>{{ t.nombre }}</ion-label>
+        <div [class.disposicion-panel]="esAdmin">
+          <div>
+            <div class="tabla tabla-tipos" role="table" aria-label="Tipos de activo">
+              <div class="tabla__cabecera" role="row">
+                <span role="columnheader">Tipo</span>
+                <span role="columnheader">Estado</span>
+                <span role="columnheader">@if (esAdmin) { Acciones }</span>
+              </div>
+              @for (t of tipos(); track t.id) {
+                <div class="tabla__fila" role="row">
+                  <span role="cell">
+                    @if (esAdmin) {
+                      <ion-input [value]="t.nombre" aria-label="Nombre del tipo" (ionChange)="renombrarTipo(t, $any($event.detail).value)"></ion-input>
+                    } @else {
+                      {{ t.nombre }}
+                    }
+                  </span>
+                  <span role="cell" class="celda-fin">
+                    <ion-badge [color]="t.activo ? 'success' : 'medium'">{{ t.activo ? 'Activo' : 'Desactivado' }}</ion-badge>
+                  </span>
+                  <span role="cell" class="celda-acciones">
+                    @if (esAdmin) {
+                      <ion-button size="small" fill="outline" [color]="t.activo ? 'danger' : 'success'" (click)="cambiarEstadoTipo(t)">
+                        {{ t.activo ? 'Desactivar' : 'Reactivar' }}
+                      </ion-button>
+                    }
+                  </span>
+                </div>
+              } @empty {
+                <p class="vacio"><b>No hay tipos registrados</b>Agrega el primero con el formulario «Nuevo tipo».</p>
               }
-              @if (!t.activo) { <ion-badge slot="end" color="medium">desactivado</ion-badge> }
-              @if (esAdmin) {
-                <ion-button slot="end" size="small" fill="clear" [color]="t.activo ? 'danger' : 'success'" (click)="cambiarEstadoTipo(t)">
-                  {{ t.activo ? 'Desactivar' : 'Reactivar' }}
-                </ion-button>
-              }
-            </ion-item>
+            </div>
+            @if (esAdmin) {
+              <ion-note class="nota">Para renombrar un tipo, edita su nombre y sal del campo.</ion-note>
+            }
+          </div>
+
+          @if (esAdmin) {
+            <form class="panel-lateral" [formGroup]="formTipo" (ngSubmit)="crearTipo()">
+              <div class="panel-lateral__cabecera"><h2>Nuevo tipo</h2></div>
+              <div class="panel-lateral__cuerpo">
+                <ion-input label="Nombre *" labelPlacement="stacked" formControlName="nombre" placeholder="PDU"></ion-input>
+                <div class="acciones">
+                  <ion-button type="submit" size="small">Agregar</ion-button>
+                </div>
+              </div>
+            </form>
           }
-        </ion-list>
-        @if (esAdmin) {
-          <ion-note class="nota">Para renombrar un tipo, edita su nombre y sal del campo.</ion-note>
-        }
+        </div>
       }
 
       @case ('estados') {
-        @if (esAdmin) {
-          <form class="fila-tipo" [formGroup]="formEstado" (ngSubmit)="crearEstado()">
-            <ion-input label="Nombre (clave) *" labelPlacement="stacked" formControlName="nombre" placeholder="En_prestamo"
-              helperText="Sin espacios; usa _ para separar." errorText="Solo letras, números y _."></ion-input>
-            <ion-input label="Etiqueta" labelPlacement="stacked" formControlName="etiqueta" placeholder="En préstamo"></ion-input>
-            <ion-select label="Color" labelPlacement="stacked" interface="popover" formControlName="color">
-              @for (c of coloresEstado; track c) { <ion-select-option [value]="c">{{ c }}</ion-select-option> }
-            </ion-select>
-            <ion-button type="submit" size="small">Agregar</ion-button>
-          </form>
-        }
-        <ion-list lines="full">
-          @for (e of estados(); track e.id) {
-            <ion-item>
-              <ion-badge slot="start" [color]="e.color">{{ e.etiqueta }}</ion-badge>
-              @if (esAdmin) {
-                <ion-input [value]="e.etiqueta" aria-label="Etiqueta del estado" (ionChange)="editarEstado(e, { etiqueta: $any($event.detail).value })"></ion-input>
-                <ion-select slot="end" aria-label="Color del estado" interface="popover" [value]="e.color"
-                  (ionChange)="editarEstado(e, { color: $any($event.detail).value })">
+        <div [class.disposicion-panel]="esAdmin">
+          <div>
+            <div class="tabla tabla-estados" [class.solo-lectura]="!esAdmin" role="table" aria-label="Estados de activo">
+              <div class="tabla__cabecera" role="row">
+                <span role="columnheader">Se ve así</span>
+                <span role="columnheader">Etiqueta</span>
+                <span role="columnheader">Color</span>
+                <span role="columnheader">Nombre (clave)</span>
+                <span role="columnheader">@if (esAdmin) { Acciones }</span>
+              </div>
+              @for (e of estados(); track e.id) {
+                <div class="tabla__fila" role="row">
+                  <span role="cell" class="celda-fin"><ion-badge [color]="e.color">{{ e.etiqueta }}</ion-badge></span>
+                  <span role="cell">
+                    @if (esAdmin) {
+                      <ion-input [value]="e.etiqueta" aria-label="Etiqueta del estado" (ionChange)="editarEstado(e, { etiqueta: $any($event.detail).value })"></ion-input>
+                    } @else {
+                      {{ e.etiqueta }}
+                    }
+                  </span>
+                  <span role="cell" class="celda-opcional">
+                    @if (esAdmin) {
+                      <ion-select aria-label="Color del estado" interface="popover" [value]="e.color"
+                        (ionChange)="editarEstado(e, { color: $any($event.detail).value })">
+                        @for (c of coloresEstado; track c) { <ion-select-option [value]="c">{{ c }}</ion-select-option> }
+                      </ion-select>
+                    } @else {
+                      {{ e.color }}
+                    }
+                  </span>
+                  <span role="cell" class="celda-secundaria mono">
+                    {{ e.nombre }}
+                    @if (e.es_sistema) { <ion-badge color="medium">sistema</ion-badge> }
+                    @if (!e.activo) { <ion-badge color="medium">desactivado</ion-badge> }
+                  </span>
+                  <span role="cell" class="celda-acciones">
+                    @if (esAdmin && !e.es_sistema) {
+                      <ion-button size="small" fill="outline" [color]="e.activo ? 'danger' : 'success'" (click)="cambiarVigenciaEstado(e)">
+                        {{ e.activo ? 'Desactivar' : 'Reactivar' }}
+                      </ion-button>
+                    }
+                  </span>
+                </div>
+              } @empty {
+                <p class="vacio"><b>No hay estados registrados</b>Agrega uno con el formulario «Nuevo estado».</p>
+              }
+            </div>
+            <ion-note class="nota">
+              "Operativo" (estado de alta) y "Retirado" (baja del activo) los usa el sistema: se puede cambiar su etiqueta y color,
+              pero no desactivarlos. Un estado con activos asignados no se puede desactivar.
+            </ion-note>
+          </div>
+
+          @if (esAdmin) {
+            <form class="panel-lateral" [formGroup]="formEstado" (ngSubmit)="crearEstado()">
+              <div class="panel-lateral__cabecera"><h2>Nuevo estado</h2></div>
+              <div class="panel-lateral__cuerpo">
+                <ion-input label="Nombre (clave) *" labelPlacement="stacked" formControlName="nombre" placeholder="En_prestamo"
+                  helperText="Sin espacios; usa _ para separar." errorText="Solo letras, números y _."></ion-input>
+                <ion-input label="Etiqueta" labelPlacement="stacked" formControlName="etiqueta" placeholder="En préstamo"></ion-input>
+                <ion-select label="Color" labelPlacement="stacked" interface="popover" formControlName="color">
                   @for (c of coloresEstado; track c) { <ion-select-option [value]="c">{{ c }}</ion-select-option> }
                 </ion-select>
-              } @else {
-                <ion-label>{{ e.etiqueta }}</ion-label>
-              }
-              <ion-note slot="end">{{ e.nombre }}</ion-note>
-              @if (e.es_sistema) { <ion-badge slot="end" color="light">sistema</ion-badge> }
-              @if (!e.activo) { <ion-badge slot="end" color="medium">desactivado</ion-badge> }
-              @if (esAdmin && !e.es_sistema) {
-                <ion-button slot="end" size="small" fill="clear" [color]="e.activo ? 'danger' : 'success'" (click)="cambiarVigenciaEstado(e)">
-                  {{ e.activo ? 'Desactivar' : 'Reactivar' }}
-                </ion-button>
-              }
-            </ion-item>
-          } @empty {
-            <p class="vacio">No hay estados registrados.</p>
+                <div class="acciones">
+                  <ion-button type="submit" size="small">Agregar</ion-button>
+                </div>
+              </div>
+            </form>
           }
-        </ion-list>
-        <ion-note class="nota">
-          "Operativo" (estado de alta) y "Retirado" (baja del activo) los usa el sistema: se puede cambiar su etiqueta y color,
-          pero no desactivarlos. Un estado con activos asignados no se puede desactivar.
-        </ion-note>
+        </div>
       }
     }
   </div>

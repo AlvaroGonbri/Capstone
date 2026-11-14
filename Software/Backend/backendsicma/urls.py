@@ -20,6 +20,7 @@ from infraestructura.views import ZabbixWebhookView
 from mediciones.views import (
     SensorClaveView,
     SensorDetailView,
+    SensorHistorialView,
     SensorListView,
     UbicacionDetailView,
     UbicacionListView,
@@ -33,6 +34,7 @@ urlpatterns = [
     path('api/sensores/', SensorListView.as_view(), name='sensor_list'),
     path('api/sensores/<int:pk>/', SensorDetailView.as_view(), name='sensor_detail'),
     path('api/sensores/<int:pk>/clave/', SensorClaveView.as_view(), name='sensor_clave'),
+    path('api/sensores/<int:pk>/historial/', SensorHistorialView.as_view(), name='sensor_historial'),
     path('api/ubicaciones/', UbicacionListView.as_view(), name='ubicacion_list'),
     path('api/ubicaciones/<int:pk>/', UbicacionDetailView.as_view(), name='ubicacion_detail'),
     path('api/activos/', include('inventario.urls')),

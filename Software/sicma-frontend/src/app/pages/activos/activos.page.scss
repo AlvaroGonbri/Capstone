@@ -43,6 +43,13 @@
     }
   }
 
+  &__ultima {
+    font-size: 0.8rem;
+    color: var(--sicma-tenue);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   &__boton {
     margin: 0 0 0 auto;
   }
@@ -101,7 +108,7 @@
   border: 1px solid var(--sicma-linea);
   border-radius: var(--sicma-radio);
   background: var(--sicma-superficie);
-  overflow: hidden;
+  /* Sin overflow: hidden, para que el encabezado pueda quedar fijo al desplazarse */
   margin-bottom: 16px;
 
   &__cabecera,
@@ -114,6 +121,10 @@
   }
 
   &__cabecera {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    border-radius: var(--sicma-radio) var(--sicma-radio) 0 0;
     background: #fafbfc;
     border-bottom: 1px solid var(--sicma-linea);
     font-size: 0.68rem;
@@ -121,6 +132,10 @@
     letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--sicma-tenue);
+  }
+
+  &__fila:last-child {
+    border-radius: 0 0 var(--sicma-radio) var(--sicma-radio);
   }
 
   &__fila {
@@ -141,6 +156,49 @@
 
   ion-badge {
     text-transform: capitalize;
+  }
+}
+
+/* Encabezados que ordenan */
+.orden {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+
+  &:hover,
+  &.activa {
+    color: var(--sicma-tinta);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: 2px;
+  }
+
+  &__flecha {
+    min-width: 8px;
+  }
+}
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 16px;
+  font-size: 0.82rem;
+  color: var(--sicma-tenue);
+
+  ion-button {
+    margin: 0;
   }
 }
 

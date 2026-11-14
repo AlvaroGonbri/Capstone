@@ -1,19 +1,40 @@
-<app-encabezado titulo="Intervenciones" seccion="Operación"></app-encabezado>
+<!-- Pestañas: en escritorio van en la barra superior; en pantallas angostas, sobre la lista -->
+<ng-template #pestanas>
+  <ion-segment-button value="abiertas"><ion-label>Abiertas<span class="contador">{{ conteo().abiertas }}</span></ion-label></ion-segment-button>
+  @if (!esTecnico) {
+    <ion-segment-button value="Pendiente"><ion-label>Por aprobar<span class="contador">{{ conteo().Pendiente }}</span></ion-label></ion-segment-button>
+  }
+  <!-- App móvil: solo Abiertas, Por aprobar y Cerradas ("Abiertas" ya incluye las aprobadas y en ejecución) -->
+  @if (!movil) {
+    <ion-segment-button value="Aprobada"><ion-label>Aprobadas<span class="contador">{{ conteo().Aprobada }}</span></ion-label></ion-segment-button>
+    <ion-segment-button value="EnEjecucion"><ion-label>En ejecución<span class="contador">{{ conteo().EnEjecucion }}</span></ion-label></ion-segment-button>
+  }
+  <ion-segment-button value="cerradas"><ion-label>Cerradas</ion-label></ion-segment-button>
+  @if (!movil) {
+    <ion-segment-button value="todas"><ion-label>Todas</ion-label></ion-segment-button>
+  }
+</ng-template>
+
+<app-encabezado titulo="Intervenciones" seccion="Operación">
+  <ion-segment acciones slot="end" class="pestanas-arriba" [value]="filtro()" scrollable
+    (ionChange)="cambiarFiltro($any($event.detail).value)">
+    <ng-container *ngTemplateOutlet="pestanas"></ng-container>
+  </ion-segment>
+</app-encabezado>
 
 <ion-content>
   <div class="contenido-limitado">
-    <ion-segment [value]="filtro()" scrollable (ionChange)="cambiarFiltro($any($event.detail).value)">
-      <ion-segment-button value="abiertas"><ion-label>Abiertas</ion-label></ion-segment-button>
-      <ion-segment-button value="Pendiente"><ion-label>Por aprobar</ion-label></ion-segment-button>
-      <ion-segment-button value="Aprobada"><ion-label>Aprobadas</ion-label></ion-segment-button>
-      <ion-segment-button value="EnEjecucion"><ion-label>En ejecución</ion-label></ion-segment-button>
-      <ion-segment-button value="cerradas"><ion-label>Cerradas</ion-label></ion-segment-button>
-      <ion-segment-button value="todas"><ion-label>Todas</ion-label></ion-segment-button>
+    <ion-segment class="pestanas-contenido" [value]="filtro()" scrollable (ionChange)="cambiarFiltro($any($event.detail).value)">
+      <ng-container *ngTemplateOutlet="pestanas"></ng-container>
     </ion-segment>
 
     <ion-note class="nota">
-      Las solicitudes llegan desde Microsoft Forms y la Jefatura las aprueba en Teams. Luego el Administrador asigna
-      al técnico y SICMA pide al flujo agendarla en el calendario de Outlook.
+      @if (esTecnico) {
+        Aquí ves solo las intervenciones que el Administrador te asignó. Puedes iniciarlas dentro del horario asignado.
+      } @else {
+        Las solicitudes llegan desde Microsoft Forms y la Jefatura las aprueba en Teams. Luego el Administrador asigna
+        al técnico y SICMA pide al flujo agendarla en el calendario de Outlook.
+      }
     </ion-note>
 
     @if (cargando()) {
@@ -30,11 +51,17 @@
     } @else if (error(); as mensajeError) {
       <p class="vacio">{{ mensajeError }}</p>
     } @else if (filtradas().length === 0) {
-      <p class="vacio">Sin intervenciones para este filtro.</p>
+      <p class="vacio">
+        @if (esTecnico) {
+          <b>Sin intervenciones asignadas aquí</b>El Administrador te asigna las intervenciones aprobadas.
+        } @else {
+          <b>Sin intervenciones en esta pestaña</b>Prueba con otra pestaña o con «Todas».
+        }
+      </p>
     } @else {
       <ion-list lines="none" class="lista-intervenciones">
         @for (i of filtradas(); track i.id) {
-          <ion-item button detail="false" class="tarjeta-intervencion" [class.elegida]="seleccionada() === i.id"
+          <ion-item button detail="false" class="tarjeta-intervencion" [id]="'intervencion-' + i.id" [class.elegida]="seleccionada() === i.id"
             (click)="alternar(i)" [attr.aria-expanded]="seleccionada() === i.id">
             <ion-label>
               <h3>{{ titulo(i) }}</h3>
@@ -44,6 +71,12 @@
                 inicio {{ i.fecha_inicio ? (i.fecha_inicio | date: 'dd/MM/yyyy HH:mm') : 'por definir' }}
                 @if (i.responsable_nombre) { · técnico {{ i.responsable_nombre }} }
               </p>
+              <!-- Teléfono: avance del flujo en la misma tarjeta -->
+              <span class="mini-pasos" aria-hidden="true">
+                @for (paso of pasos; track paso; let n = $index) {
+                  <i [class.hecho]="n <= pasoActual(i.estado)"></i>
+                }
+              </span>
             </ion-label>
             <ion-badge slot="end" [color]="colorEstado(i.estado)">{{ etiquetaEstado(i.estado) }}</ion-badge>
           </ion-item>
@@ -62,18 +95,22 @@
                 }
               </ol>
               <ion-card-content>
+                <dl class="grilla-datos resumen-intervencion">
+                  <div><dt>Técnico</dt><dd>{{ i.responsable_nombre || 'sin asignar' }}</dd></div>
+                  <div>
+                    <dt>Horario</dt>
+                    <dd>
+                      {{ i.fecha_inicio ? (i.fecha_inicio | date: 'dd/MM/yyyy HH:mm') : 'por definir' }}
+                      @if (i.fecha_termino) { → {{ i.fecha_termino | date: 'dd/MM HH:mm' }} }
+                    </dd>
+                  </div>
+                  <div><dt>Calendario</dt><dd>{{ i.agenda_enviada ? 'Enviada al flujo de Outlook' : 'Aún no agendada' }}</dd></div>
+                </dl>
                 <dl class="datos">
                   <dt>Solicitante</dt><dd>{{ i.solicitante_nombre || '—' }} ({{ i.solicitante_correo || 'sin correo' }})</dd>
                   @if (i.descripcion) { <dt>Descripción</dt><dd>{{ i.descripcion }}</dd> }
                   @if (i.plan_reversa) { <dt>Plan de reversa</dt><dd>{{ i.plan_reversa }}</dd> }
                   <dt>Solicitada</dt><dd>{{ i.fecha_solicitud | date: 'dd/MM/yyyy HH:mm' }}</dd>
-                  <dt>Horario</dt>
-                  <dd>
-                    {{ i.fecha_inicio ? (i.fecha_inicio | date: 'dd/MM/yyyy HH:mm') : 'por definir' }}
-                    @if (i.fecha_termino) { → {{ i.fecha_termino | date: 'dd/MM/yyyy HH:mm' }} }
-                  </dd>
-                  <dt>Técnico</dt><dd>{{ i.responsable_nombre || 'sin asignar' }}</dd>
-                  <dt>Calendario</dt><dd>{{ i.agenda_enviada ? 'Enviada al flujo de Outlook' : 'Aún no agendada' }}</dd>
                   @if (i.activos.length > 0) {
                     <dt>Activos</dt>
                     <dd>
@@ -87,6 +124,7 @@
                     <dd>
                       @for (p of i.personal_externo; track p.id) {
                         <span class="persona" [class.alerta]="!p.habilitada || !p.huella_registrada">
+                          <span class="avatar avatar--chico" aria-hidden="true">{{ iniciales(p.nombre) }}</span>
                           {{ p.nombre }} ({{ p.empresa || 'sin empresa' }}) · RUT {{ p.rut || '—' }}
                           @if (!p.habilitada) { <b> · deshabilitada: reemplázala</b> }
                           @else if (!p.huella_registrada) { <b> · sin huella registrada</b> }
@@ -157,14 +195,6 @@
                     }
                   </div>
 
-                  <form [formGroup]="formAsignar" (ngSubmit)="asignar(i)">
-                    <div class="acciones">
-                      <ion-button type="submit" size="small" [disabled]="enviando()">Asignar y agendar</ion-button>
-                      @if (i.responsable) {
-                        <ion-button size="small" fill="outline" [disabled]="enviando()" (click)="guardarPersonal(i)">Guardar solo el personal</ion-button>
-                      }
-                    </div>
-                  </form>
                   @if (i.responsable) {
                     <ion-note>Reasignar envía otra solicitud al flujo: revisa que no quede una cita duplicada en Outlook.</ion-note>
                   }
@@ -176,16 +206,19 @@
                   @for (p of i.personal_externo; track p.id) {
                     <div class="verificacion">
                       <div class="quien">
-                        <b>{{ p.nombre }}</b> · {{ p.empresa || 'sin empresa' }} · RUT {{ p.rut || '—' }}
-                        @if (!p.habilitada) {
-                          <span class="estado mal">Deshabilitada: no puede trabajar</span>
-                        } @else if (p.verificada_en) {
-                          <span class="estado ok">✓ Verificada a las {{ p.verificada_en | date: 'HH:mm' }}</span>
-                        } @else if (p.verificacion?.estado === 'Fallida') {
-                          <span class="estado mal">No verificada: {{ p.verificacion!.mensaje }}</span>
-                        } @else {
-                          <span class="estado">Pendiente de verificar</span>
-                        }
+                        <span class="avatar" aria-hidden="true">{{ iniciales(p.nombre) }}</span>
+                        <div class="quien__texto">
+                          <span><b>{{ p.nombre }}</b> · {{ p.empresa || 'sin empresa' }} · <span class="mono">{{ p.identificador }}</span></span>
+                          @if (!p.habilitada) {
+                            <span class="estado mal">Deshabilitada: no puede trabajar</span>
+                          } @else if (p.verificada_en) {
+                            <span class="estado ok">✓ Verificada a las {{ p.verificada_en | date: 'HH:mm' }}</span>
+                          } @else if (p.verificacion?.estado === 'Fallida') {
+                            <span class="estado mal">No verificada: {{ p.verificacion!.mensaje }}</span>
+                          } @else {
+                            <span class="estado">Pendiente de verificar</span>
+                          }
+                        </div>
                       </div>
                       @if (verificando()?.personaId === p.id && (verificando()!.solicitud.estado === 'Pendiente' || verificando()!.solicitud.estado === 'EnCurso')) {
                         @if (verificando()!.solicitud; as v) {
@@ -206,9 +239,17 @@
                   }
                 }
 
+                <!-- Por qué "Iniciar" (en la barra de abajo) está deshabilitado -->
                 @if (i.estado === 'Aprobada' && i.responsable && puedeEjecutar(i)) {
-                  <div class="acciones">
-                    <ion-button size="small" color="tertiary" [disabled]="enviando() || pendientesDeVerificar(i).length > 0" (click)="iniciar(i)">Iniciar intervención</ion-button>
+                  <div class="avisos-inicio">
+                    @switch (fueraDeHorario(i)) {
+                      @case ('antes') {
+                        <ion-note>Podrás iniciarla desde el {{ i.fecha_inicio | date: 'dd/MM/yyyy HH:mm' }}, la hora de inicio asignada.</ion-note>
+                      }
+                      @case ('despues') {
+                        <ion-note>El horario asignado terminó el {{ i.fecha_termino | date: 'dd/MM/yyyy HH:mm' }}. Pide al Administrador que la reprograme.</ion-note>
+                      }
+                    }
                     @if (pendientesDeVerificar(i).length > 0) {
                       <ion-note>Para iniciar, verifica la huella de: {{ pendientesDeVerificar(i).map(nombrePersona).join(', ') }}.</ion-note>
                     }
@@ -219,21 +260,52 @@
                   <h4>Registrar cierre</h4>
                   <form [formGroup]="formCierre">
                     <ion-textarea label="¿Qué se hizo? *" labelPlacement="stacked" [autoGrow]="true" formControlName="observacion"></ion-textarea>
-                    <div class="acciones">
-                      <ion-button size="small" color="success" [disabled]="enviando()" (click)="cerrar(i, true)">Cerrar como ejecutada</ion-button>
-                      <ion-button size="small" color="danger" fill="outline" [disabled]="enviando()" (click)="cerrar(i, false)">Cerrar como fallida</ion-button>
-                    </div>
                   </form>
                 }
 
-                @if (puedeCancelar(i.estado)) {
-                  <h4>Cancelar</h4>
-                  <form class="fila" [formGroup]="formCancelar" (ngSubmit)="cancelar(i)">
-                    <ion-input label="Motivo *" labelPlacement="stacked" formControlName="motivo"></ion-input>
-                    <ion-button type="submit" size="small" color="danger" fill="clear" [disabled]="enviando()">Cancelar intervención</ion-button>
+                @if (cancelando() && puedeCancelar(i.estado)) {
+                  <h4>Cancelar la intervención</h4>
+                  <form [formGroup]="formCancelar" (ngSubmit)="cancelar(i)">
+                    <ion-input label="Motivo *" labelPlacement="stacked" formControlName="motivo"
+                      helperText="Se avisa por correo al solicitante y al técnico asignado."></ion-input>
                   </form>
                 }
               </ion-card-content>
+
+              <!-- Barra de acciones: cancelar a la izquierda; el paso siguiente del flujo a la derecha -->
+              @if (tieneAcciones(i)) {
+                <div class="pie-detalle">
+                  <div class="pie-detalle__izquierda">
+                    @if (puedeCancelar(i.estado)) {
+                      @if (cancelando()) {
+                        <ion-button size="small" fill="clear" color="medium" (click)="cancelando.set(false)">Volver</ion-button>
+                        <ion-button size="small" color="danger" [disabled]="enviando()" (click)="cancelar(i)">Confirmar cancelación</ion-button>
+                      } @else {
+                        <ion-button size="small" fill="outline" color="danger" (click)="cancelando.set(true)">Cancelar intervención</ion-button>
+                      }
+                    }
+                  </div>
+                  <div class="pie-detalle__derecha">
+                    @if (esAdmin && i.estado === 'Aprobada') {
+                      @if (i.responsable) {
+                        <ion-button size="small" fill="outline" [disabled]="enviando()" (click)="guardarPersonal(i)">Guardar solo el personal</ion-button>
+                      }
+                      <ion-button size="small" [fill]="i.responsable ? 'outline' : 'solid'" [disabled]="enviando()" (click)="asignar(i)">
+                        {{ i.responsable ? 'Reasignar y agendar' : 'Asignar y agendar' }}
+                      </ion-button>
+                    }
+                    @if (i.estado === 'Aprobada' && i.responsable && puedeEjecutar(i)) {
+                      <ion-button size="small"
+                        [disabled]="enviando() || pendientesDeVerificar(i).length > 0 || fueraDeHorario(i) !== null"
+                        (click)="iniciar(i)">Iniciar intervención</ion-button>
+                    }
+                    @if (i.estado === 'EnEjecucion' && puedeEjecutar(i)) {
+                      <ion-button size="small" color="danger" fill="outline" [disabled]="enviando()" (click)="cerrar(i, false)">Cerrar como fallida</ion-button>
+                      <ion-button size="small" color="success" [disabled]="enviando()" (click)="cerrar(i, true)">Cerrar como ejecutada</ion-button>
+                    }
+                  </div>
+                </div>
+              }
             </ion-card>
           }
         }

@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { addIcons } from 'ionicons';
 import { warningOutline } from 'ionicons/icons';
@@ -34,11 +34,17 @@ import { ActivosService } from '../../core/services/activos.service';
 import { AlertasService } from '../../core/services/alertas.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CatalogosService, nombreUbicacion } from '../../core/services/catalogos.service';
-import { ESTADO_RETIRADO, InventarioService } from '../../core/services/inventario.service';
+import { ESTADO_RETIRADO, InventarioService, colorCriticidad, etiquetaCriticidad } from '../../core/services/inventario.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
+import { HacePipe } from '../../shared/hace.pipe';
 import { environment } from '../../../environments/environment';
 
 type FiltroEstado = 'todos' | EstadoInventario;
+type Columna = 'nombre' | 'tipo' | 'ubicacion' | 'responsable' | 'criticidad' | 'zabbix' | 'estado';
+
+/** Con más activos, la tabla se pagina de a 25 (el encabezado queda fijo al desplazarse). */
+const POR_PAGINA = 25;
+const RANGO_CRITICIDAD: Record<string, number> = { Baja: 0, Media: 1, Alta: 2, Critica: 3 };
 
 @Component({
   selector: 'app-activos',
@@ -46,6 +52,7 @@ type FiltroEstado = 'todos' | EstadoInventario;
     DatePipe,
     RouterLink,
     EncabezadoComponent,
+    HacePipe,
     IonBadge,
     IonButton,
     IonButtons,
@@ -123,6 +130,66 @@ export class ActivosPage {
     );
   });
 
+  // ------------------------------------------------- orden y páginas
+  protected readonly columnas: Array<{ columna: Columna; titulo: string }> = [
+    { columna: 'nombre', titulo: 'Activo' },
+    { columna: 'tipo', titulo: 'Tipo' },
+    { columna: 'ubicacion', titulo: 'Ubicación' },
+    { columna: 'responsable', titulo: 'Responsable' },
+    { columna: 'criticidad', titulo: 'Criticidad' },
+    { columna: 'zabbix', titulo: 'Zabbix' },
+    { columna: 'estado', titulo: 'Estado' },
+  ];
+  protected readonly orden = signal<{ columna: Columna; asc: boolean }>({ columna: 'nombre', asc: true });
+  protected readonly pagina = signal(0);
+
+  protected readonly ordenados = computed(() => {
+    const { columna, asc } = this.orden();
+    const valor = (a: ActivoInventario): string | number => {
+      switch (columna) {
+        case 'tipo': return a.tipo ?? '';
+        case 'ubicacion': return a.ubicacion_nombre;
+        case 'responsable': return a.responsable_nombre ?? '';
+        case 'criticidad': return RANGO_CRITICIDAD[a.criticidad] ?? 0;
+        case 'zabbix': return this.host(a)?.problemasActivos ?? -1; // sin monitoreo, al final
+        case 'estado': return this.etiquetaEstado(a.estado);
+        default: return a.nombre;
+      }
+    };
+    const signo = asc ? 1 : -1;
+    return [...this.filtrados()].sort((a, b) => {
+      const va = valor(a);
+      const vb = valor(b);
+      const comparacion = typeof va === 'number' && typeof vb === 'number'
+        ? va - vb
+        : String(va).localeCompare(String(vb), 'es', { sensitivity: 'base' });
+      return comparacion * signo || a.nombre.localeCompare(b.nombre, 'es');
+    });
+  });
+
+  protected readonly paginas = computed(() => Math.max(1, Math.ceil(this.ordenados().length / POR_PAGINA)));
+  /** Si los filtros dejan menos páginas, se muestra la última que existe. */
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.paginas() - 1));
+  protected readonly visibles = computed(() => {
+    const desde = this.paginaActual() * POR_PAGINA;
+    return this.ordenados().slice(desde, desde + POR_PAGINA);
+  });
+
+  protected ordenarPor(columna: Columna): void {
+    this.orden.update((o) => (o.columna === columna ? { columna, asc: !o.asc } : { columna, asc: true }));
+    this.pagina.set(0);
+  }
+
+  /** Valor de aria-sort de la columna (para lectores de pantalla). */
+  protected sentido(columna: Columna): 'ascending' | 'descending' | 'none' {
+    const o = this.orden();
+    return o.columna !== columna ? 'none' : o.asc ? 'ascending' : 'descending';
+  }
+
+  protected irAPagina(n: number): void {
+    this.pagina.set(Math.max(0, Math.min(n, this.paginas() - 1)));
+  }
+
   /** Equipos que Zabbix monitorea y aún no están en el inventario. */
   protected readonly sinInventariar = computed(() => {
     const codigos = new Set(this.activos().map((a) => a.codigo.toLowerCase()));
@@ -131,6 +198,15 @@ export class ActivosPage {
 
   constructor() {
     addIcons({ warningOutline });
+    // Al cambiar un filtro se vuelve a la primera página (la recarga periódica de Zabbix no la cambia).
+    effect(() => {
+      this.busqueda();
+      this.filtroEstado();
+      this.filtroTipo();
+      this.filtroUbicacion();
+      this.incluirRetirados();
+      untracked(() => this.pagina.set(0));
+    });
     this.catalogos.ubicaciones().subscribe((lista) => this.ubicaciones.set(lista));
     this.inventario.tipos().subscribe((lista) => this.tipos.set(lista));
     this.cargar();
@@ -171,16 +247,23 @@ export class ActivosPage {
     }));
   });
 
-  protected colorCriticidad(criticidad: string): string {
-    switch (criticidad) {
-      case 'Baja':
-        return 'success';
-      case 'Media':
-        return 'warning';
-      default:
-        return 'danger';
+  protected readonly colorCriticidad = colorCriticidad;
+  protected readonly etiquetaCriticidad = etiquetaCriticidad;
+
+  /** Cantidad de activos por estado, para las pestañas ("Operativo 2"). */
+  protected readonly conteoPorEstado = computed(() => {
+    const conteo = new Map<string, number>();
+    for (const a of this.activos()) {
+      conteo.set(a.estado, (conteo.get(a.estado) ?? 0) + 1);
     }
-  }
+    return conteo;
+  });
+
+  /** La alerta de infraestructura más reciente, para la franja resumida. */
+  protected readonly ultimaAlerta = computed(() => {
+    const fecha = (a: Alerta) => new Date(a.fecha_ultima_ocurrencia ?? a.fecha_apertura).getTime();
+    return [...this.alertas()].sort((a, b) => fecha(b) - fecha(a))[0] ?? null;
+  });
 
   protected cambiarIncluirRetirados(valor: boolean): void {
     this.incluirRetirados.set(valor);

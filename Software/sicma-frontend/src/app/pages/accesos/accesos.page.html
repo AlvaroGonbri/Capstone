@@ -5,8 +5,8 @@
     @if (esAdmin) {
       <ion-segment [value]="pestana()" scrollable (ionChange)="cambiarPestana($event.detail.value)">
         <ion-segment-button value="registro"><ion-label>Registro</ion-label></ion-segment-button>
-        <ion-segment-button value="puntos"><ion-label>Lectores</ion-label></ion-segment-button>
-        <ion-segment-button value="permisos"><ion-label>Permisos</ion-label></ion-segment-button>
+        <ion-segment-button value="puntos"><ion-label>Lectores<span class="contador">{{ puntos().length }}</span></ion-label></ion-segment-button>
+        <ion-segment-button value="permisos"><ion-label>Permisos<span class="contador">{{ permisosActivos() }}</span></ion-label></ion-segment-button>
       </ion-segment>
     }
     @if (mensaje(); as m) {
@@ -15,14 +15,38 @@
 
     @switch (pestana()) {
       @case ('registro') {
+        @let r = resumen();
+        <div class="resumen-accesos" role="group" aria-label="Resumen de los intentos">
+          <div class="resumen-accesos__item">
+            <span>Intentos registrados</span>
+            <b>{{ r.total }}</b>
+            <small>{{ r.total === 500 ? 'últimos 500 · acota con filtros' : 'con los filtros actuales' }}</small>
+          </div>
+          <div class="resumen-accesos__item resumen-accesos__item--normal">
+            <span>Autorizados</span>
+            <b>{{ r.autorizados }}</b>
+            <small>en el período</small>
+          </div>
+          <div class="resumen-accesos__item resumen-accesos__item--critico">
+            <span>Denegados</span>
+            <b>{{ r.denegados }}</b>
+            <small>en el período</small>
+          </div>
+          <div class="resumen-accesos__item resumen-accesos__item--advertencia">
+            <span>Fallas del lector</span>
+            <b [class.estado-advertencia]="r.fallas > 0">{{ r.fallas }}</b>
+            <small>errores del equipo</small>
+          </div>
+        </div>
+
         <form class="rejilla-form filtros tarjeta-filtros" [formGroup]="filtros" (ngSubmit)="buscar()">
           <ion-input label="Desde" labelPlacement="stacked" type="date" formControlName="desde"></ion-input>
           <ion-input label="Hasta" labelPlacement="stacked" type="date" formControlName="hasta"></ion-input>
           <ion-select label="Resultado" labelPlacement="stacked" interface="popover" formControlName="resultado">
             <ion-select-option value="">Todos</ion-select-option>
-            <ion-select-option value="Permitido">Permitido</ion-select-option>
+            <ion-select-option value="Permitido">Autorizado</ion-select-option>
             <ion-select-option value="Denegado">Denegado</ion-select-option>
-            <ion-select-option value="Error">Error</ion-select-option>
+            <ion-select-option value="Error">Falla del lector</ion-select-option>
           </ion-select>
           <ion-select label="Lector" labelPlacement="stacked" interface="popover" formControlName="punto">
             <ion-select-option [value]="0">Todos</ion-select-option>
@@ -42,25 +66,46 @@
             }
           </ion-list>
         } @else if (eventos().length === 0) {
-          <p class="vacio">Sin intentos de acceso para estos filtros.</p>
+          <p class="vacio"><b>Sin intentos de acceso</b>Prueba con otro rango de fechas o limpia los filtros.</p>
         } @else {
-          <ion-note class="nota">{{ eventos().length }} intentos{{ eventos().length === 500 ? ' (los 500 más recientes; acota los filtros)' : '' }}</ion-note>
-          <ion-list lines="full" class="lista-eventos">
-            @for (e of eventos(); track e.id) {
-              <ion-item [class.denegado]="e.resultado === 'Denegado'" [class.falla]="e.resultado === 'Error'">
-                <ion-icon slot="start" name="finger-print-outline" [color]="colorResultado(e.resultado)" aria-hidden="true"></ion-icon>
-                <ion-label>
-                  <h3>{{ e.persona_nombre || 'Persona no identificada' }}</h3>
-                  <p>{{ e.punto_nombre }} · {{ e.ubicacion_nombre }} · identificador {{ e.identificador_biometrico_externo }}</p>
-                  @if (e.motivo) { <p class="motivo">{{ e.motivo }}</p> }
-                </ion-label>
-                <div slot="end" class="derecha">
-                  <ion-badge [color]="colorResultado(e.resultado)">{{ e.resultado }}</ion-badge>
-                  <ion-note>{{ e.fecha_hora | date: 'dd/MM/yyyy HH:mm:ss' }}</ion-note>
-                </div>
-              </ion-item>
+          <ion-note class="nota">
+            {{ eventos().length }} intentos{{ eventos().length === 500 ? ' (los 500 más recientes; acota los filtros)' : '' }}
+            @if (filas().length < eventos().length) { · las fallas repetidas del lector se muestran agrupadas }
+          </ion-note>
+          <div class="tabla tabla-registro" role="table" aria-label="Registro de accesos">
+            <div class="tabla__cabecera" role="row">
+              <span role="columnheader">Fecha y hora</span>
+              <span role="columnheader">Persona</span>
+              <span role="columnheader">Lector</span>
+              <span role="columnheader">Detalle</span>
+              <span role="columnheader">Resultado</span>
+            </div>
+            @for (f of filas(); track f.evento.id) {
+              @let e = f.evento;
+              <div class="tabla__fila" role="row" [attr.data-resultado]="e.resultado">
+                <span role="cell" class="celda-fecha mono">
+                  {{ e.fecha_hora | date: 'dd/MM HH:mm:ss' }}
+                  @if (f.cantidad > 1) { <small>desde {{ f.desde | date: 'dd/MM HH:mm' }}</small> }
+                </span>
+                <span role="cell" class="celda-principal">
+                  <div>
+                    <b>{{ e.persona_nombre || 'Persona no identificada' }}</b>
+                    <small class="mono">{{ e.identificador_biometrico_externo }}</small>
+                  </div>
+                </span>
+                <span role="cell" class="celda-secundaria celda-opcional">{{ e.punto_nombre }}<small class="lugar">{{ e.ubicacion_nombre }}</small></span>
+                <span role="cell" class="celda-secundaria">
+                  @if (e.motivo) { <span class="motivo">{{ e.motivo }}</span> }
+                  @if (f.cantidad > 1) {
+                    <span class="repeticiones">× {{ f.cantidad }} repeticiones · {{ textoIntervalo(f.cadaSegundos!) }}</span>
+                  }
+                </span>
+                <span role="cell" class="celda-fin">
+                  <ion-badge [color]="colorResultado(e.resultado)">{{ etiquetaResultado(e.resultado) }}</ion-badge>
+                </span>
+              </div>
             }
-          </ion-list>
+          </div>
         }
         <ion-note class="nota">SICMA no guarda huellas: el lector compara la huella en su equipo y envía solo el identificador reconocido.
           Las personas y sus huellas se registran en <a routerLink="/personal">Personal externo</a>.</ion-note>
@@ -72,7 +117,10 @@
             <strong>Clave del lector «{{ c.punto }}» (id {{ c.id }}):</strong>
             <code>{{ c.clave }}</code>
             <span>Cópiala ahora en la configuración del agente del lector. SICMA guarda solo su hash y no la volverá a mostrar.</span>
-            <ion-button size="small" fill="clear" (click)="claveNueva.set(null)">Ya la copié</ion-button>
+            <div class="clave__acciones">
+              <ion-button size="small" fill="outline" (click)="copiarClave(c.clave)">{{ claveCopiada() ? 'Copiada ✓' : 'Copiar' }}</ion-button>
+              <ion-button size="small" fill="clear" (click)="claveNueva.set(null)">Ya la copié</ion-button>
+            </div>
           </div>
         }
         <div class="dos-columnas">
@@ -90,19 +138,20 @@
         </ion-card>
         <ion-list lines="full">
           @for (p of puntos(); track p.id) {
-            <ion-item>
+            <ion-item class="lector">
+              <span slot="start" class="lector__icono" aria-hidden="true"><ion-icon name="finger-print-outline"></ion-icon></span>
               <ion-label>
-                <h3>{{ p.nombre }} <span class="id">· id {{ p.id }}</span></h3>
+                <h3>{{ p.nombre }} <span class="lector__id">id {{ p.id }}</span></h3>
                 <p>{{ p.ubicacion_nombre }}</p>
               </ion-label>
-              @if (p.estado !== 'Activo') { <ion-badge slot="end" color="medium">desactivado</ion-badge> }
-              <ion-button slot="end" size="small" fill="clear" (click)="regenerarClave(p)">Nueva clave</ion-button>
-              <ion-button slot="end" size="small" fill="clear" [color]="p.estado === 'Activo' ? 'danger' : 'success'" (click)="cambiarEstadoPunto(p)">
+              <ion-badge slot="end" [color]="p.estado === 'Activo' ? 'success' : 'medium'">{{ p.estado === 'Activo' ? 'Activo' : 'Desactivado' }}</ion-badge>
+              <ion-button slot="end" size="small" fill="outline" (click)="regenerarClave(p)">Nueva clave</ion-button>
+              <ion-button slot="end" size="small" fill="outline" [color]="p.estado === 'Activo' ? 'danger' : 'success'" (click)="cambiarEstadoPunto(p)">
                 {{ p.estado === 'Activo' ? 'Desactivar' : 'Reactivar' }}
               </ion-button>
             </ion-item>
           } @empty {
-            <p class="vacio">No hay lectores registrados.</p>
+            <p class="vacio"><b>No hay lectores registrados</b>Regístralo con el formulario «Nuevo lector».</p>
           }
         </ion-list>
         </div>
@@ -127,9 +176,11 @@
                 <ion-input label="Vigente hasta" labelPlacement="stacked" type="date" formControlName="vigencia_fin" helperText="Vacío: sin término"></ion-input>
               </div>
               <p class="etiqueta">Días con horario (sin marcar ninguno: todos los días, todo el día)</p>
-              <div class="dias">
+              <div class="dias" role="group" aria-label="Días con horario">
                 @for (d of dias; track d) {
-                  <ion-checkbox labelPlacement="end" [checked]="formPermiso.controls.dias.value.includes(d)" (ionChange)="alternarDia(d, $event.detail.checked)">{{ d }}</ion-checkbox>
+                  @let marcado = formPermiso.controls.dias.value.includes(d);
+                  <button type="button" class="pildora" [class.activa]="marcado" [attr.aria-pressed]="marcado"
+                    (click)="alternarDia(d, !marcado)">{{ nombreDia[d] }}</button>
                 }
               </div>
               @if (formPermiso.controls.dias.value.length > 0) {
@@ -157,7 +208,7 @@
               }
             </ion-item>
           } @empty {
-            <p class="vacio">No hay permisos registrados.</p>
+            <p class="vacio"><b>No hay permisos registrados</b>Crea el primero con el formulario «Nuevo permiso».</p>
           }
         </ion-list>
         </div>

@@ -152,6 +152,44 @@ h4 {
   }
 }
 
+/* ------------------------------------------------- Tabla y panel lateral */
+.tabla-personal {
+  --columnas: minmax(0, 1.6fr) minmax(0, 1fr) 120px 110px 120px;
+}
+
+.subtitulo {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--sicma-tenue);
+}
+
+.ficha-datos {
+  padding: 0 0 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.ayuda-alta {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--sicma-tenue);
+}
+
+.acciones--fin {
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+
+  ion-button {
+    margin: 0;
+  }
+}
+
+form.panel-lateral ion-input {
+  margin-bottom: 10px;
+}
+
 /* ------------------------------------------------- Ajustes del rediseño */
 .nota {
   padding: 2px 2px 12px;

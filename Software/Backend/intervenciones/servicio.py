@@ -2,8 +2,10 @@
 
 Pendiente --(Jefatura en Teams)--> Aprobada | Rechazada
 Aprobada  --(Administrador asigna técnico y horario)--> Aprobada + correo AGENDAR al flujo
-Aprobada  --(técnico inicia)--> EnEjecucion --(técnico cierra)--> Ejecutada | Fallida
-Pendiente | Aprobada --(Administrador)--> Cancelada
+Aprobada  --(técnico inicia, dentro de su horario)--> EnEjecucion --(técnico cierra)--> Ejecutada | Fallida
+Pendiente | Aprobada --(Administrador o Jefatura)--> Cancelada
+
+El Administrador puede iniciar y cerrar en lugar del técnico, sin la restricción de horario.
 """
 from datetime import timedelta, timezone as dt_timezone
 import json
@@ -248,12 +250,30 @@ def asignar(intervencion, tecnico, fecha_inicio, fecha_termino, activos, persona
     return intervencion
 
 
-def iniciar(intervencion):
-    """RF-INT-06: el técnico registra el inicio de la ejecución."""
+def _exigir_horario_asignado(intervencion):
+    """El técnico inicia solo entre la hora de inicio y la de término que le asignaron."""
+    if not intervencion.fecha_inicio or not intervencion.fecha_termino:
+        raise TransicionInvalida('La intervención aún no tiene horario.')
+    ahora = timezone.now()
+    if ahora < intervencion.fecha_inicio:
+        raise TransicionInvalida(
+            f'La intervención se puede iniciar desde el {_hora_local(intervencion.fecha_inicio)}, la hora de inicio asignada.'
+        )
+    if ahora > intervencion.fecha_termino:
+        raise TransicionInvalida(
+            f'El horario asignado terminó el {_hora_local(intervencion.fecha_termino)}. '
+            'Pide al Administrador que la reprograme.'
+        )
+
+
+def iniciar(intervencion, exigir_horario=False):
+    """RF-INT-06: el técnico registra el inicio de la ejecución (dentro de su horario si exigir_horario)."""
     with transaction.atomic():
         _exigir_estado(intervencion, APROBADA)
         if not intervencion.responsable_id:
             raise TransicionInvalida('Primero el Administrador debe asignar un técnico.')
+        if exigir_horario:
+            _exigir_horario_asignado(intervencion)
         pendientes = personal_pendiente(intervencion)
         if pendientes:
             raise TransicionInvalida('Falta verificar al personal externo: ' + ', '.join(pendientes) + '.')

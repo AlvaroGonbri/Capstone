@@ -140,41 +140,26 @@
   color: var(--sicma-critico) !important;
 }
 
-/* Barra: rango permitido (verde) y lectura (marca) */
-.barra-rango {
-  position: relative;
-  height: 8px;
-  border-radius: 5px;
-  background: var(--sicma-critico-suave);
+/* La barra de rango (.barra-rango) está en styles.scss: también la usa Arduinos. */
 
-  &__ok {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    background: #cfe9da;
-  }
+.valor-rango {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
 
-  &__marca {
-    position: absolute;
-    top: -5px;
-    width: 3px;
-    height: 18px;
-    margin-left: -1.5px;
-    border-radius: 2px;
-    background: var(--sicma-tinta-2);
-  }
+/* Sensor sin datos o inactivo: la lectura mostrada es la última recibida, no la actual */
+.tarjeta-sensor.desactualizada {
+  border-left-color: var(--sicma-neutro);
+}
 
-  &__limites {
-    position: relative;
-    height: 16px;
-    margin-top: 4px;
-    font-size: 0.7rem;
-    color: var(--sicma-tenue);
+.sin-conexion {
+  font-size: 0.75rem;
+  color: var(--sicma-tenue);
 
-    span {
-      position: absolute;
-      transform: translateX(-50%);
-    }
+  b {
+    color: var(--sicma-tinta-2);
   }
 }
 
@@ -200,24 +185,9 @@
   font-size: 0.78rem;
 }
 
-.tendencia {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.7rem;
-  color: var(--sicma-tenue);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.linea {
-  width: 120px;
-  height: 36px;
-  color: var(--sicma-critico);
-}
-
-.tarjeta-sensor[data-nivel='normal'] .linea {
-  color: var(--ion-color-primary);
+/* ------------------------------------------------- Historial (gráfico) */
+.tarjeta-historial {
+  margin-top: 0;
 }
 
 /* ------------------------------------------------- Columna lateral */
@@ -270,6 +240,14 @@
   }
 }
 
+.version {
+  margin-left: 6px;
+  font-family: var(--sicma-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--sicma-tenue);
+}
+
 .campos-umbral {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -280,15 +258,117 @@
 .acciones-zona {
   display: flex;
   justify-content: flex-end;
-  margin: 4px 0 14px;
+  gap: 8px;
+  margin: 10px 0 4px;
 
   ion-button {
     margin: 0;
   }
 }
 
-.correos-zona {
-  margin-top: 4px;
+/* Notificar a: correos como etiquetas, con ✕ para quitarlos */
+.etiqueta-correos {
+  margin: 6px 0 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--sicma-tenue);
+}
+
+.correos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.correo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+  border: 1px solid var(--sicma-linea);
+  border-radius: 999px;
+  background: var(--sicma-neutro-suave);
+  font-size: 0.78rem;
+  color: var(--sicma-tinta-2);
+  overflow-wrap: anywhere;
+
+  button {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--sicma-tenue);
+    font-size: 0.7rem;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--sicma-linea);
+      color: var(--sicma-tinta);
+    }
+  }
+}
+
+.sin-correos {
+  font-size: 0.78rem;
+  color: var(--sicma-advertencia);
+}
+
+.agregar-correo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  ion-input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  ion-button {
+    flex-shrink: 0;
+    margin: 0;
+    white-space: nowrap;
+  }
+}
+
+/* Historial de versiones de los umbrales */
+.historial-umbrales {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--sicma-linea-suave);
+}
+
+.version-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 0;
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--sicma-linea-suave);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  small {
+    color: var(--sicma-tenue);
+  }
+
+  ion-badge {
+    margin-left: auto;
+  }
+}
+
+.version-numero {
+  min-width: 28px;
+  color: var(--sicma-tenue);
+}
+
+.version-valor {
+  color: var(--sicma-tinta);
 }
 
 .mensaje-umbral {

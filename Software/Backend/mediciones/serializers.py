@@ -182,6 +182,19 @@ class MedicionFilterSerializer(serializers.Serializer):
 
 class UmbralFilterSerializer(serializers.Serializer):
     ubicacion = serializers.IntegerField(min_value=1, required=False)
+    # Todas las versiones de una zona (las vigentes y las reemplazadas), de la más reciente a la más antigua.
+    historial = serializers.BooleanField(required=False, default=False)
+
+    def validate(self, attrs):
+        if attrs['historial'] and 'ubicacion' not in attrs:
+            raise serializers.ValidationError({'ubicacion': 'El historial se pide por zona.'})
+        return attrs
+
+
+class HistorialSensorFilterSerializer(serializers.Serializer):
+    """Período del gráfico de temperatura y humedad: últimas 24 horas, 7 días o 30 días."""
+
+    rango = serializers.ChoiceField(choices=('24h', '7d', '30d'), required=False, default='24h')
 
 
 class UmbralWriteSerializer(serializers.ModelSerializer):

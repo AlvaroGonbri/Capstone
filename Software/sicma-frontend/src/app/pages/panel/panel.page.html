@@ -14,53 +14,82 @@
         }
       </div>
     } @else {
+      @let r = resumen();
       <div class="rejilla-tarjetas kpis">
-        <ion-card routerLink="/activos" button class="kpi" [class.kpi--critico]="resumen().activosEnFalla > 0">
+        <ion-card routerLink="/activos" button class="kpi" [class.kpi--critico]="r.activosEnFalla > 0">
           <ion-card-content>
             <div class="kpi__titulo">
               <span class="kpi__icono kpi__icono--normal"><ion-icon name="cube-outline" aria-hidden="true"></ion-icon></span>
               Activos operativos
             </div>
             <p class="dato-grande">
-              {{ resumen().activosOperativos }}<span class="de"> / {{ resumen().activosTotales }}</span>
+              {{ r.activosOperativos }}<span class="de"> / {{ r.activosTotales }}</span>
             </p>
-            <p class="kpi__detalle">{{ resumen().activosEnFalla }} en falla</p>
+            <p class="kpi__detalle">{{ r.activosEnFalla }} en falla · {{ r.activosEnMantenimiento }} en mantención</p>
           </ion-card-content>
         </ion-card>
 
+        <!-- Sin datos ≠ alerta: un sensor que no reporta se cuenta aparte -->
         <ion-card
           routerLink="/monitoreo"
           button
           class="kpi"
-          [class.kpi--critico]="resumen().sensoresEnAlerta > 0"
-          [class.kpi--normal]="resumen().sensoresEnAlerta === 0"
+          [class.kpi--critico]="r.sensoresEnAlerta > 0"
+          [class.kpi--neutro]="r.sensoresEnAlerta === 0 && r.sensoresSinDatos > 0"
+          [class.kpi--normal]="r.sensoresEnAlerta === 0 && r.sensoresSinDatos === 0"
         >
           <ion-card-content>
             <div class="kpi__titulo">
-              <span class="kpi__icono" [class.kpi__icono--critico]="resumen().sensoresEnAlerta > 0" [class.kpi__icono--normal]="resumen().sensoresEnAlerta === 0">
+              <span class="kpi__icono" [class.kpi__icono--critico]="r.sensoresEnAlerta > 0"
+                [class.kpi__icono--normal]="r.sensoresEnAlerta === 0 && r.sensoresSinDatos === 0">
                 <ion-icon name="thermometer-outline" aria-hidden="true"></ion-icon>
               </span>
-              Sensores en alerta
+              Sensores ambientales
             </div>
-            <p
-              class="dato-grande"
-              [class.estado-critico]="resumen().sensoresEnAlerta > 0"
-            >
-              {{ resumen().sensoresEnAlerta }}
+            <p class="dato-grande" [class.estado-critico]="r.sensoresEnAlerta > 0">
+              {{ r.sensoresEnAlerta }}<span class="de"> en alerta</span>
             </p>
-            <p class="kpi__detalle">sobre umbral de temperatura o humedad</p>
+            <p class="kpi__detalle">
+              @if (r.sensoresSinDatos > 0) {
+                <b>{{ r.sensoresSinDatos }} sin datos</b>
+                @if (r.ultimaLecturaSinDatos) { · última lectura {{ r.ultimaLecturaSinDatos | hace }} }
+              } @else {
+                todos reportando
+              }
+            </p>
           </ion-card-content>
         </ion-card>
 
-        @if (veAccesos) {
-          <ion-card routerLink="/accesos" button class="kpi" [class.kpi--advertencia]="resumen().accesosDenegadosHoy > 0">
+        @if (movil) {
+          <!-- App móvil: el KPI de Alertas reemplaza al de Accesos -->
+          <ion-card class="kpi" [class.kpi--critico]="r.alertasAbiertas > 0" [class.kpi--normal]="r.alertasAbiertas === 0">
+            <ion-card-content>
+              <div class="kpi__titulo">
+                <span class="kpi__icono" [class.kpi__icono--critico]="r.alertasAbiertas > 0" [class.kpi__icono--normal]="r.alertasAbiertas === 0">
+                  <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+                </span>
+                Alertas
+              </div>
+              <p class="dato-grande">{{ r.alertasAbiertas }}</p>
+              <p class="kpi__detalle">
+                @for (c of chipsAlertas(); track c.texto; let ultimo = $last) { {{ c.texto }}{{ ultimo ? '' : ' · ' }} }
+                @empty { sin alertas abiertas }
+              </p>
+            </ion-card-content>
+          </ion-card>
+        } @else if (veAccesos) {
+          <ion-card routerLink="/accesos" button class="kpi"
+            [class.kpi--advertencia]="r.accesosDenegadosHoy > 0 || r.fallasLectorHoy > 0">
             <ion-card-content>
               <div class="kpi__titulo">
                 <span class="kpi__icono kpi__icono--advertencia"><ion-icon name="finger-print-outline" aria-hidden="true"></ion-icon></span>
                 Accesos de hoy
               </div>
-              <p class="dato-grande">{{ resumen().accesosHoy }}</p>
-              <p class="kpi__detalle">{{ resumen().accesosDenegadosHoy }} denegados</p>
+              <p class="dato-grande">{{ r.accesosHoy }}</p>
+              <p class="kpi__detalle">
+                {{ r.accesosDenegadosHoy }} denegados
+                @if (r.fallasLectorHoy > 0) { · <span class="kpi__aviso">lector con fallas</span> }
+              </p>
             </ion-card-content>
           </ion-card>
         }
@@ -71,74 +100,112 @@
               <span class="kpi__icono kpi__icono--primario"><ion-icon name="build-outline" aria-hidden="true"></ion-icon></span>
               Intervenciones abiertas
             </div>
-            <p class="dato-grande">{{ resumen().intervencionesAbiertas }}</p>
-            <p class="kpi__detalle">planificadas y en curso</p>
+            <p class="dato-grande">{{ r.intervencionesAbiertas }}</p>
+            <p class="kpi__detalle">{{ r.detalleIntervenciones }}</p>
           </ion-card-content>
         </ion-card>
       </div>
 
       <div class="columnas">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Alertas ambientales</ion-card-title>
-            @if (alertas().length > 0) {
-              <ion-badge color="danger">{{ alertas().length }}</ion-badge>
-            }
-            <a class="ver-todo" routerLink="/monitoreo">Ver monitoreo <ion-icon name="arrow-forward-outline" aria-hidden="true"></ion-icon></a>
-          </ion-card-header>
-          <ion-card-content class="ion-no-padding">
-            @if (alertas().length === 0) {
-              <p class="vacio">Todas las salas dentro de rango.</p>
-            } @else {
-              <ion-list lines="full">
-                @for (sensor of alertas(); track sensor.sensorId) {
-                  <ion-item routerLink="/monitoreo" button detail="true" class="fila-alerta" [class]="'nivel-' + sensor.nivel">
-                    <ion-icon
-                      slot="start"
-                      name="alert-circle-outline"
-                      [color]="sensor.nivel | colorNivel"
-                      aria-hidden="true"
-                    ></ion-icon>
-                    <ion-label>
-                      <h3>{{ sensor.ubicacion }} · rack {{ sensor.rack }}</h3>
-                      <p>
-                        <span class="mono">{{ sensor.temperatura }} °C · {{ sensor.humedad }} %</span> ·
-                        {{ sensor.actualizadoEn | date: 'dd/MM HH:mm' }}
-                      </p>
-                    </ion-label>
-                    <ion-badge slot="end" [color]="sensor.nivel | colorNivel">
-                      {{ sensor.nivel }}
-                    </ion-badge>
-                  </ion-item>
-                }
-              </ion-list>
-            }
-          </ion-card-content>
-        </ion-card>
+        <div class="columna-principal">
+          <!-- Temperatura y humedad (24 h / 7 d / 30 d); en la app móvil se ve en Ambiente -->
+          @if (!movil && sensoresGrafico().length > 0) {
+            <ion-card class="tarjeta-grafico">
+              <ion-card-content>
+                <app-grafico-ambiental [sensores]="sensoresGrafico()"></app-grafico-ambiental>
+              </ion-card-content>
+            </ion-card>
+          }
 
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Trabajos abiertos</ion-card-title>
-            <a class="ver-todo" routerLink="/intervenciones">Intervenciones <ion-icon name="arrow-forward-outline" aria-hidden="true"></ion-icon></a>
-          </ion-card-header>
-          <ion-card-content class="ion-no-padding">
-            @if (trabajosAbiertos().length === 0) {
-              <p class="vacio">Sin intervenciones pendientes.</p>
-            } @else {
-              <ion-list lines="full">
-                @for (trabajo of trabajosAbiertos(); track trabajo.id) {
-                  <ion-item routerLink="/intervenciones" button detail="true">
-                    <ion-label>
-                      <h3>{{ tituloIntervencion(trabajo) }}</h3>
-                      <p>{{ trabajo.impacto_esperado || trabajo.objetivo }}</p>
-                    </ion-label>
-                    <ion-badge slot="end" [color]="colorIntervencion(trabajo.estado)">{{ etiquetaIntervencion(trabajo.estado) }}</ion-badge>
-                  </ion-item>
+          <!-- Servidores de Zabbix: estado y problemas abiertos de cada uno -->
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Servidores (Zabbix)</ion-card-title>
+              @if (servidores(); as lista) {
+                <span class="cabecera-nota">
+                  {{ lista.length }} {{ lista.length === 1 ? 'host' : 'hosts' }} · {{ r.problemasZabbix }}
+                  {{ r.problemasZabbix === 1 ? 'problema abierto' : 'problemas abiertos' }}
+                </span>
+              }
+              <a class="ver-todo" routerLink="/activos">Ver activos <ion-icon name="arrow-forward-outline" aria-hidden="true"></ion-icon></a>
+            </ion-card-header>
+            <ion-card-content class="ion-no-padding">
+              @if (servidores(); as lista) {
+                @if (lista.length === 0) {
+                  <p class="vacio"><b>Zabbix no informa servidores</b>Revisa los grupos Cluster e Hypervisores en Zabbix.</p>
+                } @else {
+                  <div class="servidores">
+                    @for (s of lista; track s.codigo) {
+                      <a class="servidor" [attr.data-nivel]="s.nivel" [routerLink]="s.ruta">
+                        <b class="mono">{{ s.codigo }}</b>
+                        <small>{{ s.detalle || 'Servidor' }}</small>
+                        <span class="servidor__chips">
+                          @for (c of s.chips; track c.texto) { <ion-badge [color]="c.color">{{ c.texto }}</ion-badge> }
+                        </span>
+                      </a>
+                    }
+                  </div>
                 }
-              </ion-list>
-            }
-          </ion-card-content>
-        </ion-card>
+              } @else {
+                <p class="vacio"><b>Sin conexión con Zabbix</b>El resto del panel se muestra igual. Revisa que el proceso sincronizar_zabbix esté corriendo.</p>
+              }
+            </ion-card-content>
+          </ion-card>
+        </div>
+
+        <div class="columna-lateral">
+          <!-- Alertas de Zabbix y del ambiente en una sola lista; un mismo problema en varios servidores va en una fila -->
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Alertas abiertas</ion-card-title>
+              @for (c of chipsAlertas(); track c.texto) { <ion-badge [color]="c.color">{{ c.texto }}</ion-badge> }
+            </ion-card-header>
+            <ion-card-content class="ion-no-padding">
+              @if (alertas().length === 0) {
+                <p class="vacio"><b>Sin alertas abiertas</b>Servidores sin problemas, salas dentro de rango y sensores reportando.</p>
+              } @else {
+                <ion-list lines="full">
+                  @for (fila of alertas(); track fila.clave) {
+                    <ion-item [routerLink]="fila.ruta" button detail="false" class="fila-alerta" [attr.data-nivel]="fila.nivel">
+                      <ion-label>
+                        <h3>{{ fila.titulo }}</h3>
+                        <p><span class="mono">{{ fila.detalle }}</span> · {{ fila.prefijo }}{{ fila.fecha | hace }}</p>
+                      </ion-label>
+                      <ion-badge slot="end" [color]="fila.color">{{ fila.etiqueta }}</ion-badge>
+                    </ion-item>
+                  }
+                </ion-list>
+              }
+            </ion-card-content>
+          </ion-card>
+
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Trabajos abiertos</ion-card-title>
+              <a class="ver-todo" routerLink="/intervenciones">Intervenciones <ion-icon name="arrow-forward-outline" aria-hidden="true"></ion-icon></a>
+            </ion-card-header>
+            <ion-card-content class="ion-no-padding">
+              @if (trabajosAbiertos().length === 0) {
+                <p class="vacio"><b>Sin intervenciones pendientes</b>Las solicitudes nuevas llegan desde Microsoft Forms.</p>
+              } @else {
+                <ion-list lines="full">
+                  @for (trabajo of trabajosAbiertos(); track trabajo.id) {
+                    <ion-item routerLink="/intervenciones" [queryParams]="{ id: trabajo.id }" button detail="true">
+                      <ion-label>
+                        <h3><span class="numero-id">#{{ trabajo.id }}</span> {{ trabajo.rack || trabajo.objetivo }}</h3>
+                        <p>
+                          {{ trabajo.impacto_esperado || trabajo.objetivo }} · {{ trabajo.solicitante_nombre || 'sin solicitante' }}
+                          @if (trabajo.fecha_inicio) { · {{ trabajo.fecha_inicio | date: 'dd/MM HH:mm' }} }
+                        </p>
+                      </ion-label>
+                      <ion-badge slot="end" [color]="colorIntervencion(trabajo.estado)">{{ etiquetaIntervencion(trabajo.estado) }}</ion-badge>
+                    </ion-item>
+                  }
+                </ion-list>
+              }
+            </ion-card-content>
+          </ion-card>
+        </div>
       </div>
     }
   </div>

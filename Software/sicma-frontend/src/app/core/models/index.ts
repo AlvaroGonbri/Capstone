@@ -200,6 +200,9 @@ export interface Lectura {
 export type ConexionSensor = 'En línea' | 'Sin datos' | 'Inactivo';
 
 export interface EstadoSensor {
+  /** Id del sensor en la base (para pedir su historial de lecturas). */
+  id: number;
+  /** Código del dispositivo, p. ej. "arduino-01". */
   sensorId: string;
   conexion: ConexionSensor;
   ubicacion: string;
@@ -209,12 +212,44 @@ export interface EstadoSensor {
   humedad: number;
   nivel: NivelAmbiental;
   actualizadoEn: string;
-  /** Ultimas lecturas de temperatura, de la mas antigua a la mas reciente. */
-  historial: number[];
   /** Umbrales vigentes de la zona del sensor; null si la zona no tiene ninguno definido. */
   umbrales: Umbrales | null;
   /** Por qué la lectura está fuera de rango (vacío si está normal). */
   motivos: string[];
+}
+
+/** Período del gráfico de temperatura y humedad. */
+export type RangoHistorial = '24h' | '7d' | '30d';
+
+/** Un tramo del historial: promedio, mínimo y máximo de las lecturas del tramo (null = sin dato). */
+export interface PuntoHistorial {
+  /** Inicio del tramo (ISO). */
+  fecha: string;
+  lecturas: number;
+  temperatura: number | null;
+  temperaturaMin: number | null;
+  temperaturaMax: number | null;
+  humedad: number | null;
+  humedadMin: number | null;
+  humedadMax: number | null;
+}
+
+/** Historial de un sensor para el gráfico (GET /api/sensores/<id>/historial/). */
+export interface HistorialSensor {
+  sensorId: number;
+  codigo: string;
+  ubicacion: string;
+  rango: RangoHistorial;
+  desde: string;
+  hasta: string;
+  /** Largo de cada tramo, en segundos (10 min en 24 h, 1 h en 7 d, 4 h en 30 d). */
+  pasoSegundos: number;
+  umbrales: {
+    temperatura: { minimo: number; maximo: number } | null;
+    humedad: { minimo: number; maximo: number } | null;
+  };
+  /** Solo los tramos con lecturas, del más antiguo al más reciente. */
+  puntos: PuntoHistorial[];
 }
 
 /** Rango permitido por variable (RF-AMB-03). null = no definido para esa variable. */
@@ -229,8 +264,19 @@ export interface Umbrales {
 export interface UmbralZona extends Umbrales {
   ubicacionId: number;
   nombre: string;
+  /** Versión vigente de los umbrales de la zona (cada cambio crea una nueva); null si no hay. */
+  version: number | null;
   /** Responsables de alerta de la zona: reciben el correo (RF-CAT-05 / RF-AMB-05). */
   correos: string[];
+}
+
+/** Una versión de un umbral (cada cambio crea una nueva; las anteriores se conservan). */
+export interface VersionUmbral {
+  variable: 'Temperatura' | 'Humedad';
+  minimo: number;
+  maximo: number;
+  version: number;
+  vigenteDesde: string;
 }
 
 /** Alerta generada por SICMA (RF-AMB-04). */
@@ -247,6 +293,10 @@ export interface Alerta {
   ubicacion: number | null;
   /** event_id de Zabbix, solo en alertas de origen Zabbix (RF-INF-02). */
   evento_zabbix: string | null;
+  /** Servidor de Zabbix (nombre técnico) de la alerta; null en las de otro origen. */
+  host: string | null;
+  /** La condición sin el servidor (en Zabbix, condicion = "host: problema"). */
+  problema: string;
   /** Última acción manual: quién la reconoció o cerró, cuándo y con qué comentario. */
   ultima_gestion: { accion: 'Reconocida' | 'Cerrada'; usuario: string | null; comentario: string; fecha_hora: string } | null;
 }

@@ -1,5 +1,6 @@
 import logging
 import secrets
+from datetime import datetime, timedelta, timezone as dt_timezone
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
@@ -8,12 +9,13 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 
 from .models import Medicion, Sensor, Ubicacion, UmbralAmbiental
 from .serializers import (
+    HistorialSensorFilterSerializer,
     MedicionFilterSerializer,
     MedicionIngestSerializer,
     MedicionReadSerializer,
@@ -180,6 +182,107 @@ class SensorDetailView(LecturaPublicaEscrituraAdminMixin, SensorQuerysetMixin, A
         return Response(SensorReadSerializer(self.sensor_queryset().get(pk=pk)).data)
 
 
+# Período del gráfico -> (duración, largo de cada tramo en segundos). Unos 150 a 180 puntos por serie.
+RANGOS_HISTORIAL = {
+    '24h': (timedelta(hours=24), 10 * 60),
+    '7d': (timedelta(days=7), 60 * 60),
+    '30d': (timedelta(days=30), 4 * 60 * 60),
+}
+
+_fecha_iso = serializers.DateTimeField().to_representation
+
+
+def _resumen_tramo(valores):
+    """Promedio, mínimo y máximo de un tramo; None si no hubo lecturas de esa variable."""
+    if not valores:
+        return None, None, None
+    return round(sum(valores) / len(valores), 2), min(valores), max(valores)
+
+
+def _umbrales_vigentes(ubicacion_id):
+    umbrales = {}
+    for variable in ('Temperatura', 'Humedad'):
+        vigente = (
+            UmbralAmbiental.objects.filter(ubicacion_id=ubicacion_id, variable=variable)
+            .order_by('-version', '-vigente_desde', '-id')
+            .first()
+        )
+        umbrales[variable.lower()] = (
+            {'minimo': float(vigente.valor_minimo), 'maximo': float(vigente.valor_maximo)} if vigente else None
+        )
+    return umbrales
+
+
+class SensorHistorialView(APIView):
+    """GET ?rango=24h|7d|30d: lecturas de un sensor promediadas por tramo, para el gráfico de
+    temperatura y humedad (RF-AMB). Cada punto trae promedio, mínimo y máximo del tramo.
+
+    Los tramos sin lecturas no se envían: el gráfico los muestra como "sin datos" en vez de
+    unir los puntos de antes y después. Va bajo /api/sensores/ porque el túnel publica
+    /api/ pero bloquea /api/mediciones/ (ingreso de lecturas de los dispositivos)."""
+
+    permission_classes = [RolePermission]
+    allowed_roles = READ_ROLES
+
+    def get(self, request, pk, format=None):
+        filtros = HistorialSensorFilterSerializer(data=request.query_params)
+        filtros.is_valid(raise_exception=True)
+        rango = filtros.validated_data['rango']
+        duracion, paso = RANGOS_HISTORIAL[rango]
+        sensor = get_object_or_404(Sensor.objects.select_related('ubicacion'), pk=pk)
+
+        hasta = timezone.now()
+        # El inicio se alinea al tramo, así cada punto representa un tramo completo.
+        inicio = int((hasta - duracion).timestamp()) // paso * paso
+        desde = datetime.fromtimestamp(inicio, tz=dt_timezone.utc)
+
+        tramos = {}
+        lecturas = (
+            Medicion.objects.filter(sensor=sensor, fecha_hora_medicion__gte=desde, fecha_hora_medicion__lte=hasta)
+            .order_by('fecha_hora_medicion')
+            .values_list('fecha_hora_medicion', 'temperatura', 'humedad')
+        )
+        for fecha, temperatura, humedad in lecturas.iterator():
+            clave = int(fecha.timestamp()) // paso * paso
+            tramo = tramos.setdefault(clave, {'lecturas': 0, 'temperatura': [], 'humedad': []})
+            tramo['lecturas'] += 1
+            if temperatura is not None:
+                tramo['temperatura'].append(float(temperatura))
+            if humedad is not None:
+                tramo['humedad'].append(float(humedad))
+
+        puntos = []
+        for clave in sorted(tramos):
+            tramo = tramos[clave]
+            temperatura, temperatura_min, temperatura_max = _resumen_tramo(tramo['temperatura'])
+            humedad, humedad_min, humedad_max = _resumen_tramo(tramo['humedad'])
+            puntos.append({
+                'fecha': _fecha_iso(datetime.fromtimestamp(clave, tz=dt_timezone.utc)),
+                'lecturas': tramo['lecturas'],
+                'temperatura': temperatura,
+                'temperatura_min': temperatura_min,
+                'temperatura_max': temperatura_max,
+                'humedad': humedad,
+                'humedad_min': humedad_min,
+                'humedad_max': humedad_max,
+            })
+
+        ubicacion = sensor.ubicacion
+        return Response({
+            'sensor': {
+                'id': sensor.id,
+                'codigo': sensor.codigo,
+                'ubicacion': ' · '.join(filter(None, (ubicacion.sala, ubicacion.zona, ubicacion.rack))),
+            },
+            'rango': rango,
+            'desde': _fecha_iso(desde),
+            'hasta': _fecha_iso(hasta),
+            'paso_segundos': paso,
+            'umbrales': _umbrales_vigentes(ubicacion.id),
+            'puntos': puntos,
+        })
+
+
 class SensorClaveView(APIView):
     """POST: genera una device key nueva; la anterior deja de funcionar de inmediato."""
     permission_classes = [RolePermission]
@@ -223,6 +326,7 @@ class UbicacionDetailView(LecturaPublicaEscrituraAdminMixin, APIView):
 
 class UmbralListView(APIView):
     """GET: umbrales vigentes (de una ubicación con ?ubicacion=N, o de todas).
+    Con ?ubicacion=N&historial=1, todas las versiones de esa zona (la más reciente primero).
 
     POST: define un umbral nuevo; solo administradores (RF-AMB-03).
     """
@@ -235,6 +339,11 @@ class UmbralListView(APIView):
     def get(self, request, format=None):
         filters = UmbralFilterSerializer(data=request.query_params)
         filters.is_valid(raise_exception=True)
+        if filters.validated_data['historial']:
+            versiones = UmbralAmbiental.objects.filter(
+                ubicacion_id=filters.validated_data['ubicacion'],
+            ).order_by('-vigente_desde', '-id')
+            return Response(UmbralReadSerializer(versiones, many=True).data)
         latest_id = UmbralAmbiental.objects.filter(
             ubicacion_id=OuterRef('ubicacion_id'),
             variable=OuterRef('variable'),

@@ -9,6 +9,9 @@ class AlertaReadSerializer(serializers.ModelSerializer):
     evento_zabbix = serializers.CharField(
         source='host_problema_zabbix.identificador_externo', default=None, read_only=True,
     )
+    # Servidor y problema por separado, para agrupar y contar las alertas por servidor (Panel).
+    host = serializers.SerializerMethodField()
+    problema = serializers.SerializerMethodField()
     ultima_gestion = serializers.SerializerMethodField()
 
     class Meta:
@@ -25,8 +28,28 @@ class AlertaReadSerializer(serializers.ModelSerializer):
             'sensor_codigo',
             'ubicacion',
             'evento_zabbix',
+            'host',
+            'problema',
             'ultima_gestion',
         )
+
+    @staticmethod
+    def _partes(alerta):
+        """Las alertas de Zabbix se guardan como 'host: problema' (alertas/zabbix.py).
+
+        El nombre técnico de un host de Zabbix no admite ':', así que el primer ': ' los separa.
+        """
+        if alerta.origen == 'Zabbix':
+            host, separador, problema = alerta.condicion.partition(': ')
+            if separador and host:
+                return host, problema
+        return None, alerta.condicion
+
+    def get_host(self, alerta):
+        return self._partes(alerta)[0]
+
+    def get_problema(self, alerta):
+        return self._partes(alerta)[1]
 
     def get_ultima_gestion(self, alerta):
         g = next(iter(alerta.gestiones.all()), None)

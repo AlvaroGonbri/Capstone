@@ -1,8 +1,7 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
-  IonBackButton,
   IonBadge,
   IonButton,
   IonButtons,
@@ -11,7 +10,6 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonContent,
-  IonHeader,
   IonItem,
   IonLabel,
   IonList,
@@ -19,8 +17,6 @@ import {
   IonSegment,
   IonSegmentButton,
   IonSkeletonText,
-  IonTitle,
-  IonToolbar,
 } from '@ionic/angular';
 import { Activo, ActivoInventario, EventoTecnico, HistorialActivo, Intervencion } from '../../core/models';
 import { ActivosService } from '../../core/services/activos.service';
@@ -30,7 +26,23 @@ import {
   etiquetaEstadoIntervencion,
   tituloIntervencion,
 } from '../../core/services/intervenciones.service';
-import { InventarioService } from '../../core/services/inventario.service';
+import { InventarioService, colorCriticidad, etiquetaCriticidad } from '../../core/services/inventario.service';
+import { EncabezadoComponent } from '../../shared/encabezado.component';
+import { environment } from '../../../environments/environment';
+
+/**
+ * Enlace al Forms de solicitudes con los datos de la ficha: {rack} se reemplaza por la ubicación
+ * del activo y {activo} por su código y nombre (Forms los deja codificados como %7Brack%7D).
+ */
+function enlaceSolicitud(plantilla: string, activo: ActivoInventario): string {
+  const valores: Record<string, string> = {
+    rack: activo.ubicacion_nombre,
+    activo: `${activo.codigo} · ${activo.nombre}`,
+  };
+  return plantilla.replace(/\{(rack|activo)\}|%7B(rack|activo)%7D/gi, (_, a?: string, b?: string) =>
+    encodeURIComponent(valores[(a ?? b ?? '').toLowerCase()] ?? ''),
+  );
+}
 
 /** Nombre legible de cada campo del historial (RF-ACT-03). */
 const CAMPOS: Record<string, string> = {
@@ -53,7 +65,7 @@ const CAMPOS: Record<string, string> = {
   imports: [
     DatePipe,
     RouterLink,
-    IonBackButton,
+    EncabezadoComponent,
     IonBadge,
     IonButton,
     IonButtons,
@@ -62,7 +74,6 @@ const CAMPOS: Record<string, string> = {
     IonCardHeader,
     IonCardTitle,
     IonContent,
-    IonHeader,
     IonItem,
     IonLabel,
     IonList,
@@ -70,8 +81,6 @@ const CAMPOS: Record<string, string> = {
     IonSegment,
     IonSegmentButton,
     IonSkeletonText,
-    IonTitle,
-    IonToolbar,
   ],
   templateUrl: './activo-detalle.page.html',
   styleUrl: './activo-detalle.page.scss',
@@ -83,7 +92,18 @@ export class ActivoDetallePage {
   private readonly inventario = inject(InventarioService);
   private readonly zabbix = inject(ActivosService);
   private readonly intervencionesService = inject(IntervencionesService);
-  protected readonly puedeEditar = inject(AuthService).puedeModificar('administrador', 'administradorprivilegiado', 'tecnico');
+  private readonly auth = inject(AuthService);
+  protected readonly puedeEditar = this.auth.puedeModificar('administrador', 'administradorprivilegiado', 'tecnico');
+
+  /**
+   * "Nueva intervención": abre el Forms de solicitudes (el mismo flujo de siempre: Jefatura aprueba
+   * en Teams) con el rack ya completado. Sin enlace configurado, o en la app móvil, no se muestra.
+   */
+  protected readonly enlaceNuevaIntervencion = computed(() => {
+    const activo = this.activo();
+    const plantilla = environment.formularioIntervencionUrl;
+    return plantilla && activo && !this.auth.soloConsulta ? enlaceSolicitud(plantilla, activo) : null;
+  });
 
   protected readonly activo = signal<ActivoInventario | undefined>(undefined);
   protected readonly cargando = signal(true);
@@ -93,6 +113,8 @@ export class ActivoDetallePage {
   protected readonly tituloIntervencion = tituloIntervencion;
   protected readonly etiquetaEstado = (estado: string) => this.inventario.etiquetaEstado(estado);
   protected readonly colorEstado = (estado: string) => this.inventario.colorEstado(estado);
+  protected readonly colorCriticidad = colorCriticidad;
+  protected readonly etiquetaCriticidad = etiquetaCriticidad;
 
   /** Host de Zabbix con el mismo código (null = no monitoreado; undefined = aún consultando). */
   protected readonly host = signal<Activo | null | undefined>(undefined);

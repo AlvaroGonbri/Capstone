@@ -17,7 +17,7 @@
           </div>
           <div>
             <p class="marca__nombre">SICMA</p>
-            <p class="marca__sub">Control y monitoreo de activos</p>
+            <p class="marca__sub">Datacenter · Sitio A</p>
           </div>
         </div>
 
@@ -35,6 +35,10 @@
                   >
                     <ion-icon slot="start" [name]="item.icono" aria-hidden="true"></ion-icon>
                     <ion-label>{{ item.titulo }}</ion-label>
+                    @if (indicador(item.ruta); as ind) {
+                      <span slot="end" [class]="ind.clase"
+                        [attr.aria-label]="ind.texto ? ind.texto + ' abiertas' : 'Hay algo que revisar'">{{ ind.texto }}</span>
+                    }
                   </ion-item>
                 </ion-menu-toggle>
               }
@@ -46,7 +50,7 @@
           <div class="menu-usuario__avatar" aria-hidden="true">{{ iniciales() }}</div>
           <div class="menu-usuario__datos">
             <p class="menu-usuario__nombre">{{ auth.usuario()?.nombre }}</p>
-            <p class="menu-usuario__rol">{{ auth.usuario()?.rol }}</p>
+            <p class="menu-usuario__rol">{{ rol() }}</p>
           </div>
           <ion-button
             fill="clear"
@@ -79,4 +83,7 @@
       </button>
     </nav>
   }
+
+  <!-- Buscador global (Ctrl K / ⌘ K) -->
+  <app-buscador></app-buscador>
 </ion-app>

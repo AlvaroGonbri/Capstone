@@ -77,6 +77,12 @@ class IntervencionesTestCase(TablasNoGestionadasTestCase):
                 'fecha_termino': (inicio + timedelta(hours=2)).isoformat(), **extra,
             }, format='json')
 
+    def asignar_en_curso(self, intervencion, **extra):
+        """Asigna con un horario que ya comenzó: el técnico puede iniciarla ahora."""
+        ahora = timezone.now()
+        return self.asignar(intervencion, fecha_inicio=(ahora - timedelta(minutes=10)).isoformat(),
+                            fecha_termino=(ahora + timedelta(hours=2)).isoformat(), **extra)
+
 
 class BuzonTests(IntervencionesTestCase):
     def test_solicitud_de_forms_crea_la_intervencion_pendiente_y_avisa_al_solicitante(self):
@@ -209,7 +215,7 @@ class CicloDeVidaTests(IntervencionesTestCase):
         url = f'/api/intervenciones/{intervencion.id}/'
 
         self.assertEqual(self.admin.post(url + 'iniciar/').status_code, 409)  # sin técnico asignado
-        self.asignar(intervencion)
+        self.asignar_en_curso(intervencion)
         self.assertEqual(otro.post(url + 'iniciar/').status_code, 403)
         self.assertEqual(self.tecnico_cliente.post(url + 'iniciar/').json()['estado'], 'EnEjecucion')
         self.assertEqual(self.tecnico_cliente.post(url + 'cerrar/', {'exitosa': True}, format='json').status_code, 400)
@@ -275,7 +281,7 @@ class PersonalExternoTests(IntervencionesTestCase):
 
     def test_cambiar_solo_el_personal_hasta_que_se_inicia(self):
         intervencion = self.aprobada()
-        self.asignar(intervencion)
+        self.asignar_en_curso(intervencion)
         mail.outbox.clear()
         url = f'/api/intervenciones/{intervencion.id}/personal/'
         self.assertEqual(self.admin.post(url, {'personal_externo': [self.juan.id]}, format='json').json()['personal_externo'][0]['id'], self.juan.id)
@@ -379,6 +385,55 @@ class VerificacionDeIdentidadTests(IntervencionesTestCase):
         self.assertEqual(otro.post(self.base + f'personal/{self.juan.id}/verificar/', {}, format='json').status_code, 403)
         self.assertEqual(self.auditor.post(self.base + f'personal/{self.juan.id}/verificar/', {}, format='json').status_code, 403)
 
+
+
+class TecnicoTests(IntervencionesTestCase):
+    """El técnico solo ve lo que tiene asignado e inicia solo en su horario; el Administrador, sin restricción."""
+
+    def test_tecnico_solo_ve_sus_intervenciones(self):
+        suya = self.aprobada()
+        self.asignar(suya)
+        otro = cliente_con_rol('otro', 'Tecnico')
+        ajena = self.aprobada_otra('R-2')
+        self.asignar(ajena, tecnico=User.objects.get(username='otro').id)
+        self.recibir(correo_nueva('R-3'))  # pendiente, sin técnico
+
+        self.assertEqual([i['id'] for i in self.tecnico_cliente.get('/api/intervenciones/').json()], [suya.id])
+        self.assertEqual(self.tecnico_cliente.get(f'/api/intervenciones/{ajena.id}/').status_code, 404)
+        self.assertEqual(self.tecnico_cliente.get(f'/api/intervenciones/{suya.id}/').status_code, 200)
+        self.assertEqual([i['id'] for i in otro.get('/api/intervenciones/').json()], [ajena.id])
+        self.assertEqual(len(self.admin.get('/api/intervenciones/').json()), 3)
+        self.assertEqual(len(self.auditor.get('/api/intervenciones/').json()), 3)
+
+    def aprobada_otra(self, forms_id):
+        self.recibir(correo_nueva(forms_id))
+        self.recibir(correo_decision(forms_id=forms_id), asunto='[SICMA-INT] DECISION')
+        return Intervencion.objects.get(origen_externo_id=forms_id)
+
+    def test_tecnico_inicia_solo_dentro_de_su_horario(self):
+        intervencion = self.aprobada()
+        url = f'/api/intervenciones/{intervencion.id}/iniciar/'
+        ahora = timezone.now()
+
+        self.asignar(intervencion)  # mañana
+        respuesta = self.tecnico_cliente.post(url)
+        self.assertEqual(respuesta.status_code, 409)
+        self.assertIn('se puede iniciar desde el', respuesta.json()['detail'])
+
+        self.asignar(intervencion, fecha_inicio=(ahora - timedelta(hours=3)).isoformat(),
+                     fecha_termino=(ahora - timedelta(hours=1)).isoformat())
+        respuesta = self.tecnico_cliente.post(url)
+        self.assertEqual(respuesta.status_code, 409)
+        self.assertIn('El horario asignado terminó', respuesta.json()['detail'])
+
+        self.asignar_en_curso(intervencion)
+        self.assertEqual(self.tecnico_cliente.post(url).json()['estado'], 'EnEjecucion')
+
+    def test_administrador_inicia_fuera_del_horario(self):
+        intervencion = self.aprobada()
+        self.asignar(intervencion)  # mañana
+        respuesta = self.admin.post(f'/api/intervenciones/{intervencion.id}/iniciar/')
+        self.assertEqual((respuesta.status_code, respuesta.json()['estado']), (200, 'EnEjecucion'))
 
 
 class JefaturaCancelaTests(IntervencionesTestCase):

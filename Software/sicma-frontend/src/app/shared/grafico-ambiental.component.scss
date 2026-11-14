@@ -1,0 +1,327 @@
+/* Colores de las series: validados (contraste y daltonismo) sobre la superficie blanca. */
+:host {
+  display: block;
+  --serie-temperatura: #eb6834;
+  --serie-humedad: #2a78d6;
+}
+
+.grafico__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 4px;
+}
+
+.grafico__titulos {
+  min-width: 0;
+}
+
+.grafico__titulo {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--sicma-tinta);
+}
+
+.grafico__subtitulo {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--sicma-tenue);
+  overflow-wrap: anywhere;
+}
+
+.grafico__sensor {
+  font: inherit;
+  font-family: var(--sicma-mono);
+  color: var(--sicma-tinta-2);
+  border: 1px solid var(--sicma-linea);
+  border-radius: 6px;
+  padding: 1px 4px;
+  background: var(--sicma-superficie);
+}
+
+.grafico__rangos {
+  display: inline-flex;
+  gap: 4px;
+
+  .pildora {
+    padding: 4px 11px;
+    font-size: 0.75rem;
+  }
+}
+
+.grafico__leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 2px 0 2px;
+  font-size: 0.72rem;
+  color: var(--sicma-tenue);
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+}
+
+.clave {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+
+  &--banda {
+    background: var(--sicma-normal-suave);
+  }
+
+  &--hueco {
+    background: var(--sicma-neutro-suave);
+  }
+}
+
+.grafico__lienzo {
+  position: relative;
+  min-height: 180px;
+  transition: opacity 0.15s ease;
+}
+
+/* Al cambiar de período o de sensor, el gráfico anterior queda atenuado (sin saltos). */
+.grafico--cargando .grafico__lienzo {
+  opacity: 0.5;
+}
+
+.grafico__svg {
+  display: block;
+  overflow: visible;
+  touch-action: pan-y;
+  font-family: inherit;
+
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+.grilla {
+  stroke: var(--sicma-linea-suave);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.eje {
+  font-size: 10.5px;
+  fill: var(--sicma-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel__titulo {
+  font-size: 11.5px;
+  font-weight: 600;
+  fill: var(--sicma-tinta-2);
+}
+
+.panel__rango {
+  font-size: 10.5px;
+  fill: var(--sicma-tenue);
+}
+
+.banda {
+  fill: var(--sicma-normal-suave);
+}
+
+.hueco {
+  fill: var(--sicma-neutro-suave);
+}
+
+.hueco__texto {
+  font-size: 10.5px;
+  fill: var(--sicma-tenue);
+}
+
+.linea {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+
+  &--temperatura {
+    stroke: var(--serie-temperatura);
+  }
+
+  &--humedad {
+    stroke: var(--serie-humedad);
+  }
+}
+
+.punto--temperatura,
+.fin--temperatura {
+  fill: var(--serie-temperatura);
+}
+
+.punto--humedad,
+.fin--humedad {
+  fill: var(--serie-humedad);
+}
+
+/* Anillo del color de la superficie: el punto se distingue sobre la línea y la banda. */
+.fin {
+  stroke: var(--sicma-superficie);
+  stroke-width: 2;
+}
+
+.fin__texto {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--sicma-tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+.cursor {
+  stroke: var(--sicma-tinta-2);
+  stroke-width: 1;
+  opacity: 0.45;
+}
+
+/* Recuadro con los valores del tramo: el valor primero, el nombre de la serie después. */
+.grafico__lectura {
+  position: absolute;
+  z-index: 2;
+  min-width: 160px;
+  padding: 8px 10px;
+  border: 1px solid var(--sicma-linea);
+  border-radius: 8px;
+  background: var(--sicma-superficie);
+  box-shadow: 0 6px 18px rgba(15, 27, 36, 0.12);
+  font-size: 0.78rem;
+  pointer-events: none;
+  transform: translateX(12px);
+
+  &--izquierda {
+    transform: translateX(calc(-100% - 12px));
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.lectura__tramo {
+  margin-bottom: 4px !important;
+  font-size: 0.72rem;
+  color: var(--sicma-tenue);
+}
+
+.lectura__fila {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 2px 0 !important;
+  white-space: nowrap;
+
+  b {
+    color: var(--sicma-tinta);
+    font-variant-numeric: tabular-nums;
+  }
+
+  span {
+    color: var(--sicma-tinta-2);
+  }
+
+  small {
+    color: var(--sicma-tenue);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.clave-linea {
+  display: inline-block;
+  align-self: center;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+
+  &--temperatura {
+    background: var(--serie-temperatura);
+  }
+
+  &--humedad {
+    background: var(--serie-humedad);
+  }
+}
+
+.lectura__nota {
+  margin-top: 4px !important;
+  font-size: 0.72rem;
+  color: var(--sicma-tenue);
+}
+
+.grafico__vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 180px;
+  margin: 0;
+  padding: 0 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--sicma-tenue);
+
+  b {
+    color: var(--sicma-tinta);
+  }
+}
+
+.enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ion-color-primary);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.grafico__tabla {
+  margin-top: 6px;
+  font-size: 0.78rem;
+
+  summary {
+    cursor: pointer;
+    color: var(--sicma-tenue);
+    width: fit-content;
+  }
+}
+
+.grafico__tabla-desplazable {
+  max-height: 220px;
+  margin-top: 6px;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+th,
+td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--sicma-linea-suave);
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: var(--sicma-superficie);
+  color: var(--sicma-tenue);
+  font-weight: 600;
+}

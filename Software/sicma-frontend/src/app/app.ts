@@ -27,6 +27,10 @@ import {
   libraryOutline,
 } from 'ionicons/icons';
 import { AuthService } from './core/services/auth.service';
+import { EstadoGeneralService } from './core/services/estado-general.service';
+import { etiquetaRol } from './core/services/roles.util';
+import { BuscadorComponent } from './shared/buscador.component';
+import { iniciales } from './shared/texto.util';
 
 type GrupoMenu = 'Operación' | 'Inventario' | 'Seguridad';
 
@@ -49,6 +53,7 @@ const RUTAS_PESTANAS = ['/panel', '/activos', '/monitoreo', '/intervenciones'];
   imports: [
     RouterLink,
     RouterLinkActive,
+    BuscadorComponent,
     IonApp,
     IonButton,
     IonContent,
@@ -67,6 +72,28 @@ const RUTAS_PESTANAS = ['/panel', '/activos', '/monitoreo', '/intervenciones'];
 export class App {
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly estado = inject(EstadoGeneralService);
+
+  /**
+   * Contador o aviso junto a una opción del menú: intervenciones abiertas, alertas de Zabbix
+   * abiertas (en rojo) y un punto en Monitoreo si hay algo que revisar.
+   */
+  protected indicador(ruta: string): { texto: string; clase: string } | null {
+    switch (ruta) {
+      case '/intervenciones': {
+        const n = this.estado.intervencionesAbiertas();
+        return n ? { texto: String(n), clase: 'menu-contador' } : null;
+      }
+      case '/activos': {
+        const n = this.estado.alertasZabbix();
+        return n ? { texto: String(n), clase: 'menu-contador menu-contador--alerta' } : null;
+      }
+      case '/monitoreo':
+        return this.estado.avisoMonitoreo() ? { texto: '', clase: 'menu-punto' } : null;
+      default:
+        return null;
+    }
+  }
 
   private readonly opciones: ItemMenu[] = [
     { titulo: 'Panel', ruta: '/panel', icono: 'grid-outline', grupo: 'Operación' },
@@ -121,13 +148,9 @@ export class App {
     () => this.auth.soloConsulta && this.auth.autenticado(),
   );
 
-  protected readonly iniciales = computed(() => {
-    const nombre = (this.auth.usuario()?.nombre ?? '').trim();
-    const partes = nombre.split(/\s+/).filter(Boolean);
-    if (partes.length === 0) return '·';
-    if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
-    return (partes[0][0] + partes[1][0]).toUpperCase();
-  });
+  protected readonly iniciales = computed(() => iniciales(this.auth.usuario()?.nombre));
+  /** "Administrador privilegiado" en vez del nombre interno del rol. */
+  protected readonly rol = computed(() => etiquetaRol(this.auth.usuario()?.rol));
 
   constructor() {
     this.auth.iniciarControlInactividad();

@@ -609,6 +609,374 @@ ion-skeleton-text {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa5ae' stroke-width='1.5'%3E%3Crect x='3' y='4' width='18' height='7' rx='1.5'/%3E%3Crect x='3' y='13' width='18' height='7' rx='1.5'/%3E%3C/svg%3E");
 }
 
+/* Estado vacío: título en negrita y qué hacer debajo */
+.vacio b {
+  display: block;
+  margin-bottom: 3px;
+  font-weight: 600;
+  color: var(--sicma-tinta-2);
+}
+
+/* Contador dentro de una pestaña: "Abiertas 2" */
+.contador {
+  margin-left: 5px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--sicma-tenue);
+}
+
+/* Valores de una lectura que ya no es actual (sensor sin datos o inactivo) */
+.lectura-desactualizada,
+.lectura-desactualizada.estado-critico {
+  color: #9aa5ae !important;
+}
+
+/* Barra: rango permitido (verde) y dónde cae la lectura (marca) */
+.barra-rango {
+  position: relative;
+  height: 8px;
+  border-radius: 5px;
+  background: var(--sicma-critico-suave);
+
+  &__ok {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: #cfe9da;
+  }
+
+  &__marca {
+    position: absolute;
+    top: -5px;
+    width: 3px;
+    height: 18px;
+    margin-left: -1.5px;
+    border-radius: 2px;
+    background: var(--sicma-tinta-2);
+  }
+
+  &__limites {
+    position: relative;
+    height: 16px;
+    margin-top: 4px;
+    font-size: 0.7rem;
+    color: var(--sicma-tenue);
+
+    span {
+      position: absolute;
+      transform: translateX(-50%);
+    }
+  }
+}
+
+/* Chip de rol: un color por perfil, igual en toda la app */
+.chip-rol {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--sicma-neutro-suave);
+  color: var(--sicma-neutro);
+
+  &--privilegiado {
+    background: #f1e9fb;
+    color: #6b3fa0;
+  }
+  &--administrador {
+    background: var(--sicma-primario-suave);
+    color: var(--ion-color-primary);
+  }
+  &--jefatura {
+    background: var(--sicma-info-suave);
+    color: var(--sicma-info);
+  }
+  &--tecnico {
+    background: var(--sicma-advertencia-suave);
+    color: var(--sicma-advertencia);
+  }
+  &--contratistas {
+    background: #fbe7f0;
+    color: #a3346b;
+  }
+}
+
+/* Botón tipo píldora para elegir entre opciones (días, criticidad) */
+.pildora {
+  padding: 6px 14px;
+  border: 1px solid var(--sicma-linea);
+  border-radius: 999px;
+  background: var(--sicma-superficie);
+  color: var(--sicma-tinta-2);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: 2px;
+  }
+
+  &.activa {
+    border-color: var(--ion-color-primary);
+    background: var(--ion-color-primary);
+    color: #fff;
+  }
+}
+
+/* Número de un registro, p. ej. "#2" de una intervención */
+.numero-id {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--sicma-neutro-suave);
+  color: var(--sicma-tenue);
+  font-family: var(--sicma-mono);
+  font-size: 0.75em;
+  font-weight: 500;
+  vertical-align: 1px;
+}
+
+/* Avatar con iniciales */
+.avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: var(--sicma-primario-suave);
+  color: var(--ion-color-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  &--chico {
+    width: 24px;
+    height: 24px;
+    font-size: 0.62rem;
+  }
+}
+
+/*
+ * Tabla de datos en grilla. Cada vista define sus columnas con --columnas en el contenedor.
+ * En pantallas angostas cada fila pasa a ser una tarjeta: la primera celda arriba,
+ * la que tiene .celda-fin a la derecha y las .celda-opcional se ocultan.
+ */
+.tabla {
+  --columnas: 1fr;
+  border: 1px solid var(--sicma-linea);
+  border-radius: var(--sicma-radio);
+  background: var(--sicma-superficie);
+  overflow: hidden;
+  margin-bottom: 16px;
+
+  &__cabecera,
+  &__fila {
+    display: grid;
+    grid-template-columns: var(--columnas);
+    gap: 12px;
+    align-items: center;
+    padding: 11px 18px;
+  }
+
+  &__cabecera {
+    background: #fafbfc;
+    border-bottom: 1px solid var(--sicma-linea);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--sicma-tenue);
+  }
+
+  &__fila {
+    width: 100%;
+    margin: 0;
+    border: 0;
+    border-bottom: 1px solid var(--sicma-linea-suave);
+    background: transparent;
+    color: var(--sicma-tinta);
+    font: inherit;
+    font-size: 0.85rem;
+    text-align: left;
+    text-decoration: none;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  /* Filas que abren una ficha o un formulario */
+  button.tabla__fila,
+  a.tabla__fila {
+    cursor: pointer;
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: #f7f9fa;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ion-color-primary);
+      outline-offset: -2px;
+    }
+  }
+
+  .tabla__fila.elegida {
+    background: var(--sicma-primario-suave);
+  }
+
+  .celda-principal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+
+    /* Dentro de un <button> solo cabe contenido en línea: el texto va en un <span class="texto"> */
+    > div,
+    > .texto {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    b {
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    small {
+      font-size: 0.72rem;
+      color: var(--sicma-tenue);
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .celda-secundaria {
+    min-width: 0;
+    color: var(--sicma-tinta-2);
+    overflow-wrap: anywhere;
+  }
+
+  .celda-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+
+    ion-button {
+      margin: 0;
+    }
+  }
+
+  .celda-chevron {
+    color: var(--sicma-tenue);
+    justify-self: end;
+  }
+}
+
+@media (max-width: 767px) {
+  .tabla__cabecera {
+    display: none;
+  }
+
+  .tabla__fila {
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+    padding: 12px 14px;
+
+    > * {
+      grid-column: 1;
+    }
+
+    > .celda-fin {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+    }
+
+    > .celda-opcional,
+    > .celda-chevron {
+      display: none;
+    }
+
+    > .celda-acciones {
+      justify-content: flex-start;
+    }
+  }
+}
+
+/* Lista o tabla a la izquierda y panel (ficha o formulario) a la derecha */
+.disposicion-panel {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 16px;
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  .disposicion-panel {
+    grid-template-columns: minmax(0, 1fr) 400px;
+  }
+
+  .panel-lateral {
+    position: sticky;
+    top: 16px;
+  }
+}
+
+.panel-lateral {
+  min-width: 0;
+  margin-bottom: 16px;
+  border: 1px solid var(--sicma-linea);
+  border-radius: var(--sicma-radio);
+  background: var(--sicma-superficie);
+
+  &__cabecera {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--sicma-linea-suave);
+
+    h2 {
+      flex: 1;
+      min-width: 0;
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--sicma-tinta);
+    }
+  }
+
+  &__cerrar {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--sicma-tenue);
+    font-size: 0.9rem;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--sicma-neutro-suave);
+      color: var(--sicma-tinta);
+    }
+  }
+
+  &__cuerpo {
+    padding: 14px 18px 18px;
+  }
+}
+
 /* Encabezado de sección dentro de una página */
 .titulo-seccion {
   margin: 8px 0 10px;

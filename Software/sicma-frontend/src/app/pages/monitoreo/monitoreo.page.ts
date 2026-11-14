@@ -14,19 +14,23 @@ import {
   IonRefresherContent,
   IonSkeletonText,
   IonSpinner,
-  IonTextarea,
 } from '@ionic/angular';
 import { Observable, forkJoin } from 'rxjs';
-import { Alerta, EstadoSensor, UmbralZona, Umbrales } from '../../core/models';
+import { Alerta, EstadoSensor, UmbralZona, Umbrales, VersionUmbral } from '../../core/models';
 import { AlertasService } from '../../core/services/alertas.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MonitoreoService, VariableAmbiental } from '../../core/services/monitoreo.service';
-import { rangoTexto } from '../../core/services/umbrales.util';
+import { posicionesBarra, rangoTexto, respectoDelRango } from '../../core/services/umbrales.util';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
+import { GraficoAmbientalComponent, SensorGrafico } from '../../shared/grafico-ambiental.component';
+import { HacePipe } from '../../shared/hace.pipe';
 import { ColorNivelPipe } from '../../shared/nivel.pipe';
 import { environment } from '../../../environments/environment';
 
 type CampoUmbral = keyof Umbrales;
+
+/** Validación básica en pantalla; el backend valida de nuevo al guardar. */
+const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const VARIABLES: Array<{ variable: VariableAmbiental; minimo: CampoUmbral; maximo: CampoUmbral }> = [
   { variable: 'Temperatura', minimo: 'temperaturaMinima', maximo: 'temperaturaMaxima' },
@@ -39,6 +43,8 @@ const VARIABLES: Array<{ variable: VariableAmbiental; minimo: CampoUmbral; maxim
     DatePipe,
     EncabezadoComponent,
     ColorNivelPipe,
+    GraficoAmbientalComponent,
+    HacePipe,
     IonBadge,
     IonButton,
     IonCard,
@@ -52,7 +58,6 @@ const VARIABLES: Array<{ variable: VariableAmbiental; minimo: CampoUmbral; maxim
     IonRefresherContent,
     IonSkeletonText,
     IonSpinner,
-    IonTextarea,
   ],
   templateUrl: './monitoreo.page.html',
   styleUrl: './monitoreo.page.scss',
@@ -68,9 +73,20 @@ export class MonitoreoPage {
   protected readonly alertas = signal<Alerta[]>([]);
   protected readonly actualizadoEn = signal<Date>(new Date());
   protected readonly rango = rangoTexto;
+  protected readonly barra = posicionesBarra;
+  protected readonly respecto = respectoDelRango;
 
+  /** Solo cuentan los sensores que reportan: la lectura de uno sin datos ya no es actual. */
   protected readonly enAlerta = computed(() =>
-    this.sensores().filter((s) => s.nivel !== 'normal').length,
+    this.sensores().filter((s) => s.conexion === 'En línea' && s.nivel !== 'normal').length,
+  );
+  protected readonly sinDatos = computed(() => this.sensores().filter((s) => s.conexion === 'Sin datos').length);
+
+  /** Sensores para el historial de temperatura y humedad: primero los que están reportando. */
+  protected readonly sensoresGrafico = computed<SensorGrafico[]>(() =>
+    [...this.sensores()]
+      .sort((a, b) => Number(b.conexion === 'En línea') - Number(a.conexion === 'En línea'))
+      .map((s) => ({ id: s.id, codigo: s.sensorId, ubicacion: s.ubicacion })),
   );
 
   /** RF-AMB-03: solo el Administrador define los umbrales (matriz de permisos). */
@@ -82,6 +98,10 @@ export class MonitoreoPage {
   protected readonly guardandoZona = signal<number | null>(null);
   protected readonly mensajeZona = signal<{ ubicacionId: number; texto: string; error: boolean } | null>(null);
   private originales = new Map<number, UmbralZona>();
+  /** Correo que se está escribiendo en cada zona, antes de agregarlo a la lista. */
+  protected readonly borradorCorreo = signal<Partial<Record<number, string>>>({});
+  /** Historial abierto (una zona a la vez); versiones null mientras carga. */
+  protected readonly historial = signal<{ ubicacionId: number; versiones: VersionUmbral[] | null } | null>(null);
 
   constructor() {
     this.cargar();
@@ -118,7 +138,72 @@ export class MonitoreoPage {
     );
   }
 
-  protected guardarZona(zona: UmbralZona): void {
+  // ------------------------------------------- responsables de alerta ("Notificar a")
+
+  protected escribirCorreo(zona: UmbralZona, texto: string | null | undefined): void {
+    this.borradorCorreo.update((b) => ({ ...b, [zona.ubicacionId]: texto ?? '' }));
+  }
+
+  /** Agrega el correo escrito a la lista de la zona (se guarda con "Guardar"). Devuelve false si no es válido. */
+  protected agregarCorreo(zona: UmbralZona): boolean {
+    const correo = (this.borradorCorreo()[zona.ubicacionId] ?? '').trim().toLowerCase();
+    if (!correo) {
+      return true;
+    }
+    if (!CORREO_VALIDO.test(correo)) {
+      this.avisar(zona, `«${correo}» no es un correo válido.`, true);
+      return false;
+    }
+    if (!zona.correos.includes(correo)) {
+      this.zonas.update((lista) =>
+        lista.map((item) => (item.ubicacionId === zona.ubicacionId ? { ...item, correos: [...item.correos, correo] } : item)),
+      );
+    }
+    this.borradorCorreo.update((b) => ({ ...b, [zona.ubicacionId]: '' }));
+    this.mensajeZona.set(null);
+    return true;
+  }
+
+  protected quitarCorreo(zona: UmbralZona, correo: string): void {
+    this.zonas.update((lista) =>
+      lista.map((item) =>
+        item.ubicacionId === zona.ubicacionId ? { ...item, correos: item.correos.filter((c) => c !== correo) } : item,
+      ),
+    );
+  }
+
+  // ------------------------------------------------------ historial de umbrales
+
+  protected verHistorial(zona: UmbralZona): void {
+    if (this.historial()?.ubicacionId === zona.ubicacionId) {
+      this.historial.set(null);
+      return;
+    }
+    this.historial.set({ ubicacionId: zona.ubicacionId, versiones: null });
+    this.servicio.historialUmbrales(zona.ubicacionId).subscribe({
+      next: (versiones) =>
+        this.historial.update((h) => (h?.ubicacionId === zona.ubicacionId ? { ...h, versiones } : h)),
+      error: () => {
+        this.historial.set(null);
+        this.avisar(zona, 'No fue posible cargar el historial de cambios.', true);
+      },
+    });
+  }
+
+  /** La primera versión de cada variable en el historial (ordenado de la más reciente) es la vigente. */
+  protected esVigente(versiones: VersionUmbral[], v: VersionUmbral): boolean {
+    return versiones.find((x) => x.variable === v.variable) === v;
+  }
+
+  /**
+   * Un solo Guardar por zona: los umbrales que cambiaron y la lista de responsables, si cambió.
+   * Si se escribió un correo sin presionar "Agregar", se agrega antes de guardar.
+   */
+  protected guardarZona(zonaEditada: UmbralZona): void {
+    if (!this.agregarCorreo(zonaEditada)) {
+      return;
+    }
+    const zona = this.zonas().find((z) => z.ubicacionId === zonaEditada.ubicacionId) ?? zonaEditada;
     const original = this.originales.get(zona.ubicacionId);
     const cambios: Observable<unknown>[] = [];
 
@@ -138,6 +223,11 @@ export class MonitoreoPage {
       }
       cambios.push(this.servicio.guardarUmbral(zona.ubicacionId, variable, min, max));
     }
+    const umbralesCambiados = cambios.length > 0;
+    const correosCambiados = !original || original.correos.join(',') !== zona.correos.join(',');
+    if (correosCambiados) {
+      cambios.push(this.servicio.guardarResponsables(zona.ubicacionId, zona.correos));
+    }
 
     if (cambios.length === 0) {
       this.avisar(zona, 'No hay cambios que guardar.', false);
@@ -149,44 +239,24 @@ export class MonitoreoPage {
     forkJoin(cambios).subscribe({
       next: () => {
         this.guardandoZona.set(null);
-        this.avisar(zona, 'Umbrales guardados. Se aplican desde ahora a las nuevas evaluaciones.', false);
+        const partes = [
+          umbralesCambiados ? 'Umbrales guardados: se aplican desde ahora a las nuevas evaluaciones.' : null,
+          correosCambiados
+            ? zona.correos.length ? `Responsables guardados: ${zona.correos.length}.` : 'La zona quedó sin responsables: sus alertas no enviarán correo.'
+            : null,
+        ];
+        this.avisar(zona, partes.filter(Boolean).join(' '), false);
         this.cargarZonas();
         this.cargar();
-      },
-      error: (error: { error?: Record<string, string | string[]> }) => {
-        this.guardandoZona.set(null);
-        this.avisar(zona, this.mensajeError(error.error), true);
-        this.cargarZonas(); // si una variable se guardó y la otra no, se muestra lo vigente
-      },
-    });
-  }
-
-  /** Los correos se escriben separados por coma, punto y coma o salto de línea. */
-  protected editarCorreos(zona: UmbralZona, texto: string | null | undefined): void {
-    const correos = (texto ?? '').split(/[\s,;]+/).map((c) => c.trim()).filter(Boolean);
-    this.zonas.update((lista) =>
-      lista.map((item) => (item.ubicacionId === zona.ubicacionId ? { ...item, correos } : item)),
-    );
-  }
-
-  protected guardarResponsables(zona: UmbralZona): void {
-    this.guardandoZona.set(zona.ubicacionId);
-    this.mensajeZona.set(null);
-    this.servicio.guardarResponsables(zona.ubicacionId, zona.correos).subscribe({
-      next: ({ correos }) => {
-        this.guardandoZona.set(null);
-        this.avisar(
-          zona,
-          correos.length ? `Responsables guardados: ${correos.length}.` : 'La zona quedó sin responsables: sus alertas no enviarán correo.',
-          false,
-        );
-        this.cargarZonas();
+        if (this.historial()?.ubicacionId === zona.ubicacionId) {
+          this.historial.set(null); // se vuelve a abrir con las versiones nuevas
+          this.verHistorial(zona);
+        }
       },
       error: (error: { error?: Record<string, unknown> }) => {
         this.guardandoZona.set(null);
-        const correos = error.error?.['correos'];
-        const detalle = correos && typeof correos === 'object' ? Object.values(correos).flat()[0] : null;
-        this.avisar(zona, typeof detalle === 'string' ? `Correo no válido: ${detalle}` : 'No fue posible guardar los responsables.', true);
+        this.avisar(zona, this.mensajeError(error.error), true);
+        this.cargarZonas(); // si una parte se guardó y otra no, se muestra lo vigente
       },
     });
   }
@@ -202,43 +272,18 @@ export class MonitoreoPage {
     this.mensajeZona.set({ ubicacionId: zona.ubicacionId, texto, error });
   }
 
-  private mensajeError(respuesta?: Record<string, string | string[]>): string {
-    const [, mensajes] = Object.entries(respuesta ?? {})[0] ?? [];
-    const mensaje = Array.isArray(mensajes) ? mensajes[0] : mensajes;
-    return mensaje ?? 'No fue posible guardar los umbrales.';
-  }
-
-  /** Convierte el historial de temperatura en los puntos de una linea de 120x36. */
-  protected puntos(historial: number[]): string {
-    if (historial.length < 2) {
-      return '';
-    }
-    const minimo = Math.min(...historial);
-    const maximo = Math.max(...historial);
-    const rango = maximo - minimo || 1;
-    const anchoPaso = 120 / (historial.length - 1);
-    return historial
-      .map((valor, i) => {
-        const x = (i * anchoPaso).toFixed(1);
-        const y = (32 - ((valor - minimo) / rango) * 28).toFixed(1);
-        return `${x},${y}`;
-      })
-      .join(' ');
-  }
-
-  /**
-   * Posición (en %) del rango permitido y de la lectura dentro de una barra.
-   * Solo es presentación: usa los mismos umbrales con que ya se evalúa el sensor.
-   */
-  protected barra(valor: number, minimo: number | null, maximo: number | null) {
-    if (minimo === null || maximo === null) {
+  /** Primer mensaje de error de DRF; los de correos llegan anidados por posición ({correos: {0: [...]}}). */
+  private mensajeError(respuesta?: Record<string, unknown>): string {
+    const primero = (valor: unknown): string | null => {
+      if (typeof valor === 'string') return valor;
+      if (Array.isArray(valor)) return primero(valor[0]);
+      if (valor && typeof valor === 'object') return primero(Object.values(valor)[0]);
       return null;
-    }
-    const margen = Math.max((maximo - minimo) * 0.8, 1);
-    const desde = Math.min(minimo - margen, valor - 1);
-    const hasta = Math.max(maximo + margen, valor + 1);
-    const pos = (v: number) => ((v - desde) / (hasta - desde)) * 100;
-    return { inicio: pos(minimo), fin: pos(maximo), marca: pos(valor) };
+    };
+    const [campo, valor] = Object.entries(respuesta ?? {})[0] ?? [];
+    const mensaje = primero(valor);
+    if (!mensaje) return 'No fue posible guardar los cambios.';
+    return campo === 'correos' ? `Correo no válido: ${mensaje}` : mensaje;
   }
 
   // ------------------------------------------------- gestión de alertas

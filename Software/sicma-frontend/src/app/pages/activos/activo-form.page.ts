@@ -2,14 +2,13 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
-  IonBackButton,
+  IonBadge,
   IonButton,
-  IonButtons,
   IonCard,
   IonCardHeader,
   IonCardTitle,
   IonContent,
-  IonHeader,
+  IonFooter,
   IonInput,
   IonItem,
   IonList,
@@ -19,8 +18,6 @@ import {
   IonSpinner,
   IonText,
   IonTextarea,
-  IonTitle,
-  IonToolbar,
 } from '@ionic/angular';
 import { forkJoin } from 'rxjs';
 import {
@@ -39,21 +36,24 @@ import {
   ESTADO_INICIAL,
   ESTADO_RETIRADO,
   InventarioService,
+  colorCriticidad,
+  etiquetaCriticidad,
   mensajeErrorApi,
 } from '../../core/services/inventario.service';
+import { EncabezadoComponent } from '../../shared/encabezado.component';
 
 @Component({
   selector: 'app-activo-form',
   imports: [
     ReactiveFormsModule,
-    IonBackButton,
+    EncabezadoComponent,
+    IonBadge,
     IonButton,
-    IonButtons,
     IonCard,
     IonCardHeader,
     IonCardTitle,
     IonContent,
-    IonHeader,
+    IonFooter,
     IonInput,
     IonItem,
     IonList,
@@ -63,8 +63,6 @@ import {
     IonSpinner,
     IonText,
     IonTextarea,
-    IonTitle,
-    IonToolbar,
   ],
   templateUrl: './activo-form.page.html',
   styleUrl: './activo-form.page.scss',
@@ -98,6 +96,10 @@ export class ActivoFormPage {
   );
   protected readonly criticidades = CRITICIDADES;
   protected readonly nombreUbicacion = nombreUbicacion;
+  protected readonly colorCriticidad = colorCriticidad;
+  protected readonly etiquetaCriticidad = etiquetaCriticidad;
+  protected readonly etiquetaEstado = (estado: string) => this.inventario.etiquetaEstado(estado);
+  protected readonly colorEstado = (estado: string) => this.inventario.colorEstado(estado);
 
   /** Al editar se conserva el tipo actual aunque luego se haya desactivado en el catálogo. */
   protected readonly tipos = computed(() => {
@@ -134,6 +136,17 @@ export class ActivoFormPage {
 
   protected editando(): boolean {
     return !!this.id();
+  }
+
+  protected elegirCriticidad(criticidad: Criticidad): void {
+    this.formulario.controls.criticidad.setValue(criticidad);
+    this.formulario.controls.criticidad.markAsDirty();
+  }
+
+  /** Vuelve a la ficha (al editar) o a la lista (al registrar) sin guardar. */
+  protected cancelar(): void {
+    const id = this.id();
+    void this.router.navigate(id ? ['/activos', id] : ['/activos']);
   }
 
   protected guardar(): void {

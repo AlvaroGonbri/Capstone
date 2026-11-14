@@ -1,4 +1,4 @@
-<app-encabezado titulo="Monitoreo ambiental" seccion="Operación"></app-encabezado>
+<app-encabezado titulo="Monitoreo ambiental" seccion="Operación" buscar="Buscar sensor o zona"></app-encabezado>
 
 <ion-content>
   <ion-refresher slot="fixed" (ionRefresh)="cargar($any($event))">
@@ -8,7 +8,10 @@
   <div class="contenido-limitado">
     <div class="barra-estado">
       <div>
-        <h2>{{ enAlerta() }} de {{ sensores().length }} sensores fuera de rango</h2>
+        <h2>
+          {{ enAlerta() }} de {{ sensores().length }} sensores fuera de rango
+          @if (sinDatos() > 0) { · {{ sinDatos() }} sin datos }
+        </h2>
         <p class="umbrales">Cada sensor se evalúa con los umbrales de su zona; fuera del rango se marca como crítico.</p>
       </div>
       <span class="en-vivo"><i aria-hidden="true"></i>Actualizado {{ actualizadoEn() | date: 'HH:mm:ss' }}</span>
@@ -30,28 +33,37 @@
         } @else {
           <div class="rejilla-sensores">
             @for (sensor of sensores(); track sensor.sensorId) {
-              <ion-card class="tarjeta-sensor" [attr.data-nivel]="sensor.nivel">
+              <!-- Sin datos o inactivo: la lectura mostrada es la última recibida, no una actual -->
+              @let actual = sensor.conexion === 'En línea';
+              <ion-card class="tarjeta-sensor" [attr.data-nivel]="sensor.nivel" [class.desactualizada]="!actual">
                 <div class="sensor-cabecera">
                   <div>
-                    <p class="mono sensor-codigo">{{ sensor.sensorId }}</p>
+                    <p class="mono sensor-codigo">{{ sensor.sensorId }} · Sitio {{ sensor.sitio }} · rack {{ sensor.rack }}</p>
                     <h3>{{ sensor.ubicacion }}</h3>
                   </div>
                   <div class="sensor-estado">
-                    @if (sensor.conexion !== 'En línea') {
-                      <!-- La lectura mostrada es la última recibida, no una actual -->
-                      <ion-badge [color]="sensor.conexion === 'Sin datos' ? 'danger' : 'medium'">{{ sensor.conexion }}</ion-badge>
+                    @if (actual) {
+                      <ion-badge [color]="sensor.nivel | colorNivel">{{ sensor.nivel }}</ion-badge>
+                    } @else {
+                      <ion-badge color="medium">{{ sensor.conexion }}</ion-badge>
                     }
-                    <ion-badge [color]="sensor.nivel | colorNivel">{{ sensor.nivel }}</ion-badge>
-                    <ion-note>Sitio {{ sensor.sitio }} · rack {{ sensor.rack }} · {{ sensor.actualizadoEn | date: 'dd/MM HH:mm' }}</ion-note>
+                    <span class="sin-conexion">
+                      Última lectura <b>{{ sensor.actualizadoEn | hace }}</b> · {{ sensor.actualizadoEn | date: 'dd/MM/yyyy HH:mm' }}
+                    </span>
                   </div>
                 </div>
                 <ion-card-content>
                   <div class="lecturas">
                     <div>
-                      <p class="etiqueta-menor" [class.lectura-critica]="fueraDeRango(sensor, 'temperatura')">Temperatura</p>
-                      <p class="dato-grande" [class.estado-critico]="fueraDeRango(sensor, 'temperatura')">
-                        {{ sensor.temperatura }}<span class="unidad">°C</span>
-                      </p>
+                      <p class="etiqueta-menor" [class.lectura-critica]="actual && fueraDeRango(sensor, 'temperatura')">Temperatura</p>
+                      <div class="valor-rango">
+                        <p class="dato-grande" [class.estado-critico]="fueraDeRango(sensor, 'temperatura')" [class.lectura-desactualizada]="!actual">
+                          {{ sensor.temperatura }}<span class="unidad">°C</span>
+                        </p>
+                        @if (respecto(sensor.temperatura, sensor.umbrales?.temperaturaMinima ?? null, sensor.umbrales?.temperaturaMaxima ?? null); as r) {
+                          <ion-badge color="danger">{{ r === 'sobre' ? 'Sobre el rango' : 'Bajo el rango' }}</ion-badge>
+                        }
+                      </div>
                       @if (barra(sensor.temperatura, sensor.umbrales?.temperaturaMinima ?? null, sensor.umbrales?.temperaturaMaxima ?? null); as b) {
                         <div class="barra-rango" aria-hidden="true">
                           <span class="barra-rango__ok" [style.left.%]="b.inicio" [style.width.%]="b.fin - b.inicio"></span>
@@ -64,10 +76,15 @@
                       }
                     </div>
                     <div>
-                      <p class="etiqueta-menor" [class.lectura-critica]="fueraDeRango(sensor, 'humedad')">Humedad</p>
-                      <p class="dato-grande" [class.estado-critico]="fueraDeRango(sensor, 'humedad')">
-                        {{ sensor.humedad }}<span class="unidad">%</span>
-                      </p>
+                      <p class="etiqueta-menor" [class.lectura-critica]="actual && fueraDeRango(sensor, 'humedad')">Humedad</p>
+                      <div class="valor-rango">
+                        <p class="dato-grande" [class.estado-critico]="fueraDeRango(sensor, 'humedad')" [class.lectura-desactualizada]="!actual">
+                          {{ sensor.humedad }}<span class="unidad">%</span>
+                        </p>
+                        @if (respecto(sensor.humedad, sensor.umbrales?.humedadMinima ?? null, sensor.umbrales?.humedadMaxima ?? null); as r) {
+                          <ion-badge color="danger">{{ r === 'sobre' ? 'Sobre el rango' : 'Bajo el rango' }}</ion-badge>
+                        }
+                      </div>
                       @if (barra(sensor.humedad, sensor.umbrales?.humedadMinima ?? null, sensor.umbrales?.humedadMaxima ?? null); as b) {
                         <div class="barra-rango" aria-hidden="true">
                           <span class="barra-rango__ok" [style.left.%]="b.inicio" [style.width.%]="b.fin - b.inicio"></span>
@@ -81,7 +98,16 @@
                     </div>
                   </div>
 
-                  @if (sensor.nivel !== 'normal') {
+                  @if (!actual) {
+                    <div class="aviso detalle-alerta" role="status">
+                      @if (sensor.conexion === 'Sin datos') {
+                        Valores en gris: corresponden a la última lectura recibida, no al estado actual de la sala.
+                        Revisa la conexión WiFi o la alimentación del dispositivo.
+                      } @else {
+                        Sensor desactivado en Catálogos › Dispositivos IoT: los valores son de su última lectura.
+                      }
+                    </div>
+                  } @else if (sensor.nivel !== 'normal') {
                     <div class="aviso aviso--critico detalle-alerta" role="alert">
                       <strong>Fuera de rango</strong>
                       <span>{{ sensor.motivos.join(' y ') }}</span>
@@ -97,33 +123,24 @@
                         Zona sin umbrales definidos: la lectura no se evalúa.
                       }
                     </ion-note>
-                    @if (sensor.historial.length > 1) {
-                      <div class="tendencia">
-                        <span>Tendencia</span>
-                        <svg
-                          class="linea"
-                          viewBox="0 0 120 36"
-                          role="img"
-                          [attr.aria-label]="'Tendencia de temperatura de ' + sensor.ubicacion"
-                        >
-                          <polyline
-                            [attr.points]="puntos(sensor.historial)"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.6"
-                            stroke-linejoin="round"
-                            stroke-linecap="round"
-                          />
-                        </svg>
-                      </div>
-                    }
                   </div>
                 </ion-card-content>
               </ion-card>
             } @empty {
-              <ion-card><p class="vacio">No hay sensores con lecturas.</p></ion-card>
+              <ion-card>
+                <p class="vacio"><b>No hay sensores con lecturas</b>Registra el dispositivo en Catálogos › Dispositivos IoT y espera su primera lectura.</p>
+              </ion-card>
             }
           </div>
+
+          <!-- Historial de temperatura y humedad (24 h / 7 d / 30 d), con la banda del rango permitido -->
+          @if (sensoresGrafico().length > 0) {
+            <ion-card class="tarjeta-historial">
+              <ion-card-content>
+                <app-grafico-ambiental titulo="Historial" [sensores]="sensoresGrafico()"></app-grafico-ambiental>
+              </ion-card-content>
+            </ion-card>
+          }
         }
       </div>
 
@@ -169,7 +186,10 @@
           @for (zona of zonas(); track zona.ubicacionId) {
             <ion-card>
               <ion-card-header>
-                <ion-card-title>{{ zona.nombre }}</ion-card-title>
+                <ion-card-title>
+                  {{ zona.nombre }}
+                  @if (zona.version) { <span class="version" title="Versión vigente de los umbrales">v{{ zona.version }}</span> }
+                </ion-card-title>
               </ion-card-header>
               <ion-card-content>
                 @if (puedeEditarUmbrales()) {
@@ -183,38 +203,76 @@
                     <ion-input label="Humedad máxima (%)" labelPlacement="stacked" type="number" step="0.1"
                       [value]="zona.humedadMaxima" (ionInput)="editarValor(zona, 'humedadMaxima', $any($event.detail).value)"></ion-input>
                   </div>
+                  <!-- Notificar a: un correo por etiqueta; se guardan junto con los umbrales -->
+                  <p class="etiqueta-correos" id="notificar-{{ zona.ubicacionId }}">Notificar a</p>
+                  <div class="correos" role="list" [attr.aria-labelledby]="'notificar-' + zona.ubicacionId">
+                    @for (correo of zona.correos; track correo) {
+                      <span class="correo" role="listitem">
+                        {{ correo }}
+                        <button type="button" (click)="quitarCorreo(zona, correo)" [attr.aria-label]="'Quitar ' + correo">✕</button>
+                      </span>
+                    } @empty {
+                      <span class="sin-correos">Sin responsables: las alertas de esta zona no envían correo.</span>
+                    }
+                  </div>
+                  <div class="agregar-correo">
+                    <ion-input
+                      aria-label="Correo a agregar"
+                      type="email"
+                      placeholder="nombre@empresa.cl"
+                      [value]="borradorCorreo()[zona.ubicacionId] ?? ''"
+                      (ionInput)="escribirCorreo(zona, $any($event.detail).value)"
+                      (keyup.enter)="agregarCorreo(zona)"
+                    ></ion-input>
+                    <ion-button size="small" fill="outline" (click)="agregarCorreo(zona)">+ Agregar</ion-button>
+                  </div>
+
                   @if (mensajeZona(); as m) {
                     @if (m.ubicacionId === zona.ubicacionId) {
                       <ion-note [color]="m.error ? 'danger' : 'success'" role="status" class="mensaje-umbral">{{ m.texto }}</ion-note>
                     }
                   }
                   <div class="acciones-zona">
-                    <ion-button size="small" [disabled]="guardandoZona() === zona.ubicacionId" (click)="guardarZona(zona)">
-                      @if (guardandoZona() === zona.ubicacionId) { <ion-spinner name="crescent"></ion-spinner> } @else { Guardar umbrales }
+                    <ion-button size="small" fill="outline" color="medium" (click)="verHistorial(zona)">
+                      {{ historial()?.ubicacionId === zona.ubicacionId ? 'Ocultar historial' : 'Historial de cambios' }}
                     </ion-button>
-                  </div>
-
-                  <ion-textarea
-                    class="correos-zona"
-                    label="Responsables de alerta (correos)"
-                    labelPlacement="stacked"
-                    [autoGrow]="true"
-                    placeholder="nombre@empresa.cl, otro@empresa.cl"
-                    helperText="Reciben un correo cuando se abre una alerta en esta zona."
-                    [value]="zona.correos.join(', ')"
-                    (ionChange)="editarCorreos(zona, $any($event.detail).value)"
-                  ></ion-textarea>
-                  <div class="acciones-zona">
-                    <ion-button size="small" fill="outline" [disabled]="guardandoZona() === zona.ubicacionId" (click)="guardarResponsables(zona)">
-                      Guardar responsables
+                    <ion-button size="small" [disabled]="guardandoZona() === zona.ubicacionId" (click)="guardarZona(zona)">
+                      @if (guardandoZona() === zona.ubicacionId) { <ion-spinner name="crescent"></ion-spinner> } @else { Guardar }
                     </ion-button>
                   </div>
                 } @else {
                   <dl class="grilla-datos solo-lectura">
                     <div><dt>Temperatura</dt><dd class="mono">{{ rango(zona.temperaturaMinima, zona.temperaturaMaxima, '°C') }}</dd></div>
                     <div><dt>Humedad</dt><dd class="mono">{{ rango(zona.humedadMinima, zona.humedadMaxima, '%') }}</dd></div>
-                    <div class="ancho-completo"><dt>Responsables de alerta</dt><dd>{{ zona.correos.length ? zona.correos.join(', ') : 'sin definir' }}</dd></div>
+                    <div class="ancho-completo"><dt>Notificar a</dt><dd>{{ zona.correos.length ? zona.correos.join(', ') : 'sin definir' }}</dd></div>
                   </dl>
+                  <div class="acciones-zona">
+                    <ion-button size="small" fill="outline" color="medium" (click)="verHistorial(zona)">
+                      {{ historial()?.ubicacionId === zona.ubicacionId ? 'Ocultar historial' : 'Historial de cambios' }}
+                    </ion-button>
+                  </div>
+                }
+
+                <!-- Historial: todas las versiones de la zona; la primera de cada variable es la vigente -->
+                @if (historial(); as h) {
+                  @if (h.ubicacionId === zona.ubicacionId) {
+                    <div class="historial-umbrales" aria-live="polite">
+                      @if (h.versiones === null) {
+                        <ion-spinner name="dots" aria-label="Cargando historial"></ion-spinner>
+                      } @else {
+                        @for (v of h.versiones; track v.variable + '-' + v.version) {
+                          <div class="version-fila">
+                            <span class="mono version-numero">v{{ v.version }}</span>
+                            <span class="version-valor">{{ v.variable }} <span class="mono">{{ rango(v.minimo, v.maximo, v.variable === 'Temperatura' ? '°C' : '%') }}</span></span>
+                            <small>desde {{ v.vigenteDesde | date: 'dd/MM/yyyy HH:mm' }}</small>
+                            @if (esVigente(h.versiones, v)) { <ion-badge color="success">Vigente</ion-badge> }
+                          </div>
+                        } @empty {
+                          <p class="umbrales">Esta zona aún no tiene umbrales definidos.</p>
+                        }
+                      }
+                    </div>
+                  }
                 }
               </ion-card-content>
             </ion-card>

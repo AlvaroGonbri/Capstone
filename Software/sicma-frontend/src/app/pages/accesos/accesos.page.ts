@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   IonBadge,
@@ -9,7 +9,6 @@ import {
   IonCardContent,
   IonCardHeader,
   IonCardTitle,
-  IonCheckbox,
   IonContent,
   IonIcon,
   IonInput,
@@ -42,10 +41,65 @@ import { AuthService } from '../../core/services/auth.service';
 import { CatalogosService, nombreUbicacion } from '../../core/services/catalogos.service';
 import { mensajeErrorApi } from '../../core/services/inventario.service';
 import { EncabezadoComponent } from '../../shared/encabezado.component';
+import { copiarTexto } from '../../shared/texto.util';
 
 type Pestana = 'registro' | 'puntos' | 'permisos';
 
 const DIAS: DiaSemana[] = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
+const NOMBRE_DIA: Record<DiaSemana, string> = { Lun: 'Lun', Mar: 'Mar', Mie: 'Mié', Jue: 'Jue', Vie: 'Vie', Sab: 'Sáb', Dom: 'Dom' };
+
+/** Una fila del registro: un intento, o varias fallas seguidas e iguales del mismo lector agrupadas. */
+interface FilaRegistro {
+  evento: EventoAcceso;
+  cantidad: number;
+  /** Fecha del intento más antiguo del grupo (la lista viene de la más reciente a la más antigua). */
+  desde: string;
+  /** Cada cuánto se repitió, en segundos (solo en grupos). */
+  cadaSegundos: number | null;
+}
+
+/**
+ * Agrupa las fallas del lector que se repiten seguidas (mismo lector, mismo detalle e identificador):
+ * un lector desconectado deja cientos de filas idénticas que ocultan los intentos reales.
+ */
+function agruparFallas(eventos: EventoAcceso[]): FilaRegistro[] {
+  const filas: FilaRegistro[] = [];
+  for (const e of eventos) {
+    const anterior = filas[filas.length - 1];
+    const repetida =
+      anterior &&
+      e.resultado === 'Error' &&
+      anterior.evento.resultado === 'Error' &&
+      anterior.evento.punto_acceso === e.punto_acceso &&
+      anterior.evento.motivo === e.motivo &&
+      anterior.evento.identificador_biometrico_externo === e.identificador_biometrico_externo;
+    if (repetida) {
+      anterior.cantidad += 1;
+      anterior.desde = e.fecha_hora;
+    } else {
+      filas.push({ evento: e, cantidad: 1, desde: e.fecha_hora, cadaSegundos: null });
+    }
+  }
+  for (const f of filas) {
+    if (f.cantidad > 1) {
+      const segundos = (new Date(f.evento.fecha_hora).getTime() - new Date(f.desde).getTime()) / 1000;
+      f.cadaSegundos = Math.max(1, Math.round(segundos / (f.cantidad - 1)));
+    }
+  }
+  return filas;
+}
+
+/** "cada 4 s" o "cada 2 min". */
+function textoIntervalo(segundos: number): string {
+  return segundos < 120 ? `cada ${segundos} s` : `cada ${Math.round(segundos / 60)} min`;
+}
+
+/** Cómo se muestra cada resultado (el valor guardado no cambia). "Error" es una falla del lector, no una advertencia. */
+const ETIQUETA_RESULTADO: Record<ResultadoAcceso, string> = {
+  Permitido: 'Autorizado',
+  Denegado: 'Denegado',
+  Error: 'Falla del lector',
+};
 
 @Component({
   selector: 'app-accesos',
@@ -60,7 +114,6 @@ const DIAS: DiaSemana[] = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
     IonCardContent,
     IonCardHeader,
     IonCardTitle,
-    IonCheckbox,
     IonContent,
     IonIcon,
     IonInput,
@@ -90,6 +143,8 @@ export class AccesosPage {
   protected readonly mensaje = signal<{ texto: string; error: boolean } | null>(null);
   protected readonly nombreUbicacion = nombreUbicacion;
   protected readonly dias = DIAS;
+  protected readonly nombreDia = NOMBRE_DIA;
+  protected readonly etiquetaResultado = (resultado: ResultadoAcceso) => ETIQUETA_RESULTADO[resultado] ?? resultado;
 
   // RF-ACC-03: registro y filtros del Auditor.
   protected readonly cargando = signal(true);
@@ -108,6 +163,17 @@ export class AccesosPage {
   protected readonly ubicaciones = signal<UbicacionCatalogo[]>([]);
   /** Clave del agente recién creada o regenerada: se muestra una sola vez. */
   protected readonly claveNueva = signal<{ punto: string; id: number; clave: string } | null>(null);
+  protected readonly claveCopiada = signal(false);
+
+  /** Resumen de los intentos cargados (con los filtros actuales). */
+  protected readonly resumen = computed(() => {
+    const eventos = this.eventos();
+    const contar = (resultado: ResultadoAcceso) => eventos.filter((e) => e.resultado === resultado).length;
+    return { total: eventos.length, autorizados: contar('Permitido'), denegados: contar('Denegado'), fallas: contar('Error') };
+  });
+  protected readonly permisosActivos = computed(() => this.permisos().filter((p) => p.estado === 'Activo').length);
+  protected readonly filas = computed(() => agruparFallas(this.eventos()));
+  protected readonly textoIntervalo = textoIntervalo;
 
   protected readonly formPunto = this.fb.group({
     nombre: this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(150)]),
@@ -179,6 +245,7 @@ export class AccesosPage {
     this.servicio.crearPunto({ nombre: v.nombre.trim(), ubicacion: v.ubicacion! }).subscribe({
       next: (creado) => {
         this.claveNueva.set({ punto: creado.nombre, id: creado.id, clave: creado.clave_dispositivo });
+        this.claveCopiada.set(false);
         this.mensaje.set({ texto: 'Lector registrado.', error: false });
         this.formPunto.reset();
         this.cargarAdministracion();
@@ -188,12 +255,23 @@ export class AccesosPage {
     });
   }
 
+  protected async copiarClave(clave: string): Promise<void> {
+    const copiada = await copiarTexto(clave);
+    this.claveCopiada.set(copiada);
+    if (!copiada) {
+      this.mensaje.set({ texto: 'El navegador no permitió copiar: selecciona la clave y cópiala a mano.', error: true });
+    }
+  }
+
   protected regenerarClave(p: PuntoAcceso): void {
     if (!confirm(`¿Generar una clave nueva para "${p.nombre}"? El agente dejará de funcionar hasta que la actualices.`)) {
       return;
     }
     this.servicio.regenerarClave(p.id).subscribe({
-      next: ({ id, nombre, clave_dispositivo }) => this.claveNueva.set({ punto: nombre, id, clave: clave_dispositivo }),
+      next: ({ id, nombre, clave_dispositivo }) => {
+        this.claveNueva.set({ punto: nombre, id, clave: clave_dispositivo });
+        this.claveCopiada.set(false);
+      },
       error: () => this.mensaje.set({ texto: 'No fue posible generar la clave.', error: true }),
     });
   }

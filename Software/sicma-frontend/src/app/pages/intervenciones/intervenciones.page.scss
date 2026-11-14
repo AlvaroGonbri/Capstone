@@ -213,8 +213,17 @@ h4 {
   .quien {
     flex: 1 1 280px;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+
+    &__texto {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
   }
 
   .estado {
@@ -260,10 +269,95 @@ h4 {
 }
 
 .persona {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
 
   &.alerta b {
     color: var(--ion-color-danger);
+  }
+}
+
+/* Pestañas: en escritorio, en la barra superior; en pantallas angostas, sobre la lista */
+.pestanas-arriba {
+  display: none;
+  margin: 0 8px 0 0;
+}
+
+@media (min-width: 992px) {
+  .pestanas-arriba {
+    display: inline-flex;
+  }
+
+  .pestanas-contenido {
+    display: none;
+  }
+}
+
+/* Barra de acciones al pie del detalle */
+.pie-detalle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--sicma-linea-suave);
+  background: var(--sicma-superficie);
+
+  &__izquierda,
+  &__derecha {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__derecha {
+    margin-left: auto;
+  }
+
+  ion-button {
+    margin: 0;
+  }
+}
+
+.avisos-inicio {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+/* Técnico, horario y calendario en una grilla, sobre el resto de los datos */
+.resumen-intervencion {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  padding: 4px 0 14px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--sicma-linea-suave);
+}
+
+/* Teléfono: mini barra de avance en cada tarjeta de la lista */
+.mini-pasos {
+  display: none;
+  gap: 4px;
+  margin-top: 8px;
+
+  i {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--sicma-linea);
+
+    &.hecho {
+      background: var(--sicma-normal);
+    }
+  }
+}
+
+@media (max-width: 1099px) {
+  .mini-pasos {
+    display: flex;
   }
 }
 

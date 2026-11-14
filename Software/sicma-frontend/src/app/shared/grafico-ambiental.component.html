@@ -1,0 +1,155 @@
+<div class="grafico" [class.grafico--cargando]="cargando()">
+  <div class="grafico__cabecera">
+    <div class="grafico__titulos">
+      <h3 class="grafico__titulo">{{ titulo() }}</h3>
+      @if (sensorElegido(); as s) {
+        <p class="grafico__subtitulo">
+          @if (sensores().length > 1) {
+            <select class="grafico__sensor" aria-label="Sensor" (change)="elegir($event)">
+              @for (o of sensores(); track o.id) {
+                <option [value]="o.id" [selected]="o.id === s.id">{{ o.codigo }}</option>
+              }
+            </select>
+          } @else {
+            <span class="mono">{{ s.codigo }}</span>
+          }
+          · {{ s.ubicacion }}
+          @if (datos(); as d) { · promedio cada {{ textoPaso(d.pasoSegundos) }} }
+        </p>
+      }
+    </div>
+    <div class="grafico__rangos" role="group" aria-label="Período del gráfico">
+      @for (r of rangos; track r.valor) {
+        <button type="button" class="pildora" [class.activa]="rango() === r.valor" [attr.aria-pressed]="rango() === r.valor"
+          (click)="rango.set(r.valor)">{{ r.etiqueta }}</button>
+      }
+    </div>
+  </div>
+
+  @if (geometria(); as g) {
+    <div class="grafico__leyenda" aria-hidden="true">
+      <span><i class="clave clave--banda"></i>Banda: rango permitido</span>
+      @if (g.huecos.length > 0) { <span><i class="clave clave--hueco"></i>Sin datos</span> }
+    </div>
+  }
+
+  <div class="grafico__lienzo" #lienzo>
+    @if (error()) {
+      <p class="grafico__vacio">
+        <b>No fue posible cargar el historial</b>
+        <button type="button" class="enlace" (click)="reintentar()">Reintentar</button>
+      </p>
+    } @else if (geometria(); as g) {
+      <svg class="grafico__svg" [attr.width]="g.ancho" [attr.height]="g.alto" [attr.viewBox]="'0 0 ' + g.ancho + ' ' + g.alto"
+        role="img" [attr.aria-label]="resumen()" tabindex="0"
+        (pointermove)="mover($event)" (pointerdown)="mover($event)" (pointerleave)="activo.set(null)"
+        (keydown)="tecla($event)" (focus)="enfocar()" (blur)="activo.set(null)">
+        <!-- Rango permitido de cada variable (banda) -->
+        @for (p of g.paneles; track p.variable) {
+          @if (p.banda; as b) {
+            <rect class="banda" [attr.x]="g.x0" [attr.y]="b.y" [attr.width]="g.x1 - g.x0" [attr.height]="b.alto"></rect>
+          }
+        }
+
+        <!-- Períodos sin lecturas: se sombrean sobre la banda en ambos paneles y la línea no los une -->
+        @for (h of g.huecos; track h.x) {
+          @for (p of g.paneles; track p.variable) {
+            <rect class="hueco" [attr.x]="h.x" [attr.y]="p.arriba" [attr.width]="h.ancho" [attr.height]="p.alto"></rect>
+          }
+          @if (h.ancho >= 56) {
+            <text class="hueco__texto" [attr.x]="h.x + h.ancho / 2" [attr.y]="g.paneles[0].arriba + 16" text-anchor="middle">Sin datos</text>
+          }
+        }
+
+        @for (p of g.paneles; track p.variable) {
+          <text class="panel__titulo" [attr.x]="g.x0" [attr.y]="p.arriba - 10">{{ p.titulo }} ({{ p.unidad }})</text>
+          @if (p.banda; as b) {
+            <text class="panel__rango" [attr.x]="g.x1" [attr.y]="p.arriba - 10" text-anchor="end">{{ b.texto }}</text>
+          }
+          @for (t of p.ticks; track t.y) {
+            <line class="grilla" [attr.x1]="g.x0" [attr.x2]="g.x1" [attr.y1]="t.y" [attr.y2]="t.y"></line>
+            <text class="eje" [attr.x]="g.x0 - 6" [attr.y]="t.y + 3.5" text-anchor="end">{{ t.texto }}</text>
+          }
+          @for (d of p.trazos; track $index) {
+            <path [attr.class]="'linea linea--' + p.variable" [attr.d]="d"></path>
+          }
+          @for (a of p.aislados; track $index) {
+            <circle [attr.class]="'punto punto--' + p.variable" [attr.cx]="a.x" [attr.cy]="a.y" r="2.5"></circle>
+          }
+          <!-- Último valor rotulado al final de la línea -->
+          @if (p.final; as f) {
+            <circle [attr.class]="'fin fin--' + p.variable" [attr.cx]="f.x" [attr.cy]="f.y" r="4"></circle>
+            <text class="fin__texto" [attr.x]="f.x + 8" [attr.y]="f.y + 4">{{ f.texto }}</text>
+          }
+        }
+
+        @for (m of g.marcasX; track m.x) {
+          <text class="eje" [attr.x]="m.x" [attr.y]="g.alto - 8" text-anchor="middle">{{ m.texto }}</text>
+        }
+
+        @if (lectura(); as l) {
+          <line class="cursor" [attr.x1]="l.x" [attr.x2]="l.x" [attr.y1]="g.paneles[0].arriba"
+            [attr.y2]="g.paneles[1].arriba + g.paneles[1].alto"></line>
+          @for (v of l.valores; track v.variable) {
+            <circle [attr.class]="'fin fin--' + v.variable" [attr.cx]="l.x" [attr.cy]="v.y" r="4"></circle>
+          }
+        }
+      </svg>
+
+      @if (lectura(); as l) {
+        <div class="grafico__lectura" [class.grafico__lectura--izquierda]="l.izquierda"
+          [style.left.px]="l.x" [style.top.px]="g.paneles[0].arriba" aria-live="polite">
+          <p class="lectura__tramo">{{ l.tramo }}</p>
+          @for (v of l.valores; track v.variable) {
+            <p class="lectura__fila">
+              <i [attr.class]="'clave-linea clave-linea--' + v.variable" aria-hidden="true"></i>
+              <b>{{ v.valor }}</b>
+              <span>{{ v.titulo }}</span>
+              @if (v.extremos) { <small>{{ v.extremos }}</small> }
+            </p>
+          }
+          <p class="lectura__nota">{{ l.lecturas }} {{ l.lecturas === 1 ? 'lectura' : 'lecturas' }} en el tramo</p>
+        </div>
+      }
+    } @else if (datos(); as d) {
+      @if (d.puntos.length === 0) {
+        <p class="grafico__vacio">
+          <b>Sin lecturas en {{ textoRango(d.rango) }}</b>
+          El sensor no envió datos en este período. Prueba con un período más largo.
+        </p>
+      }
+    } @else if (sensores().length === 0) {
+      <p class="grafico__vacio"><b>No hay sensores con lecturas</b>El gráfico aparece cuando un sensor envía su primera lectura.</p>
+    } @else {
+      <p class="grafico__vacio" aria-busy="true">Cargando historial…</p>
+    }
+  </div>
+
+  @if (filas().length > 0 && !error()) {
+    <details class="grafico__tabla">
+      <summary>Ver datos en tabla ({{ filas().length }} tramos)</summary>
+      <div class="grafico__tabla-desplazable">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Tramo</th>
+              <th scope="col">Temperatura °C · prom. (mín–máx)</th>
+              <th scope="col">Humedad % · prom. (mín–máx)</th>
+              <th scope="col">Lecturas</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of filas(); track f.fecha) {
+              <tr>
+                <td>{{ f.tramo }}</td>
+                <td>{{ f.temperatura }}</td>
+                <td>{{ f.humedad }}</td>
+                <td>{{ f.lecturas }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </details>
+  }
+</div>
