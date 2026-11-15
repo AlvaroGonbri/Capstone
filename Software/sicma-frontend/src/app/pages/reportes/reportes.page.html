@@ -1,0 +1,178 @@
+<app-encabezado titulo="Reportes" seccion="Inteligencia de negocio"></app-encabezado>
+
+<ion-content>
+  <div class="contenido-limitado">
+    <!-- Filtros (solo en la web; la app móvil muestra los últimos 30 días) -->
+    @if (!movil) {
+      <form class="filtros" [formGroup]="filtros" (ngSubmit)="cargar()">
+        <ion-input label="Desde" labelPlacement="stacked" type="date" formControlName="desde" [max]="hoy"></ion-input>
+        <ion-input label="Hasta" labelPlacement="stacked" type="date" formControlName="hasta" [max]="hoy"></ion-input>
+        <ion-select label="Zona" labelPlacement="stacked" interface="popover" formControlName="zona">
+          <ion-select-option [value]="null">Todas las zonas</ion-select-option>
+          @for (u of ubicaciones(); track u.id) {
+            <ion-select-option [value]="u.id">{{ nombreUbicacion(u) }}</ion-select-option>
+          }
+        </ion-select>
+        <div class="filtros__acciones">
+          <ion-button type="submit" size="small" [disabled]="cargando()">Filtrar</ion-button>
+          <ion-button size="small" fill="outline" type="button" [disabled]="!reporte() || generandoPdf()" (click)="exportarPdf()">
+            {{ generandoPdf() ? 'Generando…' : 'Exportar PDF' }}
+          </ion-button>
+        </div>
+      </form>
+      @if (errorPdf(); as m) {
+        <ion-note class="mensaje" color="danger" role="alert">{{ m }}</ion-note>
+      }
+    }
+
+    @if (error(); as mensaje) {
+      <ion-note class="mensaje" color="danger" role="alert">{{ mensaje }}</ion-note>
+    }
+
+    @if (cargando() && !reporte()) {
+      <ion-spinner name="crescent"></ion-spinner>
+    }
+
+    @if (reporte(); as r) {
+      <div class="reporte" [class.recargando]="cargando()">
+        <p class="periodo">
+          Del {{ textoFecha(r.periodo.desde) }} al {{ textoFecha(r.periodo.hasta) }} ({{ r.periodo.dias }} días) ·
+          {{ r.periodo.zona?.nombre ?? 'Todas las zonas' }}
+        </p>
+
+        <!-- Resumen en palabras: se distingue de las tarjetas con datos -->
+        <ion-card class="resumen">
+          <div class="resumen__icono" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
+          </div>
+          <div class="resumen__cuerpo">
+            <p class="resumen__texto">{{ r.resumen.texto }}</p>
+            <p class="resumen__pie">
+              @if (r.resumen.origen === 'ia') {
+                Redactado con IA ({{ r.resumen.modelo }}) solo a partir de las cifras de este reporte; se verificó que no agregue cifras.
+              } @else {
+                Resumen automático armado con una plantilla de SICMA, a partir de las cifras de este reporte.
+              }
+              @if (r.resumen.motivo) {
+                <span class="resumen__motivo">{{ r.resumen.motivo }}</span>
+              }
+            </p>
+          </div>
+        </ion-card>
+
+        <!-- Indicadores -->
+        <div class="kpis">
+          @for (k of kpis(); track k.titulo) {
+            <ion-card class="kpi" [attr.data-nivel]="k.nivel">
+              <p class="kpi__titulo">{{ k.titulo }}</p>
+              <p class="kpi__valor">{{ k.valor }}@if (k.unidad) {<small>{{ k.unidad }}</small>}</p>
+              <p class="kpi__detalle">{{ k.detalle }}</p>
+            </ion-card>
+          }
+        </div>
+
+        <div class="columnas">
+          <div class="columna">
+            <!-- Disponibilidad -->
+            <ion-card class="tarjeta">
+              <div class="tarjeta__cabecera">
+                <div>
+                  <h3>Disponibilidad de servidores</h3>
+                  <p class="sub">Agente de Zabbix · {{ r.disponibilidad.hosts.length }} servidores</p>
+                </div>
+                <ion-segment class="vista" [value]="vista()" (ionChange)="vista.set($any($event.detail).value)">
+                  <ion-segment-button value="dia"><ion-label>Por día</ion-label></ion-segment-button>
+                  <ion-segment-button value="host"><ion-label>Por servidor</ion-label></ion-segment-button>
+                </ion-segment>
+              </div>
+              @if (r.disponibilidad.error) {
+                <p class="nota nota--aviso">{{ r.disponibilidad.error }}</p>
+              }
+              @if (vista() === 'dia') {
+                <app-grafico-disponibilidad [puntos]="r.disponibilidad.por_dia"></app-grafico-disponibilidad>
+              } @else {
+                <ul class="barras">
+                  @for (h of r.disponibilidad.hosts; track h.host) {
+                    <li>
+                      <span class="barras__nombre mono">{{ h.host }}</span>
+                      <span class="barras__pista"><span class="barras__barra" [style.width.%]="h.porcentaje ?? 0"></span></span>
+                      <span class="barras__valor">
+                        {{ h.porcentaje === null ? 'Sin datos' : formato(h.porcentaje, 2) + ' %' }}
+                        @if (h.porcentaje !== null) { <small>{{ formato(h.horas_sin_disponibilidad) }} h sin disponibilidad</small> }
+                      </span>
+                    </li>
+                  } @empty {
+                    <li class="vacio">Sin servidores con datos en el período.</li>
+                  }
+                </ul>
+              }
+              <p class="nota">Promedio de las horas con datos de Zabbix; las horas sin datos no se cuentan.</p>
+            </ion-card>
+
+            <!-- Intervenciones -->
+            <ion-card class="tarjeta">
+              <div class="tarjeta__cabecera">
+                <div>
+                  <h3>Intervenciones por estado</h3>
+                  <p class="sub">Solicitadas en el período, según su estado actual</p>
+                </div>
+              </div>
+              <ul class="barras">
+                @for (e of estados(); track e.etiqueta) {
+                  <li>
+                    <span class="barras__nombre">{{ e.etiqueta }}</span>
+                    <span class="barras__pista"><span class="barras__barra" [style.width.%]="e.ancho"></span></span>
+                    <span class="barras__valor"><b>{{ e.n }}</b></span>
+                  </li>
+                } @empty {
+                  <li class="vacio">Sin intervenciones solicitadas en el período.</li>
+                }
+              </ul>
+              @if (r.periodo.zona) {
+                <p class="nota">Las intervenciones no se filtran por zona: su rack llega como texto desde Microsoft Forms.</p>
+              }
+            </ion-card>
+          </div>
+
+          <div class="columna">
+            <!-- Eventos destacados -->
+            <ion-card class="tarjeta">
+              <div class="tarjeta__cabecera"><div><h3>Eventos destacados</h3></div></div>
+              <ul class="eventos">
+                @for (e of r.eventos; track $index) {
+                  <li>
+                    <span class="chip" [attr.data-nivel]="e.nivel">{{ e.etiqueta }}</span>
+                    <div>
+                      <span>{{ e.titulo }}</span>
+                      <small>{{ e.fuente }} · {{ e.fecha | date: 'dd-MM HH:mm' }}</small>
+                    </div>
+                  </li>
+                } @empty {
+                  <li class="vacio">Sin eventos destacados en el período.</li>
+                }
+              </ul>
+            </ion-card>
+
+            <!-- Ambiente -->
+            <ion-card class="tarjeta">
+              <div class="tarjeta__cabecera">
+                <div>
+                  <h3>Ambiente</h3>
+                  <p class="sub">{{ r.ambiente.lecturas }} lecturas reales (las simuladas no se incluyen)</p>
+                </div>
+              </div>
+              @if (r.ambiente.lecturas) {
+                <dl class="ambiente">
+                  <div><dt>Temperatura</dt><dd>{{ formato(r.ambiente.temperatura.promedio) }} °C <small>mín. {{ formato(r.ambiente.temperatura.minimo) }} · máx. {{ formato(r.ambiente.temperatura.maximo) }}</small></dd></div>
+                  <div><dt>Humedad</dt><dd>{{ formato(r.ambiente.humedad.promedio) }} % <small>mín. {{ formato(r.ambiente.humedad.minimo) }} · máx. {{ formato(r.ambiente.humedad.maximo) }}</small></dd></div>
+                </dl>
+              } @else {
+                <p class="vacio">Sin lecturas reales en el período.</p>
+              }
+            </ion-card>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</ion-content>

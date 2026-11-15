@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from email import message_from_bytes, policy
 from email.utils import parseaddr
-import hmac
 import html
 import imaplib
 import json
@@ -24,6 +23,8 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from rest_framework import serializers
+
+from integraciones import actividad, secretos
 
 from . import servicio
 from .servicio import ETIQUETA_ASUNTO, TransicionInvalida
@@ -110,8 +111,8 @@ def _validar(serializer_class, datos):
 def procesar_mensaje(remitente, asunto, cuerpo):
     """Valida y aplica un correo del flujo. Lanza MensajeInvalido si debe descartarse."""
     correo_flujo = getattr(settings, 'INTERVENCIONES_CORREO_FLUJO', '')
-    token = getattr(settings, 'INTERVENCIONES_TOKEN', '')
-    if not correo_flujo or not token:
+    # El token vigente es el renovado desde SICMA o, si nunca se renovó, el del .env.
+    if not correo_flujo or not secretos.configurado(secretos.FLUJO_INTERVENCIONES):
         raise MensajeInvalido('Faltan INTERVENCIONES_CORREO_FLUJO o INTERVENCIONES_TOKEN en la configuración.')
     if ETIQUETA_ASUNTO not in (asunto or ''):
         raise MensajeInvalido('El asunto no trae la etiqueta [SICMA-INT].')
@@ -119,7 +120,7 @@ def procesar_mensaje(remitente, asunto, cuerpo):
         raise MensajeInvalido(f'Remitente no autorizado: {remitente}')
 
     datos = extraer_json(cuerpo)
-    if not hmac.compare_digest(str(datos.get('token', '')), token):
+    if not secretos.verificar(secretos.FLUJO_INTERVENCIONES, datos.get('token', '')):
         raise MensajeInvalido('Token no válido.')
 
     tipo = str(datos.get('tipo', '')).strip().lower()
@@ -179,8 +180,10 @@ def leer_buzon():
                 continue  # copia de un correo que SICMA envió al flujo; no es para SICMA
             try:
                 procesados.append(procesar_mensaje(str(mensaje.get('From', '')), asunto, _texto_del_correo(mensaje)))
+                actividad.exito(actividad.CORREOS_FLUJO)
             except MensajeInvalido as error:
                 logger.warning('Correo descartado (%s): %s', asunto, error)
                 descartados.append(f'{asunto}: {error}')
+                actividad.rechazo(actividad.CORREOS_FLUJO, str(error))
             imap.store(numero, '+FLAGS', '\\Seen')
     return procesados, descartados

@@ -80,6 +80,7 @@ class AlertasAmbientalesTests(TablasNoGestionadasTestCase):
         self.enviar(22, 68)
         self.enviar(22, 50)
         self.assertEqual(Alerta.objects.get().estado, 'Cerrada')
+        self.assertIsNotNone(Alerta.objects.get().fecha_cierre)  # para el tiempo de resolución (Reportes)
 
         self.enviar(22, 68)
         self.assertEqual(list(Alerta.objects.order_by('id').values_list('estado', flat=True)), ['Cerrada', 'Nueva'])
@@ -121,6 +122,11 @@ class AlertasAmbientalesTests(TablasNoGestionadasTestCase):
         abiertas = tecnico.get('/api/alertas/').json()
         self.assertEqual([(a['sensor_codigo'], a['ubicacion']) for a in abiertas], [('arduino-01', self.zona.id)])
         self.assertEqual((abiertas[0]['host'], abiertas[0]['problema']), (None, abiertas[0]['condicion']))
+        # Aviso emergente: solo las posteriores a la última que ya vio el usuario.
+        ultima = abiertas[0]['id']
+        self.assertEqual(tecnico.get('/api/alertas/', {'despues_de': ultima}).json(), [])
+        self.assertEqual([a['id'] for a in tecnico.get('/api/alertas/', {'despues_de': ultima - 1}).json()], [ultima])
+        self.assertEqual(tecnico.get('/api/alertas/', {'despues_de': 'x'}).status_code, 400)
 
         url = f'/api/alertas/responsables/{self.zona.id}/'
         self.assertEqual(tecnico.put(url, {'correos': ['x@sicma.test']}, format='json').status_code, 403)
@@ -166,6 +172,7 @@ class EventosZabbixTests(TablasNoGestionadasTestCase):
         self.assertEqual(respuesta.json()['estado_alerta'], 'Cerrada')
         self.assertEqual(HostProblemaZabbix.objects.get().estado, 'RESOLVED')
         self.assertEqual(Alerta.objects.get().estado, 'Cerrada')
+        self.assertIsNotNone(Alerta.objects.get().fecha_cierre)
 
     def test_reintentos_de_zabbix_no_duplican(self):
         self.enviar()
@@ -227,6 +234,7 @@ class GestionDeAlertasTests(TablasNoGestionadasTestCase):
 
         cerrada = self.tecnico.post(url + 'cerrar/', {}, format='json').json()
         self.assertEqual((cerrada['estado'], cerrada['ultima_gestion']['accion']), ('Cerrada', 'Cerrada'))
+        self.assertIsNotNone(Alerta.objects.get(pk=self.alerta.id).fecha_cierre)
         self.assertEqual(self.tecnico.post(url + 'cerrar/', {}, format='json').status_code, 409)
         self.assertEqual(cliente_con_rol('aud', 'Auditor').get('/api/alertas/').json(), [])  # ya no está abierta
 

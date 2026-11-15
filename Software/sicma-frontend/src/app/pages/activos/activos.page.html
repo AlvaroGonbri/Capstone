@@ -25,7 +25,7 @@
         <ion-select-option [value]="null">Todas</ion-select-option>
         @for (u of ubicaciones(); track u.id) { <ion-select-option [value]="u.id">{{ nombreUbicacion(u) }}</ion-select-option> }
       </ion-select>
-      <ion-toggle [checked]="incluirRetirados()" (ionChange)="cambiarIncluirRetirados($event.detail.checked)">
+      <ion-toggle justify="start" [checked]="incluirRetirados()" (ionChange)="cambiarIncluirRetirados($event.detail.checked)">
         Incluir retirados
       </ion-toggle>
     </div>
@@ -161,7 +161,7 @@
               <span role="cell" data-etiqueta="Criticidad"><ion-badge [color]="colorCriticidad(activo.criticidad)">{{ etiquetaCriticidad(activo.criticidad) }}</ion-badge></span>
               <span role="cell" data-etiqueta="Zabbix">
                 @if (host(activo); as h) {
-                  <ion-badge [color]="colorZabbix(h)">{{ h.estado }}</ion-badge>
+                  <ion-badge [color]="colorZabbix(h)">{{ etiquetaZabbix(h.estado) }}</ion-badge>
                   @if (h.problemasActivos) { <small class="problemas">{{ h.problemasActivos }} problema(s)</small> }
                 } @else {
                   <small class="celda-secundaria">—</small>
@@ -194,7 +194,7 @@
                   <h3>{{ host.nombre }}</h3>
                   <p>{{ host.codigo }} · {{ host.direccion }} · {{ (host.grupo ?? []).join(', ') }}</p>
                 </ion-label>
-                <ion-badge slot="end" [color]="colorZabbix(host)">{{ host.estado }}</ion-badge>
+                <ion-badge slot="end" [color]="colorZabbix(host)">{{ etiquetaZabbix(host.estado) }}</ion-badge>
                 @if (puedeEditar) {
                   <ion-button slot="end" size="small" fill="outline" routerLink="/activos/nuevo"
                     [queryParams]="{ codigo: host.codigo, nombre: host.nombre }">

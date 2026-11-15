@@ -4,6 +4,19 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Activo, Alerta, EventoTecnico, SincronizacionZabbix } from '../models';
 
+const ESTADOS_ZABBIX: Record<string, string> = {
+  operativo: 'Operativo',
+  'en falla': 'En falla',
+  'en mantencion': 'En mantención',
+};
+
+/** Estado de un host de Zabbix tal como se muestra: solo la primera letra en mayúscula ("En falla"). */
+export function etiquetaEstadoZabbix(estado: string | null | undefined): string {
+  const texto = (estado ?? '').trim();
+  if (!texto) return '—';
+  return ESTADOS_ZABBIX[texto.toLowerCase()] ?? texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+}
+
 @Injectable({ providedIn: 'root' })
 export class ActivosService {
   private readonly http = inject(HttpClient);

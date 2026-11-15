@@ -517,3 +517,143 @@ export interface SincronizacionZabbix {
   al_dia: boolean;
   error: string | null;
 }
+
+// ---------------------------------------------------------------- Integraciones
+
+/** Integraciones que se pueden comprobar en vivo desde la vista Integraciones. */
+export type NombrePrueba = 'zabbix' | 'correo' | 'tunel' | 'gemini';
+/** Secretos que SICMA genera y se renuevan desde la vista (los demás siguen en el .env). */
+export type NombreSecreto = 'zabbix_webhook' | 'intervenciones_flujo';
+
+export interface EstadoSecreto {
+  configurado: boolean;
+  /** 'sicma': renovado desde la vista; 'env': todavía el valor del .env. */
+  origen: 'sicma' | 'env' | null;
+  renovado_en: string | null;
+  renovado_por: string | null;
+  /** Hasta cuándo sigue sirviendo el valor anterior (período de gracia); null si no aplica. */
+  anterior_valido_hasta: string | null;
+}
+
+export interface ProcesoSicma {
+  clave: string;
+  nombre: string;
+  ultima_actividad: string | null;
+  intervalo_segundos: number;
+  activo: boolean;
+  error: string | null;
+}
+
+export interface LectorIntegracion {
+  id: number;
+  nombre: string;
+  estado: string;
+  ultimo_contacto: string | null;
+  en_linea: boolean;
+}
+
+export interface RenovacionRegistrada {
+  secreto: NombreSecreto;
+  fecha: string;
+  usuario: string | null;
+  ip: string | null;
+  inmediato: boolean;
+}
+
+/** GET /api/sistema/integraciones/: nunca trae secretos ni sus hashes. */
+export interface EstadoIntegraciones {
+  generado: string;
+  /** false si se consulta a través del túnel (app.sicma.cl): ahí no se puede renovar. */
+  red_local: boolean;
+  puede_renovar: boolean;
+  gracia_horas: number;
+  zabbix: { configurado: boolean; ultimo_intento: string | null; ultima_exitosa: string | null; al_dia: boolean; error: string | null };
+  webhook: { secreto: EstadoSecreto; ultimo_aviso: string | null; rechazos: number; ultimo_rechazo: string | null };
+  correo: { configurado: boolean; cuenta: string | null };
+  buzon: {
+    configurado: boolean;
+    secreto: EstadoSecreto;
+    proceso: ProcesoSicma;
+    ultimo_correo: string | null;
+    descartados: number;
+    ultimo_descarte: string | null;
+    detalle_descarte: string | null;
+  };
+  tunel: { host: string | null };
+  gemini: { configurado: boolean; modelo: string | null; ultimo_resumen: string | null; error: string | null };
+  procesos: ProcesoSicma[];
+  sensores: { en_linea: number; sin_datos: number; inactivos: number };
+  lectores: LectorIntegracion[];
+  renovaciones: RenovacionRegistrada[];
+}
+
+export interface ResultadoPrueba {
+  ok: boolean;
+  detalle: string;
+  probado_en: string;
+  envio?: { ok: boolean; detalle: string } | null;
+  lectura?: { ok: boolean; detalle: string } | null;
+  expuestas?: string[];
+}
+
+/** Respuesta de la renovación: el único momento en que se ve el valor del secreto. */
+export interface SecretoRenovado {
+  nombre: NombreSecreto;
+  secreto: string;
+  renovado_en: string;
+  anterior_valido_hasta: string | null;
+}
+
+// ---------------------------------------------------------------- Reportes (inteligencia de negocio)
+
+export type NivelEvento = 'critico' | 'advertencia' | 'ok' | 'neutro';
+
+export interface EventoReporte {
+  tipo: 'zabbix' | 'ambiente' | 'intervencion';
+  nivel: NivelEvento;
+  etiqueta: string;
+  titulo: string;
+  fuente: string;
+  fecha: string;
+}
+
+export interface DisponibilidadHost {
+  host: string;
+  porcentaje: number | null;
+  horas_sin_disponibilidad: number | null;
+  horas_con_datos: number;
+}
+
+/** GET /api/reportes/resumen/: cifras del período, a partir de los mismos datos de Panel, Monitoreo, Accesos e Intervenciones. */
+export interface ReportePeriodo {
+  periodo: { desde: string; hasta: string; dias: number; zona: { id: number; nombre: string } | null };
+  disponibilidad: {
+    porcentaje: number | null;
+    hosts: DisponibilidadHost[];
+    por_dia: { fecha: string; porcentaje: number | null }[];
+    error: string | null;
+  };
+  ambiente: {
+    lecturas: number;
+    temperatura: { promedio: number | null; minimo: number | null; maximo: number | null };
+    humedad: { promedio: number | null; minimo: number | null; maximo: number | null };
+  };
+  alertas_ambientales: {
+    total: number;
+    por_severidad: Record<string, number>;
+    abiertas_al_cierre: number;
+    resolucion_promedio_min: number | null;
+    resolucion_con_datos: number;
+  };
+  problemas_zabbix: { total: number; por_severidad: Record<string, number>; altos_o_criticos: number; abiertos_al_cierre: number };
+  intervenciones: { total: number; por_estado: Record<string, number>; cerradas: number; abiertas: number };
+  accesos: { permitidos: number; denegados: number; fallas_del_lector: number };
+  eventos: EventoReporte[];
+  resumen: { texto: string; origen: 'ia' | 'plantilla'; modelo: string | null; motivo: string | null };
+}
+
+export interface FiltroReporte {
+  desde?: string;
+  hasta?: string;
+  zona?: number | null;
+}

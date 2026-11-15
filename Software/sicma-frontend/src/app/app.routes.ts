@@ -37,6 +37,21 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/usuarios/usuarios.page').then((m) => m.UsuariosPage),
   },
   {
+    path: 'reportes',
+    title: 'Reportes · SICMA',
+    // Matriz de permisos, "Dashboards y reportes": consultan todos los roles menos Contratistas.
+    canActivate: [authGuard, excluirRolesGuard('contratistas')],
+    loadComponent: () => import('./pages/reportes/reportes.page').then((m) => m.ReportesPage),
+  },
+  {
+    path: 'integraciones',
+    title: 'Integraciones · SICMA',
+    // Administrador y Privilegiado, solo en la web (la app móvil es de consulta).
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () =>
+      import('./pages/integraciones/integraciones.page').then((m) => m.IntegracionesPage),
+  },
+  {
     path: 'panel',
     title: 'Panel · SICMA',
     canActivate: [authGuard],

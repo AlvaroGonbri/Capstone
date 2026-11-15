@@ -14,6 +14,9 @@ class Alerta(models.Model):
     fecha_apertura = models.DateTimeField()
     contador_ocurrencias = models.PositiveIntegerField(default=1)
     fecha_ultima_ocurrencia = models.DateTimeField(null=True, blank=True)
+    # Columna agregada por 0004 (no está en el script del equipo): cuándo se cerró, para el tiempo
+    # de resolución en Reportes. Vacía en las alertas cerradas antes de existir.
+    fecha_cierre = models.DateTimeField(null=True, blank=True)
     sensor = models.ForeignKey(
         'mediciones.Sensor',
         db_column='sensor_id',

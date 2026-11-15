@@ -1,31 +1,21 @@
-<!-- Pestañas: en escritorio van en la barra superior; en pantallas angostas, sobre la lista -->
-<ng-template #pestanas>
-  <ion-segment-button value="abiertas"><ion-label>Abiertas<span class="contador">{{ conteo().abiertas }}</span></ion-label></ion-segment-button>
-  @if (!esTecnico) {
-    <ion-segment-button value="Pendiente"><ion-label>Por aprobar<span class="contador">{{ conteo().Pendiente }}</span></ion-label></ion-segment-button>
-  }
-  <!-- App móvil: solo Abiertas, Por aprobar y Cerradas ("Abiertas" ya incluye las aprobadas y en ejecución) -->
-  @if (!movil) {
-    <ion-segment-button value="Aprobada"><ion-label>Aprobadas<span class="contador">{{ conteo().Aprobada }}</span></ion-label></ion-segment-button>
-    <ion-segment-button value="EnEjecucion"><ion-label>En ejecución<span class="contador">{{ conteo().EnEjecucion }}</span></ion-label></ion-segment-button>
-  }
-  <ion-segment-button value="cerradas"><ion-label>Cerradas</ion-label></ion-segment-button>
-  @if (!movil) {
-    <ion-segment-button value="todas"><ion-label>Todas</ion-label></ion-segment-button>
-  }
-</ng-template>
-
-<app-encabezado titulo="Intervenciones" seccion="Operación">
-  <ion-segment acciones slot="end" class="pestanas-arriba" [value]="filtro()" scrollable
-    (ionChange)="cambiarFiltro($any($event.detail).value)">
-    <ng-container *ngTemplateOutlet="pestanas"></ng-container>
-  </ion-segment>
-</app-encabezado>
+<app-encabezado titulo="Intervenciones" seccion="Operación"></app-encabezado>
 
 <ion-content>
   <div class="contenido-limitado">
-    <ion-segment class="pestanas-contenido" [value]="filtro()" scrollable (ionChange)="cambiarFiltro($any($event.detail).value)">
-      <ng-container *ngTemplateOutlet="pestanas"></ng-container>
+    <ion-segment [value]="filtro()" scrollable (ionChange)="cambiarFiltro($any($event.detail).value)">
+      <ion-segment-button value="abiertas"><ion-label>Abiertas<span class="contador">{{ conteo().abiertas }}</span></ion-label></ion-segment-button>
+      @if (!esTecnico) {
+        <ion-segment-button value="Pendiente"><ion-label>Por aprobar<span class="contador">{{ conteo().Pendiente }}</span></ion-label></ion-segment-button>
+      }
+      <!-- App móvil: solo Abiertas, Por aprobar y Cerradas ("Abiertas" ya incluye las aprobadas y en ejecución) -->
+      @if (!movil) {
+        <ion-segment-button value="Aprobada"><ion-label>Aprobadas<span class="contador">{{ conteo().Aprobada }}</span></ion-label></ion-segment-button>
+        <ion-segment-button value="EnEjecucion"><ion-label>En ejecución<span class="contador">{{ conteo().EnEjecucion }}</span></ion-label></ion-segment-button>
+      }
+      <ion-segment-button value="cerradas"><ion-label>Cerradas</ion-label></ion-segment-button>
+      @if (!movil) {
+        <ion-segment-button value="todas"><ion-label>Todas</ion-label></ion-segment-button>
+      }
     </ion-segment>
 
     <ion-note class="nota">
@@ -64,6 +54,8 @@
           <ion-item button detail="false" class="tarjeta-intervencion" [id]="'intervencion-' + i.id" [class.elegida]="seleccionada() === i.id"
             (click)="alternar(i)" [attr.aria-expanded]="seleccionada() === i.id">
             <ion-label>
+              <!-- Teléfono: el estado va sobre el título para no angostar el texto -->
+              <ion-badge class="estado-arriba" [color]="colorEstado(i.estado)">{{ etiquetaEstado(i.estado) }}</ion-badge>
               <h3>{{ titulo(i) }}</h3>
               <p class="descripcion">Servicios afectados: {{ i.impacto_esperado || '—' }}</p>
               <p>
@@ -78,7 +70,7 @@
                 }
               </span>
             </ion-label>
-            <ion-badge slot="end" [color]="colorEstado(i.estado)">{{ etiquetaEstado(i.estado) }}</ion-badge>
+            <ion-badge slot="end" class="estado-lado" [color]="colorEstado(i.estado)">{{ etiquetaEstado(i.estado) }}</ion-badge>
           </ion-item>
 
           @if (seleccionada() === i.id) {

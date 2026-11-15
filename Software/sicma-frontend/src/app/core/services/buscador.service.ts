@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, forkJoin, map, merge, of, shareReplay, tap } from 'rxjs';
 import { Activo, ActivoInventario, Alerta, EstadoSensor, Intervencion, UbicacionCatalogo } from '../models';
-import { ActivosService } from './activos.service';
+import { ActivosService, etiquetaEstadoZabbix } from './activos.service';
 import { AuthService } from './auth.service';
 import { CatalogosService } from './catalogos.service';
 import { IntervencionesService, etiquetaEstadoIntervencion, tituloIntervencion } from './intervenciones.service';
@@ -132,7 +132,7 @@ export class BuscadorService {
           clave: `host-${h.id}`,
           tipo: 'Servidores',
           titulo: h.codigo,
-          detalle: [h.direccion, (h.grupo ?? []).join(', '), h.estado, activo ? null : 'sin inventariar']
+          detalle: [h.direccion, (h.grupo ?? []).join(', '), etiquetaEstadoZabbix(h.estado), activo ? null : 'sin inventariar']
             .filter(Boolean)
             .join(' · '),
           ruta: activo ? ['/activos', activo.id] : ['/activos'],

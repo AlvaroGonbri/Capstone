@@ -19,7 +19,7 @@ import {
   IonSkeletonText,
 } from '@ionic/angular';
 import { Activo, ActivoInventario, EventoTecnico, HistorialActivo, Intervencion } from '../../core/models';
-import { ActivosService } from '../../core/services/activos.service';
+import { ActivosService, etiquetaEstadoZabbix } from '../../core/services/activos.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
   IntervencionesService,
@@ -115,6 +115,7 @@ export class ActivoDetallePage {
   protected readonly colorEstado = (estado: string) => this.inventario.colorEstado(estado);
   protected readonly colorCriticidad = colorCriticidad;
   protected readonly etiquetaCriticidad = etiquetaCriticidad;
+  protected readonly etiquetaZabbix = etiquetaEstadoZabbix;
 
   /** Host de Zabbix con el mismo código (null = no monitoreado; undefined = aún consultando). */
   protected readonly host = signal<Activo | null | undefined>(undefined);

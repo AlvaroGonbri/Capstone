@@ -67,5 +67,6 @@ def registrar_evento_zabbix(event_id, host, problema, severidad, estado):
                 alerta.save(update_fields=['fecha_ultima_ocurrencia'])
         elif alerta is not None and alerta.estado in ESTADOS_ABIERTOS:
             alerta.estado = 'Cerrada'
-            alerta.save(update_fields=['estado'])
+            alerta.fecha_cierre = ahora
+            alerta.save(update_fields=['estado', 'fecha_cierre'])
     return alerta

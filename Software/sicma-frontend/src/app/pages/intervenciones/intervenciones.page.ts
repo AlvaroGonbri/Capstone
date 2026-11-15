@@ -1,4 +1,4 @@
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -65,7 +65,6 @@ function aEntradaLocal(iso: string | null): string {
   selector: 'app-intervenciones',
   imports: [
     DatePipe,
-    NgTemplateOutlet,
     ReactiveFormsModule,
     RouterLink,
     EncabezadoComponent,

@@ -192,13 +192,14 @@
                   @for (trabajo of trabajosAbiertos(); track trabajo.id) {
                     <ion-item routerLink="/intervenciones" [queryParams]="{ id: trabajo.id }" button detail="true">
                       <ion-label>
+                        <ion-badge class="estado-arriba" [color]="colorIntervencion(trabajo.estado)">{{ etiquetaIntervencion(trabajo.estado) }}</ion-badge>
                         <h3><span class="numero-id">#{{ trabajo.id }}</span> {{ trabajo.rack || trabajo.objetivo }}</h3>
                         <p>
                           {{ trabajo.impacto_esperado || trabajo.objetivo }} · {{ trabajo.solicitante_nombre || 'sin solicitante' }}
                           @if (trabajo.fecha_inicio) { · {{ trabajo.fecha_inicio | date: 'dd/MM HH:mm' }} }
                         </p>
                       </ion-label>
-                      <ion-badge slot="end" [color]="colorIntervencion(trabajo.estado)">{{ etiquetaIntervencion(trabajo.estado) }}</ion-badge>
+                      <ion-badge slot="end" class="estado-lado" [color]="colorIntervencion(trabajo.estado)">{{ etiquetaIntervencion(trabajo.estado) }}</ion-badge>
                     </ion-item>
                   }
                 </ion-list>

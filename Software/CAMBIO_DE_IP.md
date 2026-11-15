@@ -10,7 +10,8 @@ Qué revisar cuando el PC donde corre el backend de SICMA cambia de IP en la red
   hacia un PC conectado por WiFi, así que con el PC en WiFi el Arduino no llega.
 - **Para ver la IP actual**, ejecuta `ipconfig` y busca el adaptador **vEthernet (ExternalSwitch)**.
 - **Lo ideal es no tener que usar este instructivo:** reserva la IP en el router (DHCP → reserva
-  de IP) para la MAC `70-B5-E8-C4-0D-2E`, que es la del adaptador USB y la del ExternalSwitch.
+  de IP) para la MAC del adaptador USB, que es la misma del ExternalSwitch (se ve con
+  `ipconfig /all`, en «Dirección física» de **vEthernet (ExternalSwitch)**).
 
 ## Qué cambiar
 

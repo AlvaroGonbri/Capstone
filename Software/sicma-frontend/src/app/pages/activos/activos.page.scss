@@ -5,15 +5,33 @@
   color: var(--sicma-tenue);
 }
 
+/* Tipo y Ubicación reparten el ancho; "Incluir retirados" ocupa solo lo que necesita.
+   En el teléfono Tipo y Ubicación van lado a lado y el interruptor en la fila siguiente. */
 .filtros {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: end;
-  gap: 8px 16px;
+  gap: 8px 12px;
   margin-bottom: 14px;
 
+  ion-select {
+    min-width: 0;
+  }
+
   ion-toggle {
+    grid-column: 1 / -1;
     padding-bottom: 8px;
+  }
+}
+
+@media (min-width: 768px) {
+  .filtros {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 8px 16px;
+
+    ion-toggle {
+      grid-column: auto;
+    }
   }
 }
 
@@ -152,10 +170,6 @@
     &:hover {
       background: #f7f9fa;
     }
-  }
-
-  ion-badge {
-    text-transform: capitalize;
   }
 }
 

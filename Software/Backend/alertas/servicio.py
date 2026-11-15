@@ -65,7 +65,8 @@ def evaluar_medicion(medicion):
             if minimo <= valor <= maximo:
                 if abierta:
                     abierta.estado = 'Cerrada'
-                    abierta.save(update_fields=['estado'])
+                    abierta.fecha_cierre = ahora
+                    abierta.save(update_fields=['estado', 'fecha_cierre'])
                 continue
 
             condicion = (

@@ -67,6 +67,19 @@
   align-items: end;
 }
 
+/* Teléfono: fechas y listas de a dos por fila; búsqueda y botones a todo el ancho */
+@media (max-width: 575px) {
+  .rejilla-form.filtros {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+
+    ion-searchbar,
+    .acciones {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
 .tarjeta-filtros {
   padding: 14px 16px;
   margin-bottom: 16px;

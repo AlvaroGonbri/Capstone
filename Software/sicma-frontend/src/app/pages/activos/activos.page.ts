@@ -30,7 +30,7 @@ import {
   TipoActivoCatalogo,
   UbicacionCatalogo,
 } from '../../core/models';
-import { ActivosService } from '../../core/services/activos.service';
+import { ActivosService, etiquetaEstadoZabbix } from '../../core/services/activos.service';
 import { AlertasService } from '../../core/services/alertas.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CatalogosService, nombreUbicacion } from '../../core/services/catalogos.service';
@@ -249,6 +249,7 @@ export class ActivosPage {
 
   protected readonly colorCriticidad = colorCriticidad;
   protected readonly etiquetaCriticidad = etiquetaCriticidad;
+  protected readonly etiquetaZabbix = etiquetaEstadoZabbix;
 
   /** Cantidad de activos por estado, para las pestañas ("Operativo 2"). */
   protected readonly conteoPorEstado = computed(() => {

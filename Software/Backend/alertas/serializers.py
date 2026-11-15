@@ -62,6 +62,9 @@ class AlertaReadSerializer(serializers.ModelSerializer):
 class AlertaFilterSerializer(serializers.Serializer):
     estado = serializers.ChoiceField(choices=('abiertas', 'todas'), default='abiertas')
     origen = serializers.ChoiceField(choices=('IoT', 'Biometria', 'Zabbix'), required=False)
+    # Solo las alertas con id mayor: el aviso emergente del frontend consulta cada pocos segundos
+    # y así la respuesta normal es una lista vacía.
+    despues_de = serializers.IntegerField(min_value=0, required=False)
 
 
 class ResponsablesSerializer(serializers.Serializer):

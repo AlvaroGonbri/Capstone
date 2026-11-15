@@ -154,6 +154,13 @@ const ATAJO_BUSCADOR = /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘ K' : '
       .zabbix {
         display: none;
       }
+      /* "Volver" queda solo como flecha: el espacio es para el título */
+      ion-back-button::part(text) {
+        display: none;
+      }
+      .titulo {
+        padding: 0 8px 0 4px;
+      }
       .buscar {
         justify-content: center;
         width: 40px;

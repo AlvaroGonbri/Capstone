@@ -279,22 +279,6 @@ h4 {
   }
 }
 
-/* Pestañas: en escritorio, en la barra superior; en pantallas angostas, sobre la lista */
-.pestanas-arriba {
-  display: none;
-  margin: 0 8px 0 0;
-}
-
-@media (min-width: 992px) {
-  .pestanas-arriba {
-    display: inline-flex;
-  }
-
-  .pestanas-contenido {
-    display: none;
-  }
-}
-
 /* Barra de acciones al pie del detalle */
 .pie-detalle {
   display: flex;

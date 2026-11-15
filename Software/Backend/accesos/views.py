@@ -8,6 +8,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from integraciones import actividad
 from login.permissions import ADMIN_ROLES, CONTRATISTAS_ROLES, READ_ROLES, REGISTRO_ACCESOS_ROLES, RolePermission
 
 from . import servicio
@@ -294,6 +295,7 @@ def autenticar_lector(request):
     if (punto is None or punto.estado != ACTIVO or not clave or not punto.device_key_hash
             or not check_password(clave, punto.device_key_hash)):
         return None
+    actividad.contacto(actividad.clave_lector(punto.id))  # "último contacto" en Integraciones
     return punto
 
 

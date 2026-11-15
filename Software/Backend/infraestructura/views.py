@@ -1,9 +1,7 @@
 from collections.abc import Callable
-import hmac
 import time
 from typing import Any
 
-from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 from rest_framework import status
@@ -13,6 +11,7 @@ from rest_framework.views import APIView
 import requests
 
 from alertas.zabbix import registrar_evento_zabbix
+from integraciones import actividad, secretos
 from login.permissions import READ_ROLES, RolePermission
 
 from .models import EstadoInfraestructura
@@ -132,15 +131,15 @@ class ZabbixWebhookView(APIView):
     permission_classes = []
 
     def post(self, request, format=None):
-        secreto = getattr(settings, 'ZABBIX_WEBHOOK_SECRET', '')
         recibido = request.headers.get('X-Zabbix-Token', '')
-        # Sin secreto configurado, compare_digest('', '') aceptaría cualquier POST.
-        if not secreto:
+        # El secreto vigente es el renovado desde SICMA o, si nunca se renovó, el del .env.
+        if not secretos.configurado(secretos.WEBHOOK_ZABBIX):
             return Response(
                 {'detail': 'La integración de webhook no está configurada.'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
-        if not hmac.compare_digest(recibido, secreto):
+        if not secretos.verificar(secretos.WEBHOOK_ZABBIX, recibido):
+            actividad.rechazo(actividad.WEBHOOK_ZABBIX, 'Token de webhook no válido.')
             return Response(
                 {'detail': 'Token de webhook no válido.'},
                 status=status.HTTP_403_FORBIDDEN,
@@ -166,6 +165,7 @@ class ZabbixWebhookView(APIView):
         # El próximo GET trae datos frescos: se descarta la caché y la foto periódica queda vieja.
         cache.delete_many([CACHE_ESTADO, CACHE_ACTIVOS, CACHE_HOSTS])
         marcar_webhook()
+        actividad.exito(actividad.WEBHOOK_ZABBIX)
         return Response(
             {
                 'detail': 'Webhook recibido.',

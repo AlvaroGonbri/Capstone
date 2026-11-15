@@ -56,6 +56,8 @@ INSTALLED_APPS = [
     'inventario',
     'intervenciones',
     'accesos',
+    'integraciones',
+    'reportes',
 ]
 
 MIDDLEWARE = [
@@ -118,6 +120,11 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'login': '10/minute',
         'password_reset': '3/hour',
+        # Vista Integraciones: "Probar" y renovar secretos (esta pide reingresar la contraseña).
+        'integraciones_prueba': '30/minute',
+        'integraciones_renovacion': '10/hour',
+        # Reportes: consulta y PDF (el resumen con IA se guarda en caché según los datos).
+        'reportes': '60/minute',
     },
 }
 
@@ -207,6 +214,16 @@ INTERVENCIONES_CORREO_FLUJO = config('INTERVENCIONES_CORREO_FLUJO', default='')
 INTERVENCIONES_TOKEN = config('INTERVENCIONES_TOKEN', default='')
 # El buzón de SICMA (EMAIL_HOST_USER) se lee por IMAP con la misma contraseña de aplicación.
 INTERVENCIONES_IMAP_HOST = config('INTERVENCIONES_IMAP_HOST', default='imap.gmail.com')
+
+
+# Vista Integraciones: URL pública de la API, para comprobar el túnel de punta a punta.
+URL_PUBLICA_API = config('URL_PUBLICA_API', default='https://api.sicma.cl/api')
+
+
+# Reportes: resumen redactado con Google Gemini (opcional). Sin clave, el resumen sale de una plantilla.
+# Solo se envían cifras agregadas del período (ver reportes/resumen.py).
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
+GEMINI_MODELO = config('GEMINI_MODELO', default='gemini-3.5-flash')
 
 
 # RNF-SEG-02: bloqueo de cuenta tras intentos fallidos de ingreso.

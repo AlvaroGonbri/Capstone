@@ -25,10 +25,13 @@ import {
   thermometerOutline,
   hardwareChipOutline,
   libraryOutline,
+  pulseOutline,
+  barChartOutline,
 } from 'ionicons/icons';
 import { AuthService } from './core/services/auth.service';
 import { EstadoGeneralService } from './core/services/estado-general.service';
 import { etiquetaRol } from './core/services/roles.util';
+import { AvisoAlertasComponent } from './shared/aviso-alertas.component';
 import { BuscadorComponent } from './shared/buscador.component';
 import { iniciales } from './shared/texto.util';
 
@@ -46,7 +49,7 @@ interface ItemMenu {
 const ORDEN_GRUPOS: GrupoMenu[] = ['Operación', 'Inventario', 'Seguridad'];
 
 /** Pestañas de la app móvil (solo consulta), en este orden. */
-const RUTAS_PESTANAS = ['/panel', '/activos', '/monitoreo', '/intervenciones'];
+const RUTAS_PESTANAS = ['/panel', '/activos', '/monitoreo', '/intervenciones', '/reportes'];
 
 @Component({
   selector: 'app-root',
@@ -54,6 +57,7 @@ const RUTAS_PESTANAS = ['/panel', '/activos', '/monitoreo', '/intervenciones'];
     RouterLink,
     RouterLinkActive,
     BuscadorComponent,
+    AvisoAlertasComponent,
     IonApp,
     IonButton,
     IonContent,
@@ -104,12 +108,20 @@ export class App {
     { titulo: 'Accesos', ruta: '/accesos', icono: 'key-outline', grupo: 'Seguridad' },
     { titulo: 'Personal externo', ruta: '/personal', icono: 'id-card-outline', grupo: 'Seguridad', tituloCorto: 'Personal' },
     { titulo: 'Intervenciones', ruta: '/intervenciones', icono: 'build-outline', grupo: 'Operación', tituloCorto: 'Trabajos' },
+    { titulo: 'Reportes', ruta: '/reportes', icono: 'bar-chart-outline', grupo: 'Operación' },
   ];
 
   private readonly opcionUsuarios: ItemMenu = {
     titulo: 'Usuarios',
     ruta: '/usuarios',
     icono: 'people-outline',
+    grupo: 'Seguridad',
+  };
+
+  private readonly opcionIntegraciones: ItemMenu = {
+    titulo: 'Integraciones',
+    ruta: '/integraciones',
+    icono: 'pulse-outline',
     grupo: 'Seguridad',
   };
 
@@ -122,11 +134,11 @@ export class App {
     return this.auth.tieneRol('tecnico') ? this.opciones.filter((o) => o.ruta !== '/accesos') : this.opciones;
   });
 
-  /** Menú lateral agrupado. Usuarios aparece con la misma condición de antes. */
+  /** Menú lateral agrupado. Usuarios e Integraciones: solo administradores, en la web. */
   protected readonly secciones = computed(() => {
     const items = [...this.menu()];
     if (this.auth.puedeModificar('administrador', 'administradorprivilegiado')) {
-      items.push(this.opcionUsuarios);
+      items.push(this.opcionUsuarios, this.opcionIntegraciones);
     }
     return ORDEN_GRUPOS.map((titulo) => ({
       titulo,
@@ -165,6 +177,8 @@ export class App {
       logOutOutline,
       peopleOutline,
       libraryOutline,
+      pulseOutline,
+      barChartOutline,
     });
   }
 

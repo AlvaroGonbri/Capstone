@@ -11,6 +11,8 @@ from django.core.management.base import BaseCommand
 from django.db import close_old_connections
 from django.utils import timezone
 
+from integraciones import actividad
+
 
 class ComandoPeriodico(BaseCommand):
     intervalo_por_defecto = 60
@@ -32,6 +34,8 @@ class ComandoPeriodico(BaseCommand):
         if intervalo < 10:
             self.stderr.write('El intervalo mínimo es 10 segundos.')
             return
+        # Con --una-vez lo llama el Programador de tareas: el intervalo real no se conoce aquí.
+        self._intervalo = None if una_vez else intervalo
         # El correo asíncrono sale en un hilo daemon que muere si el proceso termina (--una-vez
         # o Ctrl+C) antes de enviarlo. Este proceso no atiende peticiones: puede enviar en línea.
         asincrono = getattr(settings, 'ALERTAS_CORREO_ASINCRONO', True)
@@ -60,6 +64,14 @@ class ComandoPeriodico(BaseCommand):
             self.stdout.write('Proceso detenido.')
 
     def _pasada_con_registro(self):
-        texto = self.pasada()
+        # Latido para la vista Integraciones: si deja de llegar, el proceso aparece detenido.
+        clave = actividad.clave_proceso(type(self).__module__.rsplit('.', 1)[-1])
+        intervalo = getattr(self, '_intervalo', None)
+        try:
+            texto = self.pasada()
+        except Exception as error:
+            actividad.latido(clave, intervalo=intervalo, error=error)
+            raise
+        actividad.latido(clave, intervalo=intervalo)
         if texto:
             self.stdout.write(f'{timezone.localtime():%H:%M:%S} {texto}')

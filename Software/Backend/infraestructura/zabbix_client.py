@@ -93,6 +93,26 @@ class ZabbixClient:
             raise ZabbixError(f'Respuesta inválida de Zabbix para {metodo}.')
         return cuerpo['result']
 
+    # ---------- Comprobación de la integración (vista Integraciones) ----------
+
+    def version(self) -> str:
+        """apiinfo.version: se pide sin token (Zabbix no lo admite en este método)."""
+        respuesta = requests.post(
+            self.url,
+            headers={'Content-Type': 'application/json-rpc'},
+            json={'jsonrpc': '2.0', 'method': 'apiinfo.version', 'params': {}, 'id': 0},
+            timeout=self.timeout,
+        )
+        respuesta.raise_for_status()
+        version = respuesta.json().get('result')
+        if not version:
+            raise ZabbixError('Respuesta inválida de Zabbix para apiinfo.version.')
+        return str(version)
+
+    def verificar_token(self) -> None:
+        """Consulta mínima autenticada: lanza ZabbixError si el token no sirve."""
+        self._llamar('hostgroup.get', {'output': ['groupid'], 'limit': 1})
+
     # ---------- Consultas crudas (usadas por /api/infraestructura/activos/) ----------
 
     def obtener_grupos(self, nombres: list[str]) -> list[dict[str, Any]]:
@@ -322,4 +342,42 @@ class ZabbixClient:
         return [
             {'fecha': _fecha(v['clock']), 'valor': v['value']}
             for v in self._llamar('history.get', params)
+        ]
+
+    # ---------- Reportes: disponibilidad en un período ----------
+
+    def disponibilidad_agentes(self, grupos: list[str], desde_ts: int, hasta_ts: int) -> list[dict[str, Any]]:
+        """Por host de los grupos dados, las tendencias por hora de zabbix[host,agent,available]
+        (1 = disponible, 2 = no disponible, 0 = desconocido). Zabbix guarda estas tendencias 365 días.
+
+        Devuelve [{'host': 'mysql01', 'horas': [{'clock': int, 'min': float, 'avg': float, 'max': float}]}].
+        """
+        groupids = [g['groupid'] for g in self.obtener_grupos(grupos)]
+        if not groupids:
+            return []
+        hosts = self._llamar('host.get', {'output': ['hostid', 'host'], 'groupids': groupids})
+        items = self._llamar('item.get', {
+            'output': ['itemid', 'hostid'],
+            'hostids': [h['hostid'] for h in hosts],
+            'filter': {'key_': 'zabbix[host,agent,available]'},
+        })
+        item_de_host = {i['hostid']: i['itemid'] for i in items}
+        horas: dict[str, list[dict[str, Any]]] = {i['itemid']: [] for i in items}
+        if horas:
+            tendencias = self._llamar('trend.get', {
+                'output': ['itemid', 'clock', 'value_min', 'value_avg', 'value_max'],
+                'itemids': list(horas),
+                'time_from': int(desde_ts),
+                'time_till': int(hasta_ts),
+            })
+            for t in tendencias:
+                horas[t['itemid']].append({
+                    'clock': int(t['clock']),
+                    'min': float(t['value_min']),
+                    'avg': float(t['value_avg']),
+                    'max': float(t['value_max']),
+                })
+        return [
+            {'host': h['host'], 'horas': sorted(horas.get(item_de_host.get(h['hostid'], ''), []), key=lambda x: x['clock'])}
+            for h in sorted(hosts, key=lambda h: h['host'].lower())
         ]

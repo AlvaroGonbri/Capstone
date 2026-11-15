@@ -1,0 +1,360 @@
+<app-encabezado titulo="Integraciones" seccion="Seguridad"></app-encabezado>
+
+<ion-content>
+  <div class="contenido-limitado">
+    <div class="intro">
+      <h2>Estado de las integraciones</h2>
+      <p>Conexiones de SICMA con Zabbix, el correo, Power Automate y Cloudflare.</p>
+    </div>
+
+    @if (cargando() && !estado()) {
+      <ion-spinner name="crescent"></ion-spinner>
+    } @else if (error(); as mensaje) {
+      <ion-note class="mensaje" color="danger" role="alert">{{ mensaje }}</ion-note>
+    }
+
+    @if (estado(); as e) {
+      @let ind = indicadores()!;
+
+      <div class="barra">
+        <span class="actualizado">Actualizado {{ e.generado | hace }}</span>
+        <div class="barra__acciones">
+          <ion-button size="small" fill="outline" (click)="cargar()">Actualizar</ion-button>
+          <ion-button size="small" (click)="probarTodo()">Probar todo</ion-button>
+        </div>
+      </div>
+
+      @if (e.puede_renovar && !e.red_local) {
+        <p class="aviso-red" role="note">
+          Estás conectado a través de internet. Aquí puedes ver el estado y probar las conexiones, pero los secretos
+          solo se renuevan desde la red local (SICMA abierto en el equipo del servidor o en la red de la sala).
+        </p>
+      }
+
+      <div class="rejilla">
+        <!-- ------------------------------------------------ Zabbix (consulta) -->
+        <ion-card class="integracion">
+          <div class="cabecera">
+            <div>
+              <h3>Zabbix (consulta)</h3>
+              <p class="sub">Estado de los servidores, cada minuto.</p>
+            </div>
+            <ng-container *ngTemplateOutlet="estadoTpl; context: { $implicit: ind.zabbix }"></ng-container>
+          </div>
+          <dl class="datos">
+            <div><dt>Última sincronización</dt><dd>{{ e.zabbix.ultima_exitosa ? (e.zabbix.ultima_exitosa | hace) : 'Nunca' }}</dd></div>
+          </dl>
+          @if (e.zabbix.error && !e.zabbix.al_dia) {
+            <p class="error-texto">{{ e.zabbix.error }}</p>
+          }
+          <ng-container *ngTemplateOutlet="pruebaTpl; context: { $implicit: 'zabbix' }"></ng-container>
+          <details class="como">
+            <summary>Cómo renovar el token</summary>
+            <ol>
+              <li>En Zabbix: Users › API tokens › Create API token, para el usuario <code>sicma_api</code> y con fecha de vencimiento.</li>
+              <li>Reemplaza <code>ZABBIX_TOKEN</code> en <code>Software/Backend/.env</code>.</li>
+              <li>Reinicia la API y la sincronización de Zabbix (cierra sus ventanas y ejecuta <code>iniciar_sicma.ps1</code>).</li>
+              <li>Usa «Probar» aquí y, si funciona, elimina el token antiguo en Zabbix.</li>
+            </ol>
+          </details>
+        </ion-card>
+
+        <!-- ------------------------------------------------ Webhook de Zabbix -->
+        <ion-card class="integracion">
+          <div class="cabecera">
+            <div>
+              <h3>Webhook de Zabbix</h3>
+              <p class="sub">Zabbix avisa al instante cuando se abre o se resuelve un problema.</p>
+            </div>
+            <ng-container *ngTemplateOutlet="estadoTpl; context: { $implicit: ind.webhook }"></ng-container>
+          </div>
+          <dl class="datos">
+            <div><dt>Último aviso recibido</dt><dd>{{ e.webhook.ultimo_aviso ? (e.webhook.ultimo_aviso | hace) : 'Ninguno registrado' }}</dd></div>
+            <div>
+              <dt>Avisos rechazados</dt>
+              <dd>
+                {{ e.webhook.rechazos }}
+                @if (e.webhook.ultimo_rechazo) { <small>(el último {{ e.webhook.ultimo_rechazo | hace }})</small> }
+              </dd>
+            </div>
+          </dl>
+          @if (e.webhook.rechazos) {
+            <p class="nota">Un rechazo es un aviso con un secreto incorrecto: Zabbix con un valor antiguo o alguien intentando enviar avisos falsos.</p>
+          }
+          <ng-container *ngTemplateOutlet="secretoTpl; context: { $implicit: 'zabbix_webhook', secreto: e.webhook.secreto, e: e }"></ng-container>
+        </ion-card>
+
+        <!-- ------------------------------------------------ Correo (Gmail) -->
+        <ion-card class="integracion">
+          <div class="cabecera">
+            <div>
+              <h3>Correo (Gmail)</h3>
+              <p class="sub">Alertas, recuperación de contraseña y lectura del buzón.</p>
+            </div>
+            <ng-container *ngTemplateOutlet="estadoTpl; context: { $implicit: ind.correo }"></ng-container>
+          </div>
+          <dl class="datos">
+            <div><dt>Cuenta</dt><dd>{{ e.correo.cuenta ?? 'Sin configurar' }}</dd></div>
+          </dl>
+          <ng-container *ngTemplateOutlet="pruebaTpl; context: { $implicit: 'correo' }"></ng-container>
+          <details class="como">
+            <summary>Cómo renovar la contraseña</summary>
+            <ol>
+              <li>En tu cuenta de Google: Seguridad › Contraseñas de aplicación, crea una nueva.</li>
+              <li>Reemplaza la variable de usuario de Windows <code>EMAIL_HOST_PASSWORD</code> (Configuración › «Editar las variables de entorno de esta cuenta»). Ponerla en el .env no sirve: la de Windows tiene prioridad.</li>
+              <li>Cierra las ventanas de SICMA y ejecuta <code>iniciar_sicma.ps1</code> desde una ventana nueva de PowerShell.</li>
+              <li>Usa «Probar» aquí y, si funciona, revoca la contraseña antigua en Google.</li>
+            </ol>
+          </details>
+        </ion-card>
+
+        <!-- ------------------------------------------------ Buzón de intervenciones -->
+        <ion-card class="integracion">
+          <div class="cabecera">
+            <div>
+              <h3>Buzón de intervenciones</h3>
+              <p class="sub">Correos del flujo de Power Automate, leídos cada minuto.</p>
+            </div>
+            <ng-container *ngTemplateOutlet="estadoTpl; context: { $implicit: ind.buzon }"></ng-container>
+          </div>
+          <dl class="datos">
+            <div><dt>Última lectura</dt><dd>{{ e.buzon.proceso.ultima_actividad ? (e.buzon.proceso.ultima_actividad | hace) : 'Sin señales del proceso' }}</dd></div>
+            <div><dt>Último correo aceptado</dt><dd>{{ e.buzon.ultimo_correo ? (e.buzon.ultimo_correo | hace) : 'Ninguno registrado' }}</dd></div>
+            <div>
+              <dt>Correos descartados</dt>
+              <dd>
+                {{ e.buzon.descartados }}
+                @if (e.buzon.ultimo_descarte) { <small>(el último {{ e.buzon.ultimo_descarte | hace }})</small> }
+              </dd>
+            </div>
+          </dl>
+          @if (e.buzon.proceso.error) {
+            <p class="error-texto">{{ e.buzon.proceso.error }}</p>
+          }
+          @if (e.buzon.detalle_descarte && e.buzon.ultimo_descarte) {
+            <p class="nota">Último descarte: {{ e.buzon.detalle_descarte }}</p>
+          }
+          <ng-container *ngTemplateOutlet="secretoTpl; context: { $implicit: 'intervenciones_flujo', secreto: e.buzon.secreto, e: e }"></ng-container>
+        </ion-card>
+
+        <!-- ------------------------------------------------ Túnel de Cloudflare -->
+        <ion-card class="integracion">
+          <div class="cabecera">
+            <div>
+              <h3>Túnel de Cloudflare</h3>
+              <p class="sub">Publica la API en internet{{ e.tunel.host ? ' (' + e.tunel.host + ')' : '' }}.</p>
+            </div>
+            <ng-container *ngTemplateOutlet="estadoTpl; context: { $implicit: ind.tunel }"></ng-container>
+          </div>
+          <p class="nota">
+            «Probar» hace que SICMA se consulte a sí mismo por su dirección pública y confirma que las rutas internas
+            (webhook, lector y sensores) siguen bloqueadas desde internet.
+          </p>
+          <ng-container *ngTemplateOutlet="pruebaTpl; context: { $implicit: 'tunel' }"></ng-container>
+        </ion-card>
+
+        <!-- ------------------------------------------------ Gemini (resumen de Reportes) -->
+        <ion-card class="integracion">
+          <div class="cabecera">
+            <div>
+              <h3>Resumen con IA (Gemini)</h3>
+              <p class="sub">Redacta el resumen de Reportes. Solo recibe cifras agregadas, sin nombres.</p>
+            </div>
+            <ng-container *ngTemplateOutlet="estadoTpl; context: { $implicit: ind.gemini }"></ng-container>
+          </div>
+          <dl class="datos">
+            <div><dt>Modelo</dt><dd>{{ e.gemini.modelo ?? '—' }}</dd></div>
+            <div><dt>Último resumen con IA</dt><dd>{{ e.gemini.ultimo_resumen ? (e.gemini.ultimo_resumen | hace) : 'Ninguno registrado' }}</dd></div>
+          </dl>
+          @if (!e.gemini.configurado) {
+            <p class="nota">Sin GEMINI_API_KEY, Reportes usa el resumen de plantilla (sin IA).</p>
+          } @else if (e.gemini.error) {
+            <p class="nota">Último problema: {{ e.gemini.error }} Mientras tanto se usa la plantilla.</p>
+          }
+          <ng-container *ngTemplateOutlet="pruebaTpl; context: { $implicit: 'gemini' }"></ng-container>
+          <details class="como">
+            <summary>Cómo configurar o renovar la clave</summary>
+            <ol>
+              <li>En aistudio.google.com › Get API key, crea una clave (empieza con «AIza»).</li>
+              <li>Ponla en <code>GEMINI_API_KEY</code> de <code>Software/Backend/.env</code> y reinicia la API.</li>
+              <li>Usa «Probar» aquí. Si la clave anterior pudo filtrarse, elimínala en AI Studio.</li>
+            </ol>
+          </details>
+        </ion-card>
+
+        <!-- ------------------------------------------------ Procesos y dispositivos -->
+        <ion-card class="integracion">
+          <div class="cabecera">
+            <div>
+              <h3>Procesos y dispositivos</h3>
+              <p class="sub">Procesos de fondo, agentes del lector y sensores.</p>
+            </div>
+          </div>
+          <ul class="lista-estado">
+            @for (p of e.procesos; track p.clave) {
+              <li>
+                <ng-container *ngTemplateOutlet="estadoTpl; context: { $implicit: { nivel: p.activo ? 'ok' : 'error', texto: p.activo ? 'En marcha' : 'Detenido' } }"></ng-container>
+                <div>
+                  <strong>{{ p.nombre }}</strong>
+                  <small>{{ p.ultima_actividad ? 'Última pasada ' + (p.ultima_actividad | hace) : 'Sin señales todavía' }}</small>
+                </div>
+              </li>
+            }
+            @for (l of e.lectores; track l.id) {
+              <li>
+                <ng-container *ngTemplateOutlet="estadoTpl; context: { $implicit: l.estado !== 'Activo' ? { nivel: 'neutro', texto: 'Inactivo' } : { nivel: l.en_linea ? 'ok' : 'error', texto: l.en_linea ? 'En línea' : 'Sin contacto' } }"></ng-container>
+                <div>
+                  <strong>Agente del lector «{{ l.nombre }}»</strong>
+                  <small>{{ l.ultimo_contacto ? 'Último contacto ' + (l.ultimo_contacto | hace) : 'Sin contacto registrado' }}</small>
+                </div>
+              </li>
+            }
+          </ul>
+          <p class="nota">
+            Sensores: {{ e.sensores.en_linea }} en línea · {{ e.sensores.sin_datos }} sin datos · {{ e.sensores.inactivos }} inactivos.
+            <a routerLink="/arduinos">Ver en Arduinos ›</a>
+          </p>
+          <p class="nota">
+            Las claves de los dispositivos se renuevan en <a routerLink="/catalogos">Catálogos</a> (sensores) y en
+            <a routerLink="/accesos">Accesos</a> (lectores).
+          </p>
+        </ion-card>
+      </div>
+
+      <!-- ------------------------------------------------ Registro de renovaciones -->
+      <ion-card class="registro">
+        <div class="cabecera">
+          <div>
+            <h3>Renovaciones de secretos</h3>
+            <p class="sub">Quién renovó qué, cuándo y desde dónde. Cada renovación avisa por correo a los Administradores Privilegiados.</p>
+          </div>
+        </div>
+        @if (e.renovaciones.length) {
+          <div class="tabla-renovaciones" role="table" aria-label="Renovaciones de secretos">
+            <div class="fila fila--titulo" role="row">
+              <span role="columnheader">Fecha</span>
+              <span role="columnheader">Secreto</span>
+              <span role="columnheader">Usuario</span>
+              <span role="columnheader">IP</span>
+              <span role="columnheader">Anterior</span>
+            </div>
+            @for (r of e.renovaciones; track r.fecha + r.secreto) {
+              <div class="fila" role="row">
+                <span role="cell">{{ r.fecha | date: 'dd-MM-yyyy HH:mm' }}</span>
+                <span role="cell">{{ nombreSecreto(r.secreto) }}</span>
+                <span role="cell">{{ r.usuario ?? '—' }}</span>
+                <span role="cell" class="mono">{{ r.ip ?? '—' }}</span>
+                <span role="cell">{{ r.inmediato ? 'Anulado de inmediato' : 'Con período de gracia' }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="nota">Todavía no se ha renovado ningún secreto desde SICMA.</p>
+        }
+      </ion-card>
+    }
+  </div>
+</ion-content>
+
+<!-- Etiqueta de estado: punto de color + texto -->
+<ng-template #estadoTpl let-indicador>
+  <span class="estado" [attr.data-nivel]="indicador.nivel"><i aria-hidden="true"></i>{{ indicador.texto }}</span>
+</ng-template>
+
+<!-- Botón "Probar" y su resultado -->
+<ng-template #pruebaTpl let-nombre>
+  @let prueba = resultadoDe(nombre);
+  @let enCurso = estaProbando(nombre);
+  <div class="prueba">
+    <ion-button size="small" fill="outline" [disabled]="enCurso" (click)="probar(nombre)">
+      {{ enCurso ? 'Probando…' : 'Probar' }}
+    </ion-button>
+    <div role="status" aria-live="polite">
+      @if (prueba) {
+        <p class="resultado" [class.resultado--ok]="prueba.ok">
+          <span aria-hidden="true">{{ prueba.ok ? '✓' : '✕' }}</span>
+          {{ prueba.detalle }}
+          <small>· {{ prueba.probado_en | hace }}</small>
+        </p>
+      }
+    </div>
+  </div>
+</ng-template>
+
+<!-- Estado de un secreto que genera SICMA y su renovación -->
+<ng-template #secretoTpl let-nombre let-secreto="secreto" let-e="e">
+  @let def = vistaDe(nombre);
+  @if (e.puede_renovar && renovando() !== nombre) {
+    <div class="secreto">
+      <ion-button size="small" fill="outline" [disabled]="!e.red_local" (click)="abrirRenovacion(nombre)">Renovar…</ion-button>
+    </div>
+  }
+
+  @if (renovando() === nombre) {
+    <div class="panel-renovacion">
+      @if (renovado(); as r) {
+        <div class="clave-nueva" role="alert">
+          <strong>Nuevo {{ def.titulo }}</strong>
+          <code>{{ r.secreto }}</code>
+          <span>Cópialo ahora: SICMA guarda solo su hash y no lo volverá a mostrar.</span>
+          <div class="acciones">
+            <ion-button size="small" fill="outline" (click)="copiar(r.secreto)">{{ copiado() ? 'Copiado ✓' : 'Copiar' }}</ion-button>
+          </div>
+        </div>
+        <p class="etiqueta-pasos">Dónde pegarlo</p>
+        <ol class="pasos">
+          @for (paso of def.pasos; track $index) {
+            <li>{{ paso }}</li>
+          }
+        </ol>
+        <p class="nota">
+          @if (r.anterior_valido_hasta) {
+            El valor anterior sigue sirviendo hasta el {{ r.anterior_valido_hasta | date: 'dd-MM-yyyy HH:mm' }}.
+          } @else {
+            El valor anterior ya no sirve.
+          }
+          Desde ahora SICMA usa este valor: {{ def.ajuste }} del .env ya no se usa y puedes borrarlo.
+        </p>
+        <div class="acciones">
+          <ion-button size="small" (click)="cerrarRenovacion()">Ya lo copié</ion-button>
+        </div>
+      } @else {
+        <form [formGroup]="formRenovar" (ngSubmit)="confirmarRenovacion()">
+          <p>SICMA generará un {{ def.titulo }} nuevo. Lo verás una sola vez, para pegarlo en {{ def.destino }}.</p>
+          @if (secreto.anterior_valido_hasta) {
+            <p class="aviso">
+              Ya hay un valor anterior en período de gracia (hasta el {{ secreto.anterior_valido_hasta | date: 'dd-MM-yyyy HH:mm' }}).
+              Si renuevas otra vez, ese valor deja de servir ahora.
+            </p>
+          }
+          <ion-checkbox formControlName="inmediato" labelPlacement="end" justify="start">
+            El valor actual pudo filtrarse: anularlo de inmediato
+          </ion-checkbox>
+          <p class="nota">
+            @if (formRenovar.controls.inmediato.value) {
+              Hasta que pegues el valor nuevo en {{ def.destino }}, {{ def.efecto }}.
+            } @else {
+              El valor actual seguirá sirviendo {{ e.gracia_horas }} h, para que alcances a reemplazarlo.
+            }
+          </p>
+          <ion-input
+            type="password"
+            label="Tu contraseña"
+            labelPlacement="stacked"
+            formControlName="password"
+            autocomplete="current-password"
+          ></ion-input>
+          @if (errorRenovacion(); as mensaje) {
+            <ion-note color="danger" role="alert">{{ mensaje }}</ion-note>
+          }
+          <div class="acciones">
+            <ion-button size="small" fill="clear" type="button" (click)="cerrarRenovacion()">Cancelar</ion-button>
+            <ion-button size="small" type="submit" [disabled]="formRenovar.invalid || enviando()">
+              {{ enviando() ? 'Renovando…' : 'Renovar' }}
+            </ion-button>
+          </div>
+        </form>
+      }
+    </div>
+  }
+</ng-template>

@@ -486,6 +486,8 @@ ion-select::part(container) {
   display: flex;
   align-items: center;
   width: 100%;
+  // El 100% incluye el relleno y el borde: si no, el selector sobresale de su celda y tapa lo de al lado.
+  box-sizing: border-box;
 }
 
 ion-select::part(icon) {
@@ -1105,4 +1107,54 @@ ion-input.has-focus .input-end:not(:empty) {
 ion-input-password-toggle ion-button {
   --color: var(--sicma-tenue);
   margin: 0;
+}
+
+/* Aviso emergente de alertas nuevas (shared/aviso-alertas.component.ts): ventana centrada que
+   toma la altura de su contenido, también en el teléfono (Ionic la abre a pantalla completa). */
+ion-modal.aviso-alertas {
+  --width: min(520px, calc(100% - 32px));
+  --height: auto;
+  --max-height: calc(100% - 48px);
+  --border-radius: 14px;
+  --box-shadow: 0 18px 50px rgba(15, 27, 36, 0.28);
+  --backdrop-opacity: 0.45;
+}
+
+ion-modal.aviso-alertas .ion-page {
+  position: relative;
+  display: block;
+  contain: content;
+}
+
+/* Textos de botón con versión corta para el teléfono:
+   <span class="texto-largo">Nuevo usuario</span><span class="texto-corto">Nuevo</span> */
+.texto-corto {
+  display: none;
+}
+
+@media (max-width: 575px) {
+  .texto-largo {
+    display: none;
+  }
+
+  .texto-corto {
+    display: inline;
+  }
+}
+
+/* Estado de una tarjeta de lista (Intervenciones, Panel): al lado en pantallas anchas y sobre el
+   título en el teléfono, para que el texto use todo el ancho. */
+.estado-arriba {
+  display: none;
+}
+
+@media (max-width: 575px) {
+  .estado-arriba {
+    display: inline-block;
+    margin-bottom: 6px;
+  }
+
+  .estado-lado {
+    display: none;
+  }
 }

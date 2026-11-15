@@ -53,6 +53,13 @@ export class EstadoGeneralService {
     }, INTERVALO_MS);
   }
 
+  /** Actualiza los contadores ya, sin esperar el próximo ciclo (p. ej. al llegar una alerta nueva). */
+  refrescar(): void {
+    if (this.temporizador) {
+      this.actualizar();
+    }
+  }
+
   private detener(): void {
     if (this.temporizador) {
       clearInterval(this.temporizador);

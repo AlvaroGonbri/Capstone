@@ -3,7 +3,7 @@
     <ion-buttons slot="end" acciones>
       <!-- Abre el Forms de solicitudes con el rack completado; se sigue aprobando en Teams -->
       @if (enlaceNuevaIntervencion(); as enlace) {
-        <ion-button fill="outline" [href]="enlace" target="_blank" rel="noopener noreferrer">Nueva intervención</ion-button>
+        <ion-button fill="outline" [href]="enlace" target="_blank" rel="noopener noreferrer"><span class="texto-largo">Nueva intervención</span><span class="texto-corto">+ Intervención</span></ion-button>
       }
       @if (puedeEditar && activo()) {
         <ion-button [routerLink]="['/activos', id(), 'editar']">Editar</ion-button>
@@ -65,14 +65,14 @@
             <ion-card-header>
               <ion-card-title>Monitoreo en Zabbix</ion-card-title>
               @if (host(); as h) {
-                <ion-badge class="a-la-derecha" [color]="colorZabbix(h)">{{ h.estado }}</ion-badge>
+                <ion-badge class="a-la-derecha" [color]="colorZabbix(h)">{{ etiquetaZabbix(h.estado) }}</ion-badge>
               }
             </ion-card-header>
             @if (host() === undefined) {
               <ion-card-content><ion-skeleton-text animated style="width: 50%"></ion-skeleton-text></ion-card-content>
             } @else if (host(); as h) {
               <dl class="grilla-datos">
-                <div><dt>Estado en vivo</dt><dd><ion-badge [color]="colorZabbix(h)">{{ h.estado }}</ion-badge></dd></div>
+                <div><dt>Estado en vivo</dt><dd><ion-badge [color]="colorZabbix(h)">{{ etiquetaZabbix(h.estado) }}</ion-badge></dd></div>
                 <div><dt>Interfaz</dt><dd class="mono">{{ h.direccion }}:{{ h.puerto ?? '—' }}</dd></div>
                 <div><dt>Grupo Zabbix</dt><dd>{{ (h.grupo ?? []).join(', ') }}</dd></div>
                 <div><dt>Problemas activos</dt><dd [class.estado-critico]="(h.problemasActivos ?? 0) > 0">{{ h.problemasActivos ?? 0 }}</dd></div>

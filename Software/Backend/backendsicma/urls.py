@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from infraestructura.views import ZabbixWebhookView
+from integraciones.views import RenovarSecretoView
 from mediciones.views import (
     SensorClaveView,
     SensorDetailView,
@@ -43,5 +44,9 @@ urlpatterns = [
     path('api/alertas/', include('alertas.urls')),
     path('api/intervenciones/', include('intervenciones.urls')),
     path('api/accesos/', include('accesos.urls')),
+    path('api/reportes/', include('reportes.urls')),
+    path('api/sistema/integraciones/', include('integraciones.urls')),
+    # Bajo /api/integraciones/: el túnel de Cloudflare no publica estas rutas (solo red local).
     path('api/integraciones/zabbix/webhook/', ZabbixWebhookView.as_view(), name='zabbix_webhook'),
+    path('api/integraciones/secretos/<str:nombre>/renovar/', RenovarSecretoView.as_view(), name='integraciones_renovar'),
 ]

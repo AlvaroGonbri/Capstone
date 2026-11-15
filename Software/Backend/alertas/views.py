@@ -27,6 +27,8 @@ class AlertaListView(APIView):
             alertas = alertas.filter(estado__in=ESTADOS_ABIERTOS)
         if 'origen' in filtros.validated_data:
             alertas = alertas.filter(origen=filtros.validated_data['origen'])
+        if 'despues_de' in filtros.validated_data:
+            alertas = alertas.filter(id__gt=filtros.validated_data['despues_de'])
         alertas = alertas.order_by('-fecha_apertura', '-id')[:100]
         return Response(AlertaReadSerializer(alertas, many=True).data)
 
@@ -83,11 +85,16 @@ class GestionAlertaView(APIView):
             alerta = get_object_or_404(Alerta.objects.select_for_update(), pk=pk)
             if alerta.estado not in self.desde:
                 return Response({'detail': f'La alerta ya está {alerta.estado}.'}, status=status.HTTP_409_CONFLICT)
+            ahora = timezone.now()
             alerta.estado = self.accion
-            alerta.save(update_fields=['estado'])
+            campos = ['estado']
+            if self.accion == GestionAlerta.CERRAR:
+                alerta.fecha_cierre = ahora
+                campos.append('fecha_cierre')
+            alerta.save(update_fields=campos)
             GestionAlerta.objects.create(
                 alerta=alerta, accion=self.accion, comentario=serializer.validated_data['comentario'].strip(),
-                usuario=request.user, fecha_hora=timezone.now(),
+                usuario=request.user, fecha_hora=ahora,
             )
         alerta = Alerta.objects.select_related('sensor', 'host_problema_zabbix').prefetch_related('gestiones__usuario').get(pk=pk)
         return Response(AlertaReadSerializer(alerta).data)
