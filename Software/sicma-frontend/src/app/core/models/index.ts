@@ -563,7 +563,7 @@ export interface RenovacionRegistrada {
 /** GET /api/sistema/integraciones/: nunca trae secretos ni sus hashes. */
 export interface EstadoIntegraciones {
   generado: string;
-  /** false si se consulta a través del túnel (app.sicma.cl): ahí no se puede renovar. */
+  /** false si se consulta a través del túnel (sicma.brionessolutions.cl): ahí no se puede renovar. */
   red_local: boolean;
   puede_renovar: boolean;
   gracia_horas: number;

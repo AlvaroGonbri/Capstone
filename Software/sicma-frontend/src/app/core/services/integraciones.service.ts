@@ -64,7 +64,7 @@ function estadoSimulado(): EstadoIntegraciones {
     webhook: { secreto: sinRenovar, ultimo_aviso: hace(7200), rechazos: 0, ultimo_rechazo: null },
     correo: { configurado: true, cuenta: 'si•••@gmail.com' },
     buzon: { configurado: true, secreto: sinRenovar, proceso: buzon, ultimo_correo: hace(86400), descartados: 0, ultimo_descarte: null, detalle_descarte: null },
-    tunel: { host: 'api.sicma.cl' },
+    tunel: { host: 'api-sicma.brionessolutions.cl' },
     gemini: { configurado: false, modelo: 'gemini-3.5-flash', ultimo_resumen: null, error: null },
     procesos: [
       { clave: 'sincronizar_zabbix', nombre: 'Sincronización de Zabbix', ultima_actividad: hace(40), intervalo_segundos: 60, activo: true, error: null },

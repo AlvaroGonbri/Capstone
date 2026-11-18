@@ -1,0 +1,16 @@
+# Configuración del servicio "SICMA Lector". instalar.ps1 la crea en
+# C:\ProgramData\SICMA\LectorServicio\agente_lector.ini (solo SYSTEM y administradores pueden leerla).
+# No se sube al repositorio: tiene la clave del lector.
+
+[sicma]
+# API de SICMA en la red local (servidor del backend).
+url = http://192.168.100.52:8000/api
+# Id y clave que muestra SICMA al registrar el lector en Accesos → Lectores.
+punto_id =
+clave =
+
+[secugen]
+# Bibliotecas del FDx SDK Pro for Windows (bin\x64), copiadas por el instalador.
+dir_sdk = C:\Program Files\SICMA\Lector\sdk
+# Archivo cifrado con las plantillas (por defecto en C:\ProgramData\SICMA\LectorServicio\).
+# plantillas = C:\ProgramData\SICMA\LectorServicio\plantillas.dat

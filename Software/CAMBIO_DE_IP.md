@@ -22,7 +22,7 @@ En los pasos siguientes, `NUEVA_IP` es la nueva dirección del PC.
 Agrega la nueva IP al final de `ALLOWED_HOSTS`. Puedes dejar las antiguas.
 
 ```
-ALLOWED_HOSTS=localhost,127.0.0.1,192.168.100.102,api.sicma.cl,IP_TAILSCALE,NUEVA_IP
+ALLOWED_HOSTS=localhost,127.0.0.1,192.168.100.102,api-sicma.brionessolutions.cl,IP_TAILSCALE,NUEVA_IP
 ```
 
 Si no lo haces, Django responde **400 Bad Request** a todo lo que llegue por la red local
@@ -72,7 +72,7 @@ desde otro equipo de la red, agrega en `Software/Backend/backendsicma/settings.p
 
 | Componente | Por qué no depende de la IP del PC |
 |---|---|
-| Web publicada (`app.sicma.cl`) y app móvil | Usan `https://api.sicma.cl`. |
+| Web publicada (`sicma.brionessolutions.cl`) y app móvil | Usan `https://api-sicma.brionessolutions.cl`. |
 | Túnel de Cloudflare (`config.yml`) | Apunta a `http://localhost:8000`. |
 | Agente del lector en este PC (`agente_lector.ini`) | Usa `http://127.0.0.1:8000/api`. |
 | PC cliente por Tailscale | Usa la IP de Tailscale del PC del backend (`IP_TAILSCALE`; se ve con `tailscale ip -4`), que no cambia. |

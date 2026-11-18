@@ -1,12 +1,12 @@
 /**
- * Web publicada en Cloudflare Pages (https://app.sicma.cl).
+ * Web publicada (https://sicma.brionessolutions.cl), servida por nginx en el servidor del frontend.
  *
  * La web y la API están en dominios distintos, así que la API va con URL absoluta:
  * el backend on-premise publicado por Cloudflare Tunnel.
  */
 export const environment = {
   production: true,
-  apiUrl: 'https://api.sicma.cl/api',
+  apiUrl: 'https://api-sicma.brionessolutions.cl/api',
   usarDatosSimulados: false,
   soloConsulta: false,
   refrescoMonitoreoMs: 10_000,

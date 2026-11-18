@@ -18,7 +18,7 @@ Las tres configuraciones (`development`, `production` y `movil`) compilan sin er
 ## Lo que NO cambió
 
 - **Entornos:** `environment.ts`, `environment.prod.ts` y `environment.movil.ts` quedan idénticos
-  (URLs `192.168.100.102:8000`, `api.sicma.cl`, `soloConsulta`, tiempos de refresco, datos simulados en `false`).
+  (URLs `192.168.100.102:8000`, `api-sicma.brionessolutions.cl`, `soloConsulta`, tiempos de refresco, datos simulados en `false`).
 - **Servicios y modelos** de `src/app/core` (llamadas al API, endpoints, mapeos, datos simulados).
 - **Seguridad:** interceptor JWT con renovación de token, guards por rol, cierre por inactividad.
 - **Rutas** (`app.routes.ts`), `app.config.ts`, `angular.json`, `capacitor.config.ts` y la carpeta `android`.

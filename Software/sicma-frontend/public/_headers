@@ -1,6 +1,6 @@
-# Cabeceras de seguridad de la web publicada en Cloudflare Pages (https://app.sicma.cl).
+# Cabeceras de seguridad de la web (https://sicma.brionessolutions.cl). Solo las usa Cloudflare Pages; en el servidor Ubuntu las mismas van en /etc/nginx/snippets/sicma-cabeceras.conf.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.sicma.cl; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api-sicma.brionessolutions.cl; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

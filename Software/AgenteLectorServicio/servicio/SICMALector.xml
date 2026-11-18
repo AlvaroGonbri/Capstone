@@ -1,0 +1,35 @@
+<!--
+  Servicio de Windows "SICMA Lector" (WinSW 2.x). instalar.ps1 copia este archivo junto a
+  SICMALector.exe (WinSW renombrado): los dos deben llamarse igual.
+  %BASE% es la carpeta de SICMALector.exe; las variables de entorno (%ProgramData%) se expanden.
+-->
+<service>
+  <id>SICMALector</id>
+  <name>SICMA Lector</name>
+  <description>Agente del lector biométrico de SICMA: captura huellas en el SecuGen y envía cada intento a la API.</description>
+
+  <executable>%BASE%\agente\agente_lector.exe</executable>
+  <arguments>--config "%ProgramData%\SICMA\LectorServicio\agente_lector.ini" escuchar</arguments>
+  <!-- El SDK de SecuGen deja su archivo de configuración en la carpeta de trabajo -->
+  <workingdirectory>%ProgramData%\SICMA\LectorServicio</workingdirectory>
+
+  <!-- Arranca con Windows (sin sesión iniciada), un poco después que la red -->
+  <startmode>Automatic</startmode>
+  <delayedAutoStart>true</delayedAutoStart>
+
+  <!-- Si se cae (p. ej. el lector se desconectó), se reinicia solo -->
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="30 sec"/>
+  <onfailure action="restart" delay="60 sec"/>
+  <resetfailure>1 hour</resetfailure>
+
+  <!-- Al detenerlo recibe Ctrl+C y cierra el lector; si no termina a tiempo, se fuerza -->
+  <stoptimeout>15 sec</stoptimeout>
+
+  <!-- Registros: 5 archivos de 1 MB por salida, el más antiguo se borra -->
+  <logpath>%ProgramData%\SICMA\LectorServicio\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>1024</sizeThreshold>
+    <keepFiles>5</keepFiles>
+  </log>
+</service>

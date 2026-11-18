@@ -39,7 +39,7 @@ como se explica abajo.
 ## Secretos que se renuevan desde la vista Integraciones
 
 Solo los puede renovar el **Administrador Privilegiado** y solo desde la red local. La ruta no se
-publica por el túnel, así que desde app.sicma.cl se ve el estado pero no se puede renovar.
+publica por el túnel, así que desde sicma.brionessolutions.cl se ve el estado pero no se puede renovar.
 
 1. En Integraciones, en la tarjeta del webhook o del buzón, usa **Renovar…**.
 2. Escribe tu contraseña. Marca **«anularlo de inmediato»** solo si el valor actual pudo filtrarse.

@@ -28,7 +28,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-# Al publicar por Cloudflare Tunnel se agrega el dominio, p. ej. api.sicma.cl (en el .env).
+# Al publicar por Cloudflare Tunnel se agrega el dominio, p. ej. api-sicma.brionessolutions.cl (en el .env).
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,192.168.100.102', cast=Csv())
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
 
@@ -136,7 +136,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost',
     'https://localhost',  # app Android (Capacitor)
     'capacitor://localhost',  # app iOS (Capacitor)
-] + config('CORS_ORIGENES_EXTRA', default='', cast=Csv())  # p. ej. https://app.sicma.cl
+] + config('CORS_ORIGENES_EXTRA', default='', cast=Csv())  # p. ej. https://sicma.brionessolutions.cl
 
 
 # Password validation
@@ -191,7 +191,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default=None)
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default=None)
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-# Página de la web que recibe el enlace del correo de recuperación (publicada: https://app.sicma.cl/...).
+# Página de la web que recibe el enlace del correo de recuperación (publicada: https://sicma.brionessolutions.cl/...).
 PASSWORD_RESET_CONFIRM_URL = config('PASSWORD_RESET_CONFIRM_URL', default='http://localhost:4200/recuperar/confirmar')
 
 # Las fechas se guardan en UTC y se muestran en esta zona horaria (RN-08).
@@ -217,7 +217,7 @@ INTERVENCIONES_IMAP_HOST = config('INTERVENCIONES_IMAP_HOST', default='imap.gmai
 
 
 # Vista Integraciones: URL pública de la API, para comprobar el túnel de punta a punta.
-URL_PUBLICA_API = config('URL_PUBLICA_API', default='https://api.sicma.cl/api')
+URL_PUBLICA_API = config('URL_PUBLICA_API', default='https://api-sicma.brionessolutions.cl/api')
 
 
 # Reportes: resumen redactado con Google Gemini (opcional). Sin clave, el resumen sale de una plantilla.

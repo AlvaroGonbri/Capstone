@@ -6,7 +6,7 @@
  */
 export const environment = {
   production: true,
-  apiUrl: 'https://api.sicma.cl/api',
+  apiUrl: 'https://api-sicma.brionessolutions.cl/api',
   usarDatosSimulados: false,
   /** Oculta toda acción y pide al backend tokens de solo lectura (canal "movil"). */
   soloConsulta: true,
