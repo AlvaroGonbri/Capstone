@@ -26,6 +26,18 @@
     height: 42px;
   }
 
+  &__huella {
+    height: 46px;
+    margin: 0;
+  }
+
+  &__huella-nota {
+    margin: 6px 0 16px;
+    font-size: 0.78rem;
+    text-align: center;
+    color: var(--sicma-tenue);
+  }
+
   ion-button[fill='clear'] {
     margin-top: 2px;
     --color: var(--ion-color-primary);

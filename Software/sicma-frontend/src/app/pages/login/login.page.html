@@ -2,6 +2,15 @@
   <app-pantalla-ingreso titulo="Ingresar">
   <div class="ingreso">
 
+    <!-- App móvil: ingreso con la huella o el PIN del teléfono -->
+    @if (huella(); as nombre) {
+      <ion-button expand="block" class="ingreso__huella" (click)="entrarConHuella()" [disabled]="cargando()">
+        <ion-icon slot="start" name="finger-print-outline" aria-hidden="true"></ion-icon>
+        Entrar con huella o PIN
+      </ion-button>
+      <p class="ingreso__huella-nota">Como {{ nombre }} · o ingresa con tu contraseña</p>
+    }
+
     <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
       <ion-list lines="full">
         <ion-item>

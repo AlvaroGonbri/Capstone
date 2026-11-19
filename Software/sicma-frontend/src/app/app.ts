@@ -183,7 +183,7 @@ export class App {
   }
 
   protected salir(): void {
-    this.auth.cerrarSesion();
+    this.auth.cerrarSesion(true); // "Salir" también apaga el ingreso con huella en el teléfono
     void this.router.navigate(['/login']);
   }
 }

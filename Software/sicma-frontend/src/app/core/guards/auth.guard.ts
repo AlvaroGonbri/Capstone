@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, RedirectCommand, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 /** Pantallas que ve el Departamento de contratistas: solo el personal externo. */
@@ -16,5 +16,8 @@ export const authGuard: CanActivateFn = (_ruta, estado) => {
     }
     return true;
   }
-  return router.createUrlTree(['/login'], { queryParams: { volverA: estado.url } });
+  // El ingreso se muestra sin cambiar la dirección del navegador: queda la que escribió la persona
+  // (p. ej. solo el dominio) y, tras iniciar sesión, se va a esa pantalla (volverA, que no se ve).
+  const ingreso = router.createUrlTree(['/login'], { queryParams: { volverA: estado.url } });
+  return new RedirectCommand(ingreso, { skipLocationChange: true });
 };

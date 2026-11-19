@@ -1,11 +1,12 @@
 import { DOCUMENT } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, catchError, delay, map, of, switchMap, tap, throwError } from 'rxjs';
+import { Observable, catchError, delay, from, map, of, switchMap, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { RolUsuario, SesionIniciada, Usuario } from '../models';
 import { USUARIOS_DEMO } from '../mock/datos-simulados';
+import { BiometriaService } from './biometria.service';
 
 const CLAVE_ALMACENAMIENTO = 'sicma.sesion';
 const CLAVE_ULTIMA_ACTIVIDAD = 'sicma.ultimaActividad';
@@ -15,6 +16,8 @@ const EVENTOS_ACTIVIDAD = ['keydown', 'mousedown', 'pointerdown', 'scroll', 'tou
 interface RespuestaToken {
   access: string;
   refresh: string;
+  /** App móvil: llave para entrar después con huella o PIN (ver BiometriaService). */
+  llave?: string;
 }
 
 interface RespuestaUsuario extends Omit<Usuario, 'inactivityTimeoutMinutes'> {
@@ -26,10 +29,13 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
+  private readonly biometria = inject(BiometriaService);
 
   private readonly sesion = signal<SesionIniciada | null>(leerSesionGuardada());
   private temporizadorInactividad: ReturnType<typeof setTimeout> | null = null;
   private ultimaActividadPersistida = 0;
+  /** Llave recibida en el último ingreso con contraseña, hasta que la persona decida activar la huella. */
+  private llavePendiente: string | null = null;
 
   readonly usuario = computed<Usuario | null>(() => this.sesion()?.usuario ?? null);
   readonly token = computed<string | null>(() => this.sesion()?.token ?? null);
@@ -82,6 +88,7 @@ export class AuthService {
     }
 
     this.sesion.set(null);
+    this.llavePendiente = null;
     return this.http
       .post<RespuestaToken>(`${environment.apiUrl}/auth/token/`, {
         username: identificador.trim(),
@@ -89,20 +96,8 @@ export class AuthService {
         canal: environment.soloConsulta ? 'movil' : 'web',
       })
       .pipe(
-        switchMap((tokens) =>
-          this.http
-            .get<RespuestaUsuario>(`${environment.apiUrl}/auth/me/`, {
-              headers: { Authorization: `Bearer ${tokens.access}` },
-            })
-            .pipe(
-              map(({ inactivity_timeout_minutes, ...usuario }) => ({
-                usuario: { ...usuario, inactivityTimeoutMinutes: inactivity_timeout_minutes },
-                token: tokens.access,
-                refreshToken: tokens.refresh,
-              })),
-            ),
-        ),
-        tap((s) => this.guardar(s)),
+        tap((tokens) => (this.llavePendiente = tokens.llave ?? null)),
+        switchMap((tokens) => this.abrirSesion(tokens)),
         catchError((error: { error?: { detail?: string; code?: string } }) =>
           throwError(() =>
             Object.assign(new Error(error.error?.detail ?? 'No fue posible iniciar sesión.'), {
@@ -113,12 +108,74 @@ export class AuthService {
       );
   }
 
-  cerrarSesion(): void {
+  /** La llave del último ingreso con contraseña (una sola vez), para ofrecer activar la huella. */
+  tomarLlavePendiente(): string | null {
+    const llave = this.llavePendiente;
+    this.llavePendiente = null;
+    return llave;
+  }
+
+  /**
+   * App móvil: pide la huella o el PIN del teléfono y entra sin contraseña.
+   * Si la persona cancela, el error lleva codigo 'huella_cancelada' (no hay que mostrar nada).
+   */
+  iniciarSesionConHuella(): Observable<SesionIniciada> {
+    this.sesion.set(null);
+    return from(
+      this.biometria.desbloquear().catch(() => {
+        throw Object.assign(new Error('No se verificó la huella.'), { codigo: 'huella_cancelada' });
+      }),
+    ).pipe(
+      switchMap((llave) =>
+        this.http.post<RespuestaToken>(`${environment.apiUrl}/auth/token/dispositivo/`, { llave }),
+      ),
+      // La llave es de un solo uso: se guarda la nueva que entregó el servidor.
+      switchMap((tokens) =>
+        from(this.biometria.guardar(tokens.llave ?? '', this.biometria.activa() ?? '')).pipe(map(() => tokens)),
+      ),
+      switchMap((tokens) => this.abrirSesion(tokens)),
+      catchError((error: (HttpErrorResponse | Error) & { codigo?: string }) => {
+        if (error instanceof HttpErrorResponse) {
+          if (error.status === 401) {
+            void this.biometria.olvidar(); // venció, se cambió la contraseña o se cerró sesión en otro lado
+          }
+          const detalle = (error.error as { detail?: string; code?: string } | null) ?? {};
+          return throwError(() =>
+            Object.assign(new Error(detalle.detail ?? 'No fue posible entrar con la huella.'), {
+              codigo: detalle.code,
+            }),
+          );
+        }
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  /**
+   * Cierra la sesión. `olvidarDispositivo` (botón "Salir" en la app móvil) también apaga el ingreso
+   * con huella en el teléfono; el cierre por inactividad no, para poder desbloquear con la huella.
+   */
+  cerrarSesion(olvidarDispositivo = false): void {
     const refreshToken = this.sesion()?.refreshToken;
-    if (refreshToken) {
-      this.http.post(`${environment.apiUrl}/auth/logout/`, { refresh: refreshToken }).subscribe({
-        error: () => undefined,
+    const accessToken = this.sesion()?.token;
+    const avisarAlServidor = (llave: string | null) => {
+      if (!refreshToken) {
+        return;
+      }
+      // El token se pasa a mano: cuando esto corre, la sesión local ya se borró.
+      this.http
+        .post(`${environment.apiUrl}/auth/logout/`, llave ? { refresh: refreshToken, llave } : { refresh: refreshToken }, {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+        })
+        .subscribe({ error: () => undefined });
+    };
+    if (olvidarDispositivo && this.biometria.activa()) {
+      void this.biometria.llaveParaInvalidar().then((llave) => {
+        avisarAlServidor(llave);
+        void this.biometria.olvidar();
       });
+    } else {
+      avisarAlServidor(null);
     }
 
     this.sesion.set(null);
@@ -151,6 +208,22 @@ export class AuthService {
           this.guardar({ ...sesion, token: access });
           return access;
         }),
+      );
+  }
+
+  /** Con los tokens recién emitidos, trae los datos del usuario y deja la sesión iniciada. */
+  private abrirSesion(tokens: RespuestaToken): Observable<SesionIniciada> {
+    return this.http
+      .get<RespuestaUsuario>(`${environment.apiUrl}/auth/me/`, {
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      })
+      .pipe(
+        map(({ inactivity_timeout_minutes, ...usuario }) => ({
+          usuario: { ...usuario, inactivityTimeoutMinutes: inactivity_timeout_minutes },
+          token: tokens.access,
+          refreshToken: tokens.refresh,
+        })),
+        tap((s) => this.guardar(s)),
       );
   }
 

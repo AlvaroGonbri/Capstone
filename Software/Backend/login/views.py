@@ -5,18 +5,20 @@ from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils import timezone
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from .dispositivo import LlaveDispositivo
 from .models import PasswordPolicy, UserSessionSettings
 from .passwords import mark_password_changed
 from .permissions import es_privilegiado
 from .permissions import AdministratorPermission
 from .serializers import (
+    DesbloqueoDispositivoSerializer,
     PasswordChangeSerializer,
     PasswordPolicySerializer,
     PasswordResetConfirmSerializer,
@@ -241,4 +243,28 @@ class LogoutView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # App móvil: cerrar sesión también apaga el ingreso con huella en ese teléfono.
+        llave = request.data.get('llave')
+        if llave:
+            try:
+                LlaveDispositivo(llave).blacklist()
+            except TokenError:
+                pass  # ya vencida o canjeada: no hay nada que invalidar
+
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DesbloqueoDispositivoView(APIView):
+    """POST de la app móvil tras la huella o el PIN: canjea la llave del dispositivo por una sesión."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_scope = 'login'
+
+    def get_authenticate_header(self, request):
+        return 'Bearer realm="api"'  # una llave rechazada responde 401 (credencial no válida), no 403
+
+    def post(self, request, format=None):
+        serializer = DesbloqueoDispositivoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data)

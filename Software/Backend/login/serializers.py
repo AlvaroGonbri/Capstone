@@ -14,6 +14,7 @@ from rest_framework_simplejwt.serializers import (
 
 from . import bloqueo
 from .authentication import CLAIM_SOLO_LECTURA
+from .dispositivo import CLAIM_CLAVE, LlaveDispositivo, emitir_llave, resumen_clave
 from .models import PasswordPolicy, UserSessionSettings
 from .passwords import (
     PasswordExpired,
@@ -75,6 +76,8 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             refresh = self.get_token(self.user)
             refresh[CLAIM_SOLO_LECTURA] = True
             data['refresh'], data['access'] = str(refresh), str(refresh.access_token)
+            # Para entrar después con huella o PIN; la app solo la guarda si la persona lo acepta.
+            data['llave'] = str(emitir_llave(self.user))
         return data
 
     def _validar_credenciales(self, attrs):
@@ -121,6 +124,38 @@ class InactivityAwareTokenRefreshSerializer(TokenRefreshSerializer):
         session_settings.last_activity_at = timezone.now()
         session_settings.save(update_fields=['last_activity_at'])
         return data
+
+
+class DesbloqueoDispositivoSerializer(serializers.Serializer):
+    """Canjea la llave del dispositivo (app móvil, tras la huella o el PIN) por una sesión nueva."""
+
+    llave = serializers.CharField()
+
+    def validate(self, attrs):
+        from rest_framework_simplejwt.exceptions import TokenError
+
+        no_valida = AuthenticationFailed(
+            'El acceso con huella venció o ya no es válido. Ingresa con tu contraseña.', code='llave_no_valida',
+        )
+        try:
+            # Verifica firma, vencimiento, tipo de token y lista negra (una llave ya canjeada no sirve).
+            llave = LlaveDispositivo(attrs['llave'])
+        except TokenError:
+            raise no_valida
+        user = User.objects.filter(pk=llave.get('user_id'), is_active=True).first()
+        if user is None or llave.get(CLAIM_CLAVE) != resumen_clave(user):
+            raise no_valida  # cuenta desactivada o contraseña cambiada desde que se activó la huella
+        bloqueo.comprobar(user)
+        get_user_role(user)
+        if password_is_expired(user):
+            raise PasswordExpired()
+
+        llave.blacklist()  # un solo uso
+        nueva = emitir_llave(user, vence=llave['exp'])
+        refresh = EmailTokenObtainPairSerializer.get_token(user)
+        refresh[CLAIM_SOLO_LECTURA] = True
+        UserSessionSettings.objects.update_or_create(user=user, defaults={'last_activity_at': timezone.now()})
+        return {'access': str(refresh.access_token), 'refresh': str(refresh), 'llave': str(nueva)}
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):

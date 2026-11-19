@@ -38,4 +38,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Ingreso con huella o PIN del teléfono (BiometriaService) -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 </manifest>

@@ -13,6 +13,7 @@ from .views import (
     ManagedUserListView,
     ManagedUserDetailView,
     ActivityView,
+    DesbloqueoDispositivoView,
     InactivityAwareTokenRefreshView,
 )
 
@@ -24,6 +25,8 @@ class EmailTokenObtainPairView(TokenObtainPairView):
 urlpatterns = [
     path('token/', EmailTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', InactivityAwareTokenRefreshView.as_view(), name='token_refresh'),
+    # App móvil: entrar con huella o PIN del teléfono (canjea la llave del dispositivo).
+    path('token/dispositivo/', DesbloqueoDispositivoView.as_view(), name='token_dispositivo'),
     path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
     path('password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('password-change/', PasswordChangeView.as_view(), name='password_change'),
