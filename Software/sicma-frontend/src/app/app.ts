@@ -27,6 +27,7 @@ import {
   libraryOutline,
   pulseOutline,
   barChartOutline,
+  shieldCheckmarkOutline,
 } from 'ionicons/icons';
 import { AuthService } from './core/services/auth.service';
 import { EstadoGeneralService } from './core/services/estado-general.service';
@@ -118,6 +119,14 @@ export class App {
     grupo: 'Seguridad',
   };
 
+  private readonly opcionSesiones: ItemMenu = {
+    titulo: 'Sesiones activas',
+    ruta: '/sesiones',
+    icono: 'shield-checkmark-outline',
+    grupo: 'Seguridad',
+    tituloCorto: 'Sesiones',
+  };
+
   private readonly opcionIntegraciones: ItemMenu = {
     titulo: 'Integraciones',
     ruta: '/integraciones',
@@ -134,11 +143,11 @@ export class App {
     return this.auth.tieneRol('tecnico') ? this.opciones.filter((o) => o.ruta !== '/accesos') : this.opciones;
   });
 
-  /** Menú lateral agrupado. Usuarios e Integraciones: solo administradores, en la web. */
+  /** Menú lateral agrupado. Usuarios, Sesiones e Integraciones: solo administradores, en la web. */
   protected readonly secciones = computed(() => {
     const items = [...this.menu()];
     if (this.auth.puedeModificar('administrador', 'administradorprivilegiado')) {
-      items.push(this.opcionUsuarios, this.opcionIntegraciones);
+      items.push(this.opcionUsuarios, this.opcionSesiones, this.opcionIntegraciones);
     }
     return ORDEN_GRUPOS.map((titulo) => ({
       titulo,
@@ -179,6 +188,7 @@ export class App {
       libraryOutline,
       pulseOutline,
       barChartOutline,
+      shieldCheckmarkOutline,
     });
   }
 

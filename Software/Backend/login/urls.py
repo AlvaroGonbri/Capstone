@@ -15,6 +15,8 @@ from .views import (
     ActivityView,
     DesbloqueoDispositivoView,
     InactivityAwareTokenRefreshView,
+    RevocarSesionesView,
+    SesionesActivasView,
 )
 
 
@@ -37,4 +39,7 @@ urlpatterns = [
     path('users/', ManagedUserListView.as_view(), name='managed_user_list'),
     path('users/<int:user_id>/', ManagedUserDetailView.as_view(), name='managed_user_detail'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    # Sesiones activas: las ven y revocan el Administrador y el Administrador Privilegiado.
+    path('sesiones/', SesionesActivasView.as_view(), name='sesiones_lista'),
+    path('sesiones/revocar/', RevocarSesionesView.as_view(), name='sesiones_revocar'),
 ]

@@ -1,0 +1,85 @@
+.intro {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--sicma-tinta-2);
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-bottom: 10px;
+
+  ion-searchbar {
+    flex: 1 1 260px;
+    padding: 0;
+  }
+
+  ion-segment {
+    flex: 0 0 auto;
+    width: auto;
+  }
+}
+
+.aviso {
+  margin: 4px 0 10px;
+  font-size: 0.85rem;
+}
+
+.resumen {
+  margin: 4px 0 10px;
+  font-size: 0.78rem;
+  color: var(--sicma-tenue);
+}
+
+.vacio {
+  margin: 18px 0;
+  font-size: 0.85rem;
+  color: var(--sicma-tenue);
+}
+
+.tabla-sesiones {
+  --columnas: minmax(0, 1.4fr) minmax(0, 1.5fr) 92px 120px 96px minmax(150px, auto);
+
+  .tabla__fila.propia {
+    background: var(--sicma-primario-suave);
+  }
+}
+
+.canal {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  ion-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: 1.05rem;
+    color: var(--sicma-tenue);
+  }
+
+  .texto {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  small {
+    font-size: 0.72rem;
+    color: var(--sicma-tenue);
+  }
+}
+
+@media (max-width: 767px) {
+  .filtros ion-segment {
+    width: 100%;
+  }
+
+  /* En el teléfono no hay cabecera de tabla: cada dato lleva su nombre */
+  .tabla-sesiones [data-etiqueta]::before {
+    content: attr(data-etiqueta) ': ';
+    color: var(--sicma-tenue);
+  }
+}

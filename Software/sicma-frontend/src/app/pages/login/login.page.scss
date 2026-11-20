@@ -26,6 +26,15 @@
     height: 42px;
   }
 
+  &__aviso {
+    margin: 0 0 14px;
+    padding: 9px 11px;
+    border-radius: 7px;
+    background: var(--sicma-advertencia-suave);
+    font-size: 0.82rem;
+    color: var(--sicma-tinta);
+  }
+
   &__huella {
     height: 46px;
     margin: 0;

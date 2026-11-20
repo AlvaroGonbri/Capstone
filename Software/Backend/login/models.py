@@ -41,3 +41,37 @@ class PasswordPolicy(models.Model):
     @classmethod
     def get_solo(cls):
         return cls.objects.get_or_create(pk=1)[0]
+
+
+class SesionUsuario(models.Model):
+    """Una sesión iniciada (web o app móvil): la ven y la pueden revocar los administradores.
+
+    El id es el jti del refresh token de la sesión; los access tokens lo llevan en el claim "sid",
+    así que una sesión revocada deja de funcionar en la siguiente petición, sin esperar a que venza.
+    """
+
+    CANAL_WEB = 'web'
+    CANAL_MOVIL = 'movil'
+    CIERRE_SALIDA = 'salida'      # la persona cerró sesión
+    CIERRE_REVOCADA = 'revocada'  # la cerró un administrador
+
+    id = models.CharField(primary_key=True, max_length=64)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sesiones')
+    canal = models.CharField(max_length=10, default=CANAL_WEB)
+    ip = models.CharField(max_length=45, blank=True, default='')
+    dispositivo = models.CharField(max_length=120, blank=True, default='')
+    inicio = models.DateTimeField(default=timezone.now)
+    ultima_actividad = models.DateTimeField(default=timezone.now)
+    vence = models.DateTimeField()
+    # App móvil: jti de la llave del dispositivo emitida con esta sesión (para apagar la huella al revocar).
+    llave_jti = models.CharField(max_length=64, blank=True, default='')
+    cerrada_en = models.DateTimeField(null=True, blank=True)
+    motivo_cierre = models.CharField(max_length=10, blank=True, default='')
+
+    class Meta:
+        verbose_name = 'sesión'
+        verbose_name_plural = 'sesiones'
+        indexes = [models.Index(fields=['cerrada_en', 'vence'])]
+
+    def __str__(self):
+        return f'{self.usuario} · {self.canal} · {self.inicio:%Y-%m-%d %H:%M}'

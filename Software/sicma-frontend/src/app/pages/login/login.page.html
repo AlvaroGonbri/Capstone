@@ -2,6 +2,10 @@
   <app-pantalla-ingreso titulo="Ingresar">
   <div class="ingreso">
 
+    @if (aviso()) {
+      <p class="ingreso__aviso" role="status">{{ aviso() }}</p>
+    }
+
     <!-- App móvil: ingreso con la huella o el PIN del teléfono -->
     @if (huella(); as nombre) {
       <ion-button expand="block" class="ingreso__huella" (click)="entrarConHuella()" [disabled]="cargando()">

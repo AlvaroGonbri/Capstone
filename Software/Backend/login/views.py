@@ -12,8 +12,9 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from . import sesiones
 from .dispositivo import LlaveDispositivo
-from .models import PasswordPolicy, UserSessionSettings
+from .models import PasswordPolicy, SesionUsuario, UserSessionSettings
 from .passwords import mark_password_changed
 from .permissions import es_privilegiado
 from .permissions import AdministratorPermission
@@ -161,6 +162,7 @@ class ActivityView(APIView):
         settings, _ = UserSessionSettings.objects.get_or_create(user=request.user)
         settings.last_activity_at = timezone.now()
         settings.save(update_fields=['last_activity_at'])
+        sesiones.marcar_actividad(request.auth.get(sesiones.CLAIM_SESION) if request.auth else None)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -236,12 +238,16 @@ class LogoutView(APIView):
             )
 
         try:
-            RefreshToken(refresh_token).blacklist()
+            refresh = RefreshToken(refresh_token)
+            refresh.blacklist()
         except TokenError:
             return Response(
                 {'detail': 'El refresh token no es válido o ya fue invalidado.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        sesion = SesionUsuario.objects.filter(pk=refresh.get(sesiones.CLAIM_SESION) or '').first()
+        if sesion is not None:
+            sesiones.cerrar(sesion, SesionUsuario.CIERRE_SALIDA)
 
         # App móvil: cerrar sesión también apaga el ingreso con huella en ese teléfono.
         llave = request.data.get('llave')
@@ -265,6 +271,65 @@ class DesbloqueoDispositivoView(APIView):
         return 'Bearer realm="api"'  # una llave rechazada responde 401 (credencial no válida), no 403
 
     def post(self, request, format=None):
-        serializer = DesbloqueoDispositivoSerializer(data=request.data)
+        serializer = DesbloqueoDispositivoSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data)
+
+
+def _datos_sesion(sesion, actual):
+    try:
+        rol = get_user_role(sesion.usuario)
+    except Exception:  # usuario sin rol válido: igual se muestra
+        rol = None
+    usuario = sesion.usuario
+    return {
+        'id': sesion.id,
+        'usuario_id': usuario.id,
+        'nombre': usuario.get_full_name() or usuario.get_username(),
+        'username': usuario.get_username(),
+        'rol': rol,
+        'canal': sesion.canal,
+        'ip': sesion.ip,
+        'dispositivo': sesion.dispositivo,
+        'inicio': sesion.inicio,
+        'ultima_actividad': sesion.ultima_actividad,
+        'actual': sesion.id == actual,
+    }
+
+
+class SesionesActivasView(APIView):
+    """GET (Administrador y Administrador Privilegiado): sesiones abiertas y en uso."""
+
+    permission_classes = [AdministratorPermission]
+
+    def get(self, request, format=None):
+        actual = request.auth.get(sesiones.CLAIM_SESION) if request.auth else None
+        return Response([_datos_sesion(s, actual) for s in sesiones.activas()])
+
+
+class RevocarSesionesView(APIView):
+    """POST {"sesion": id} o {"usuario": id}: cierra una sesión o todas las de un usuario, al instante."""
+
+    permission_classes = [AdministratorPermission]
+
+    def post(self, request, format=None):
+        actual = request.auth.get(sesiones.CLAIM_SESION) if request.auth else None
+        sesion_id = request.data.get('sesion')
+        usuario_id = request.data.get('usuario')
+        abiertas = SesionUsuario.objects.filter(cerrada_en__isnull=True)
+        if sesion_id:
+            if sesion_id == actual:
+                return Response({'detail': 'Esta es tu sesión actual: para cerrarla usa "Salir".'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            objetivo = abiertas.filter(pk=sesion_id)
+            if not objetivo.exists():
+                return Response({'detail': 'La sesión no existe o ya está cerrada.'}, status=status.HTTP_404_NOT_FOUND)
+        elif str(usuario_id or '').isdigit():
+            objetivo = abiertas.filter(usuario_id=int(usuario_id)).exclude(pk=actual or '')
+        else:
+            return Response({'detail': 'Indica la sesión o el usuario.'}, status=status.HTTP_400_BAD_REQUEST)
+        revocadas = 0
+        for sesion in objetivo:
+            sesiones.cerrar(sesion, SesionUsuario.CIERRE_REVOCADA)
+            revocadas += 1
+        return Response({'revocadas': revocadas})

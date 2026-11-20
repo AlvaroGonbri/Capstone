@@ -74,6 +74,9 @@ MATRIZ = {
     'managed_user_list': {'GET': ADMIN, 'POST': ADMIN},
     'managed_user_detail': {'PATCH': ADMIN},
     'user_session_timeout': {'PATCH': PRIV},
+    # Sesiones activas: ambos administradores las ven y las revocan.
+    'sesiones_lista': {'GET': ADMIN},
+    'sesiones_revocar': {'POST': ADMIN},
     # Monitoreo ambiental.
     'medicion_ingest': {'GET': LECTURA},  # el POST es de los ESP32: ver EXCLUIDAS
     'sensor_list': {'GET': LECTURA, 'POST': ADMIN},

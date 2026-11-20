@@ -1,4 +1,4 @@
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -21,6 +21,13 @@ class SicmaJWTAuthentication(JWTAuthentication):
         if resultado is None:
             return None
         _, token = resultado
+        from .sesiones import CLAIM_SESION, esta_revocada  # import diferido: usa los modelos
+
+        if esta_revocada(token.get(CLAIM_SESION)):
+            # El "code" va en el cuerpo para que la app lo distinga de un token vencido (no intenta renovar).
+            raise AuthenticationFailed({
+                'detail': 'Un administrador cerró esta sesión. Vuelve a iniciar sesión.', 'code': 'sesion_revocada',
+            })
         if token.get(CLAIM_SOLO_LECTURA) and request.method not in SAFE_METHODS:
             vista = getattr(getattr(request, 'resolver_match', None), 'url_name', None)
             if vista not in VISTAS_PERMITIDAS_SOLO_LECTURA:

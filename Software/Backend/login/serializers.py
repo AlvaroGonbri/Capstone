@@ -12,7 +12,7 @@ from rest_framework_simplejwt.serializers import (
     TokenRefreshSerializer,
 )
 
-from . import bloqueo
+from . import bloqueo, sesiones
 from .authentication import CLAIM_SOLO_LECTURA
 from .dispositivo import CLAIM_CLAVE, LlaveDispositivo, emitir_llave, resumen_clave
 from .models import PasswordPolicy, UserSessionSettings
@@ -67,17 +67,24 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super().get_token(user)
         token['rol'] = get_user_role(user)
+        # Id de la sesión: lo heredan los access tokens, para poder revocarla al instante.
+        token[sesiones.CLAIM_SESION] = token['jti']
         return token
 
     def validate(self, attrs):
         canal = attrs.pop('canal', 'web')
         data = self._validar_credenciales(attrs)
+        request = self.context.get('request')
         if canal == 'movil':
             refresh = self.get_token(self.user)
             refresh[CLAIM_SOLO_LECTURA] = True
             data['refresh'], data['access'] = str(refresh), str(refresh.access_token)
             # Para entrar después con huella o PIN; la app solo la guarda si la persona lo acepta.
-            data['llave'] = str(emitir_llave(self.user))
+            llave = emitir_llave(self.user)
+            data['llave'] = str(llave)
+            sesiones.registrar(request, self.user, refresh, 'movil', llave)
+        else:
+            sesiones.registrar(request, self.user, self.token_class(data['refresh']), 'web')
         return data
 
     def _validar_credenciales(self, attrs):
@@ -155,6 +162,7 @@ class DesbloqueoDispositivoSerializer(serializers.Serializer):
         refresh = EmailTokenObtainPairSerializer.get_token(user)
         refresh[CLAIM_SOLO_LECTURA] = True
         UserSessionSettings.objects.update_or_create(user=user, defaults={'last_activity_at': timezone.now()})
+        sesiones.registrar(self.context.get('request'), user, refresh, 'movil', nueva)
         return {'access': str(refresh.access_token), 'refresh': str(refresh), 'llave': str(nueva)}
 
 

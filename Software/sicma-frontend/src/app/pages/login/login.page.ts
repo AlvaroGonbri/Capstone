@@ -50,6 +50,8 @@ export class LoginPage {
 
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);
+  /** Por qué se cerró la sesión anterior (inactividad o un administrador), si fue así. */
+  protected readonly aviso = signal<string | null>(null);
   /** App móvil: nombre de quien activó la huella en este teléfono (null = no está activa). */
   protected readonly huella = signal<string | null>(null);
 
@@ -64,6 +66,12 @@ export class LoginPage {
 
   /** Cada vez que se muestra el ingreso: si la huella está activa, se pide de inmediato. */
   ionViewDidEnter(): void {
+    const motivo = this.ruta.snapshot.queryParamMap.get('sesionExpirada');
+    this.aviso.set(
+      motivo === 'revocada' ? 'Un administrador cerró tu sesión. Vuelve a iniciar sesión.'
+      : motivo === 'inactividad' ? 'Tu sesión se cerró por inactividad.'
+      : null,
+    );
     this.huella.set(this.biometria.activa());
     if (this.huella() && !this.cargando()) {
       this.entrarConHuella();

@@ -657,3 +657,22 @@ export interface FiltroReporte {
   hasta?: string;
   zona?: number | null;
 }
+
+// ------------------------------------------------- Sesiones activas (Administrador)
+
+/** Una sesión abierta y en uso: la ven y la pueden revocar los administradores. */
+export interface SesionActiva {
+  id: string;
+  usuario_id: number;
+  nombre: string;
+  username: string;
+  rol: string | null;
+  canal: 'web' | 'movil';
+  ip: string;
+  /** Resumen del navegador o del teléfono, p. ej. "Chrome · Windows" o "App SICMA · Android". */
+  dispositivo: string;
+  inicio: string;
+  ultima_actividad: string;
+  /** Es la sesión de quien está mirando la lista (no se puede revocar desde aquí). */
+  actual: boolean;
+}

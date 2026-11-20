@@ -37,6 +37,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/usuarios/usuarios.page').then((m) => m.UsuariosPage),
   },
   {
+    path: 'sesiones',
+    title: 'Sesiones activas · SICMA',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () => import('./pages/sesiones/sesiones.page').then((m) => m.SesionesPage),
+  },
+  {
     path: 'reportes',
     title: 'Reportes · SICMA',
     // Matriz de permisos, "Dashboards y reportes": consultan todos los roles menos Contratistas.
