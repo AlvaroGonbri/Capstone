@@ -60,6 +60,14 @@ export class AuthService {
       this.document.addEventListener(evento, this.registrarActividad, { passive: true });
     }
 
+    // El teléfono pausa los temporizadores cuando la app queda en segundo plano: al volver se
+    // recalcula con la hora de la última actividad, y si ya venció se cierra en ese momento.
+    this.document.addEventListener('visibilitychange', () => {
+      if (this.document.visibilityState === 'visible' && this.sesion()) {
+        this.programarCierre();
+      }
+    });
+
     if (this.sesion()) {
       this.programarCierre();
     }
@@ -205,7 +213,8 @@ export class AuthService {
           if (!sesion) {
             throw new Error('La sesión ha expirado.');
           }
-          this.guardar({ ...sesion, token: access });
+          // Renovar el token no es actividad: lo pide sola la consulta periódica (alertas, estado).
+          this.guardar({ ...sesion, token: access }, false);
           return access;
         }),
       );
@@ -227,9 +236,12 @@ export class AuthService {
       );
   }
 
-  private guardar(sesion: SesionIniciada): void {
+  /** `esActividad`: al iniciar sesión sí cuenta como actividad; al renovar el token, no. */
+  private guardar(sesion: SesionIniciada, esActividad = true): void {
     this.sesion.set(sesion);
-    this.registrarActividad();
+    if (esActividad) {
+      this.registrarActividad();
+    }
     try {
       sessionStorage.setItem(CLAVE_ALMACENAMIENTO, JSON.stringify(sesion));
       localStorage.removeItem(CLAVE_ALMACENAMIENTO);

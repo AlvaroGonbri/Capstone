@@ -120,10 +120,10 @@ class InactivityAwareTokenRefreshSerializer(TokenRefreshSerializer):
                 raise AuthenticationFailed('La sesión expiró por inactividad.')
         if password_is_expired(user):
             raise PasswordExpired()
-        data = super().validate(attrs)
-        session_settings.last_activity_at = timezone.now()
-        session_settings.save(update_fields=['last_activity_at'])
-        return data
+        # Renovar NO cuenta como actividad: la app renueva sola cada pocos minutos por sus consultas
+        # periódicas (alertas, estado), y eso mantenía la sesión abierta para siempre. La actividad
+        # real la informa la app en /api/auth/activity/ (teclado, mouse, toques).
+        return super().validate(attrs)
 
 
 class DesbloqueoDispositivoSerializer(serializers.Serializer):

@@ -17,7 +17,7 @@ from alertas.models import HostProblemaZabbix
 from alertas.zabbix import registrar_evento_zabbix
 
 from .models import EstadoInfraestructura
-from .zabbix_client import SEVERIDADES, ZabbixClient, ZabbixError
+from .zabbix_client import SEVERIDADES, ZabbixClient, ZabbixError, disponibilidad, valor_vigente
 
 
 logger = logging.getLogger(__name__)
@@ -89,18 +89,25 @@ def _serializar_host(
 ) -> dict[str, Any]:
     hostid = str(host['hostid'])
     interfaces = host.get('interfaces') or []
-    interfaz = interfaces[0] if interfaces else {}
+    interfaz = next((i for i in interfaces if str(i.get('main')) == '1'), interfaces[0] if interfaces else {})
     grupos = [grupo['name'] for grupo in host.get('groups', [])]
     items = items_por_host.get(hostid, {})
-    online = items.get('mysql.gr.online', {}).get('lastvalue')
-    primary = items.get('mysql.gr.primary', {}).get('lastvalue')
-    disponible = host.get('status') == '0' and (
-        host.get('available') in (None, '0', '1') or host.get('available') == '1'
-    )
+    # Solo valores soportados y recientes: el último dato de un servidor apagado puede tener horas.
+    online = valor_vigente(items.get('mysql.gr.online'))
+    primary = valor_vigente(items.get('mysql.gr.primary'))
+    disp = disponibilidad(host)
+    habilitado = str(host.get('status', '0')) == '0'
     if host.get('maintenance_status') == '1':
         estado = 'en mantencion'
+    elif not habilitado or disp == 'no disponible' or online == '0':
+        estado = 'en falla'
     else:
-        estado = 'operativo' if disponible and online != '0' else 'en falla'
+        estado = 'operativo'
+    errores = [i.get('error') for i in interfaces if i.get('error')]
+    if not errores and disp == 'no disponible':
+        errores = ['El agente de Zabbix no responde.']
+    if not habilitado:
+        errores = ['Deshabilitado en Zabbix: no se está monitoreando.']
     return {
         'id': int(hostid),
         'codigo': host.get('host') or hostid,
@@ -111,10 +118,11 @@ def _serializar_host(
         'direccion': interfaz.get('ip') or interfaz.get('dns') or 'Sin interfaz',
         'puerto': int(interfaz['port']) if str(interfaz.get('port', '')).isdigit() else None,
         'mantenimiento': host.get('maintenance_status') == '1',
+        'disponibilidad': disp,
         'problemasActivos': problemas_por_host[hostid],
         'mysqlGrupoOnline': online == '1' if online is not None else None,
         'mysqlEsPrimario': primary == '1' if primary is not None else None,
-        'ultimoError': host.get('error') or interfaz.get('error') or None,
+        'ultimoError': errores[0] if errores else None,
     }
 
 

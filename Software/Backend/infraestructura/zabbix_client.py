@@ -21,8 +21,12 @@ SEVERIDADES = {
     '5': 'Desastre',
 }
 
-# interface.available en Zabbix: 0 = desconocido, 1 = disponible, 2 = no disponible
+# interface.available y host.active_available en Zabbix: 0 = desconocido, 1 = disponible, 2 = no disponible
 DISPONIBILIDAD = {'0': 'desconocido', '1': 'disponible', '2': 'no disponible'}
+
+# Un valor de Zabbix más antiguo que esto no describe el presente (p. ej. el último dato de un
+# servidor apagado hace horas): se trata como desconocido.
+VIGENCIA_DATO_SEGUNDOS = 15 * 60
 
 
 class ZabbixError(Exception):
@@ -34,6 +38,39 @@ def _fecha(clock: Any) -> str | None:
     if not clock:
         return None
     return datetime.fromtimestamp(clock, tz=timezone.utc).isoformat()
+
+
+def disponibilidad(host: dict[str, Any]) -> str:
+    """'disponible', 'no disponible' o 'desconocido', como lo calcula Zabbix 7.
+
+    Zabbix 5.4+ ya no entrega host.available: la disponibilidad está en cada interfaz
+    (agente pasivo, SNMP, IPMI, JMX) y en host.active_available (agente activo). Basta una
+    que diga "no disponible" para que el servidor no responda.
+    """
+    if str(host.get('status', '0')) != '0':
+        return 'desconocido'  # deshabilitado en Zabbix: no se está monitoreando
+    señales = [str(i.get('available', '0')) for i in host.get('interfaces') or []]
+    señales.append(str(host.get('active_available', '0')))
+    if '2' in señales:
+        return 'no disponible'
+    if '1' in señales:
+        return 'disponible'
+    return 'desconocido'
+
+
+def valor_vigente(item: dict[str, Any] | None, ahora: float | None = None) -> str | None:
+    """lastvalue de un ítem solo si está soportado y es reciente; si no, None (desconocido).
+
+    Un ítem "no soportado" (state=1) conserva lastvalue=0 aunque nunca haya medido nada, y el
+    último dato de un servidor apagado puede tener horas: ninguno de los dos es el estado actual.
+    """
+    if not item or str(item.get('state', '0')) != '0':
+        return None
+    clock = int(item.get('lastclock') or 0)
+    ahora = ahora if ahora is not None else datetime.now(tz=timezone.utc).timestamp()
+    if not clock or ahora - clock > VIGENCIA_DATO_SEGUNDOS:
+        return None
+    return str(item.get('lastvalue'))
 
 
 class ZabbixClient:
@@ -134,13 +171,12 @@ class ZabbixClient:
                     'host',
                     'name',
                     'status',
-                    'available',
-                    'error',
+                    'active_available',  # Zabbix 7: disponibilidad del agente activo
                     'maintenance_status',
                 ],
                 'groupids': groupids,
                 'selectGroups': ['groupid', 'name'],
-                'selectInterfaces': ['interfaceid', 'ip', 'dns', 'port', 'type', 'available', 'error'],
+                'selectInterfaces': ['interfaceid', 'ip', 'dns', 'port', 'type', 'main', 'available', 'error'],
                 'sortfield': 'name',
             },
         )
@@ -158,6 +194,7 @@ class ZabbixClient:
                     'lastvalue',
                     'value_type',
                     'lastclock',
+                    'state',  # 1 = no soportado: lastvalue no significa nada
                     'name',
                 ],
                 'hostids': hostids,
@@ -198,8 +235,8 @@ class ZabbixClient:
     def hosts(self, grupo: str | None = None) -> list[dict[str, Any]]:
         """Hosts monitoreados, con su IP y si el agente responde."""
         params: dict[str, Any] = {
-            'output': ['hostid', 'host', 'name', 'status'],
-            'selectInterfaces': ['ip', 'available'],
+            'output': ['hostid', 'host', 'name', 'status', 'active_available'],
+            'selectInterfaces': ['ip', 'available', 'main'],
         }
         if grupo:
             params['groupids'] = [g['groupid'] for g in self.obtener_grupos([grupo])]
@@ -207,13 +244,14 @@ class ZabbixClient:
                 return []
         resultado = []
         for host in self._llamar('host.get', params):
-            interfaz = host['interfaces'][0] if host['interfaces'] else {}
+            interfaces = host.get('interfaces') or []
+            interfaz = next((i for i in interfaces if str(i.get('main')) == '1'), interfaces[0] if interfaces else {})
             resultado.append({
                 'id': host['hostid'],
                 'nombre': host['name'],
                 'habilitado': host['status'] == '0',
                 'ip': interfaz.get('ip'),
-                'agente': DISPONIBILIDAD.get(interfaz.get('available', '0')),
+                'agente': disponibilidad(host),
             })
         return resultado
 
@@ -289,7 +327,7 @@ class ZabbixClient:
     def estado_cluster(self, grupo: str = 'Cluster') -> dict[str, Any]:
         """Estado de cada nodo del InnoDB Cluster (items mysql.gr.online / mysql.gr.primary)."""
         items = self._llamar('item.get', {
-            'output': ['key_', 'lastvalue', 'lastclock'],
+            'output': ['key_', 'lastvalue', 'lastclock', 'state'],
             'selectHosts': ['name'],
             'group': grupo,
             'filter': {'key_': ['mysql.gr.online', 'mysql.gr.primary']},
@@ -302,7 +340,8 @@ class ZabbixClient:
                 {'nodo': nombre, 'online': False, 'primario': False, 'ultima_lectura': None},
             )
             campo = 'online' if item['key_'] == 'mysql.gr.online' else 'primario'
-            nodo[campo] = item['lastvalue'] == '1'
+            # Un dato viejo o de un ítem no soportado no confirma que el nodo esté en línea.
+            nodo[campo] = valor_vigente(item) == '1'
             nodo['ultima_lectura'] = _fecha(item['lastclock']) or nodo['ultima_lectura']
 
         lista = sorted(nodos.values(), key=lambda n: n['nodo'])

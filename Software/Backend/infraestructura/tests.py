@@ -1,3 +1,4 @@
+import time
 from datetime import timedelta
 from io import StringIO
 from unittest.mock import Mock, patch
@@ -53,13 +54,13 @@ class ActivosZabbixViewTests(TestCase):
             Mock(json=lambda: {'result': [{'groupid': '1', 'name': 'Cluster'}]}, raise_for_status=lambda: None),
             Mock(json=lambda: {'result': [{
                 'hostid': '7', 'host': 'mysql-01', 'name': 'MySQL 01', 'status': '0',
-                'available': '1', 'error': '', 'maintenance_status': '0',
+                'active_available': '0', 'maintenance_status': '0',
                 'groups': [{'groupid': '1', 'name': 'Cluster'}],
                 'interfaces': [{'ip': '10.0.0.7', 'port': '10050', 'available': '1', 'error': ''}],
             }]}, raise_for_status=lambda: None),
             Mock(json=lambda: {'result': [
-                {'hostid': '7', 'key_': 'mysql.gr.online', 'lastvalue': '1'},
-                {'hostid': '7', 'key_': 'mysql.gr.primary', 'lastvalue': '1'},
+                {'hostid': '7', 'key_': 'mysql.gr.online', 'lastvalue': '1', 'state': '0', 'lastclock': str(int(time.time()))},
+                {'hostid': '7', 'key_': 'mysql.gr.primary', 'lastvalue': '1', 'state': '0', 'lastclock': str(int(time.time()))},
             ]}, raise_for_status=lambda: None),
             Mock(json=lambda: {'result': [{'eventid': '99'}]}, raise_for_status=lambda: None),
             Mock(json=lambda: {'result': [{'eventid': '99', 'hosts': [{'hostid': '7'}]}]}, raise_for_status=lambda: None),
@@ -147,13 +148,13 @@ class ZabbixFalso:
 
     def obtener_hosts(self, groupids):
         return [{
-            'hostid': '7', 'host': 'mysql01', 'name': 'MySQL 01', 'status': '0', 'available': '1',
-            'error': '', 'maintenance_status': '0', 'groups': [{'groupid': '1', 'name': 'Cluster'}],
+            'hostid': '7', 'host': 'mysql01', 'name': 'MySQL 01', 'status': '0', 'active_available': '0',
+            'maintenance_status': '0', 'groups': [{'groupid': '1', 'name': 'Cluster'}],
             'interfaces': [{'ip': '10.0.0.7', 'port': '10050', 'available': '1', 'error': ''}],
         }]
 
     def obtener_items_mysql(self, hostids):
-        return [{'hostid': '7', 'key_': 'mysql.gr.online', 'lastvalue': '1'}]
+        return [{'hostid': '7', 'key_': 'mysql.gr.online', 'lastvalue': '1', 'state': '0', 'lastclock': str(int(time.time()))}]
 
     def obtener_problemas(self, hostids):
         # Como problem.get con recent=True: también trae uno recién resuelto, que se descarta.
