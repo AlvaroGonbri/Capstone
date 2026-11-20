@@ -74,12 +74,19 @@ def _redondear(valor, decimales: int = 1):
 # ------------------------------------------------------------------ Disponibilidad (Zabbix)
 
 def _fraccion_disponible(hora: dict) -> float | None:
-    """Fracción de la hora en que el agente estuvo disponible (1 = disponible, 2 = no, 0 = desconocido)."""
-    if hora['max'] <= 0:
-        return None  # solo "desconocido": esa hora no cuenta
-    if hora['min'] >= 1:
-        return max(0.0, min(1.0, 2.0 - hora['avg']))
-    return 1.0 if hora['max'] <= 1 else 0.0  # mezcla con "desconocido": se toma lo conocido
+    """Fracción de la hora en que el agente estuvo disponible.
+
+    zabbix[host,agent,available] en Zabbix 6/7: 0 = NO disponible, 1 = disponible, 2 = desconocido.
+    (Antes se leía el 0 como "desconocido" y se descartaban justo las horas de un servidor apagado,
+    que así aparecía con 100 %.)
+    """
+    if hora['min'] >= 2:
+        return None  # solo "desconocido" (p. ej. Zabbix recién iniciado): esa hora no cuenta
+    if hora['max'] <= 1:
+        return max(0.0, min(1.0, hora['avg']))  # solo 0 y 1: el promedio es la fracción disponible
+    # Mezcla con "desconocido": no se puede separar con exactitud; si hubo algún "no disponible",
+    # la hora se cuenta como caída (criterio conservador).
+    return 1.0 if hora['min'] >= 1 else 0.0
 
 
 def _tendencias(periodo: Periodo) -> list[dict]:

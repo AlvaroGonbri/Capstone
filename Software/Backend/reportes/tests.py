@@ -34,11 +34,12 @@ def hora_zabbix(dia, hora, promedio, minimo=None, maximo=None):
             'min': promedio if minimo is None else minimo, 'max': promedio if maximo is None else maximo}
 
 
+# zabbix[host,agent,available] en Zabbix 7: 0 = no disponible, 1 = disponible, 2 = desconocido.
 ZABBIX = [
     # mysql01: una hora disponible y otra a medias -> 75 %.
-    {'host': 'mysql01', 'horas': [hora_zabbix(10, 9, 1.0), hora_zabbix(10, 10, 1.5, 1, 2)]},
+    {'host': 'mysql01', 'horas': [hora_zabbix(10, 9, 1.0), hora_zabbix(10, 10, 0.5, 0, 1)]},
     # SERVER: solo "desconocido" -> no cuenta.
-    {'host': 'SERVER', 'horas': [hora_zabbix(10, 9, 0.0)]},
+    {'host': 'SERVER', 'horas': [hora_zabbix(10, 9, 2.0)]},
 ]
 
 
@@ -274,3 +275,30 @@ class ClienteGeminiTests(TestCase):
         self.assertEqual(gemini._razonamiento('gemini-2.5-flash'), {'thinkingBudget': 0})
         self.assertIsNone(gemini._razonamiento('gemini-2.5-pro'))
         self.assertEqual(gemini._razonamiento('gemini-3.5-flash'), {'thinkingLevel': 'minimal'})
+
+
+class FraccionDisponibleTests(TestCase):
+    """zabbix[host,agent,available] en Zabbix 7: 0 = no disponible, 1 = disponible, 2 = desconocido."""
+
+    def fraccion(self, promedio, minimo, maximo):
+        from .agregacion import _fraccion_disponible
+        return _fraccion_disponible({'clock': 0, 'avg': promedio, 'min': minimo, 'max': maximo})
+
+    def test_hora_apagado_completa_es_cero(self):
+        # Caso real (mysql02, 19-11-2026): servidor apagado -> min = avg = max = 0. Antes se descartaba.
+        self.assertEqual(self.fraccion(0.0, 0.0, 0.0), 0.0)
+
+    def test_hora_disponible_completa(self):
+        self.assertEqual(self.fraccion(1.0, 1.0, 1.0), 1.0)
+
+    def test_hora_en_que_se_apago(self):
+        self.assertAlmostEqual(self.fraccion(0.25, 0.0, 1.0), 0.25)
+
+    def test_solo_desconocido_no_cuenta(self):
+        self.assertIsNone(self.fraccion(2.0, 2.0, 2.0))
+
+    def test_disponible_y_desconocido_cuenta_como_disponible(self):
+        self.assertEqual(self.fraccion(1.5, 1.0, 2.0), 1.0)
+
+    def test_no_disponible_y_desconocido_cuenta_como_caida(self):
+        self.assertEqual(self.fraccion(1.0, 0.0, 2.0), 0.0)
