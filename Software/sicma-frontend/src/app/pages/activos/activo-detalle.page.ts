@@ -126,20 +126,22 @@ export class ActivoDetallePage {
   protected readonly cargandoEventos = signal(false);
   protected readonly errorEventos = signal<string | null>(null);
 
-  constructor() {
-    queueMicrotask(() => {
-      const id = Number(this.id());
-      this.inventario.obtener(id).subscribe({
-        next: (activo) => {
-          this.activo.set(activo);
-          this.cargando.set(false);
-          this.buscarHost(activo.codigo);
-        },
-        error: () => this.cargando.set(false),
-      });
-      this.inventario.historial(id).subscribe({ next: (lista) => this.cambios.set(lista), error: () => undefined });
-      this.intervencionesService.listarPorActivo(id).subscribe({ next: (lista) => this.intervenciones.set(lista), error: () => undefined });
+  /**
+   * Se carga cada vez que la ficha se muestra, no solo al crearla: Ionic reutiliza la página al
+   * volver desde "Editar", y sin esto se veían los datos de antes de guardar.
+   */
+  ionViewWillEnter(): void {
+    const id = Number(this.id());
+    this.inventario.obtener(id).subscribe({
+      next: (activo) => {
+        this.activo.set(activo);
+        this.cargando.set(false);
+        this.buscarHost(activo.codigo);
+      },
+      error: () => this.cargando.set(false),
     });
+    this.inventario.historial(id).subscribe({ next: (lista) => this.cambios.set(lista), error: () => undefined });
+    this.intervencionesService.listarPorActivo(id).subscribe({ next: (lista) => this.intervenciones.set(lista), error: () => undefined });
   }
 
   protected campo(nombre: string): string {

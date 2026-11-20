@@ -305,6 +305,17 @@ export class ActivosPage {
     });
   }
 
+  private primeraVista = true;
+
+  /** Al volver a la lista (p. ej. tras editar un activo) se recarga el inventario al tiro. */
+  ionViewWillEnter(): void {
+    if (this.primeraVista) {
+      this.primeraVista = false; // la primera carga la hace el constructor
+      return;
+    }
+    this.cargarInventario();
+  }
+
   private cargarInventario(): void {
     this.inventario.listar({ incluir_retirados: this.incluirRetirados() }).subscribe({
       next: (lista) => {
