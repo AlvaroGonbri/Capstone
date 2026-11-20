@@ -30,7 +30,8 @@
         <div class="cabecera-activo__texto">
           <div class="cabecera-activo__titulo">
             <h2>{{ a.nombre }}</h2>
-            <ion-badge [color]="colorEstado(a.estado)">{{ etiquetaEstado(a.estado) }}</ion-badge>
+            @let estado = estadoMostrado(a.estado);
+            <ion-badge [color]="estado.color">{{ estado.texto }}</ion-badge>
             <ion-badge [color]="colorCriticidad(a.criticidad)">Criticidad {{ etiquetaCriticidad(a.criticidad).toLowerCase() }}</ion-badge>
           </div>
           <p><span class="mono">{{ a.codigo }}</span> · {{ a.tipo || 'Sin tipo' }} · {{ a.ubicacion_nombre }}</p>
@@ -44,7 +45,7 @@
               <ion-card-title>Datos del activo</ion-card-title>
             </ion-card-header>
             <dl class="grilla-datos">
-              <div><dt>Estado</dt><dd><ion-badge [color]="colorEstado(a.estado)">{{ etiquetaEstado(a.estado) }}</ion-badge></dd></div>
+              <div><dt>Estado</dt><dd><ion-badge [color]="estado.color">{{ estado.texto }}</ion-badge></dd></div>
               <div><dt>Tipo</dt><dd>{{ a.tipo || '—' }}</dd></div>
               <div><dt>Marca / modelo</dt><dd>{{ a.marca || '—' }} / {{ a.modelo || '—' }}</dd></div>
               <div><dt>Número de serie</dt><dd class="mono">{{ a.numero_serie }}</dd></div>

@@ -164,6 +164,14 @@ export class ActivoDetallePage {
     this.cargarEventos(host.id);
   }
 
+  /** Igual que en la lista: "No accesible" en rojo si Zabbix no alcanza el servidor; Operativo en verde. */
+  protected estadoMostrado(estado: string): { texto: string; color: string } {
+    if (this.host()?.estado === 'en falla') {
+      return { texto: 'No accesible', color: 'danger' };
+    }
+    return { texto: this.etiquetaEstado(estado), color: estado === 'Operativo' ? 'success' : this.colorEstado(estado) };
+  }
+
   protected colorZabbix(host: Activo): string {
     return host.estado === 'operativo' ? 'success' : host.estado === 'en mantencion' ? 'warning' : 'danger';
   }

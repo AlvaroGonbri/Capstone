@@ -224,6 +224,20 @@ export class ActivosPage {
     return this.hostPorCodigo().get(activo.codigo.toLowerCase());
   }
 
+  /**
+   * Estado que se muestra en la columna "Estado": el del inventario, salvo que Zabbix no alcance el
+   * servidor ("No accesible", en rojo). Operativo va en verde.
+   */
+  protected estadoMostrado(activo: ActivoInventario): { texto: string; color: string } {
+    if (this.host(activo)?.estado === 'en falla') {
+      return { texto: 'No accesible', color: 'danger' };
+    }
+    return {
+      texto: this.etiquetaEstado(activo.estado),
+      color: activo.estado === 'Operativo' ? 'success' : this.colorEstado(activo.estado),
+    };
+  }
+
   protected colorZabbix(host: Activo): string {
     return host.estado === 'operativo' ? 'success' : host.estado === 'en mantencion' ? 'warning' : 'danger';
   }

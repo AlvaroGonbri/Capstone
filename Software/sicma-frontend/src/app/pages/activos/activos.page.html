@@ -167,7 +167,8 @@
                   <small class="celda-secundaria">—</small>
                 }
               </span>
-              <span role="cell" data-etiqueta="Estado"><ion-badge [color]="colorEstado(activo.estado)">{{ etiquetaEstado(activo.estado) }}</ion-badge></span>
+              @let estado = estadoMostrado(activo);
+              <span role="cell" data-etiqueta="Estado"><ion-badge [color]="estado.color">{{ estado.texto }}</ion-badge></span>
             </a>
           }
         </div>
