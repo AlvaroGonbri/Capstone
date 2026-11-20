@@ -166,11 +166,18 @@ export class PanelPage {
       (a) => new Date(a.fecha_hora).toDateString() === hoy,
     );
     const sinDatos = this.sinDatos();
+    // Si el activo es un servidor de Zabbix, manda el estado en vivo: un servidor apagado no es
+    // "operativo" aunque en el inventario siga registrado así.
+    const hostPorCodigo = new Map((this.hosts() ?? []).map((h) => [h.codigo.toLowerCase(), h]));
+    const estados = this.activos().map((a) => {
+      const enVivo = hostPorCodigo.get(a.codigo.toLowerCase())?.estado;
+      return enVivo === 'en falla' ? 'Fuera_de_servicio' : enVivo === 'en mantencion' ? 'En_mantenimiento' : a.estado;
+    });
     return {
-      activosTotales: this.activos().length,
-      activosOperativos: this.activos().filter((a) => a.estado === 'Operativo').length,
-      activosEnFalla: this.activos().filter((a) => a.estado === 'Degradado' || a.estado === 'Fuera_de_servicio').length,
-      activosEnMantenimiento: this.activos().filter((a) => a.estado === 'En_mantenimiento').length,
+      activosTotales: estados.length,
+      activosOperativos: estados.filter((e) => e === 'Operativo').length,
+      activosEnFalla: estados.filter((e) => e === 'Degradado' || e === 'Fuera_de_servicio').length,
+      activosEnMantenimiento: estados.filter((e) => e === 'En_mantenimiento').length,
       sensoresEnAlerta: this.fueraDeRango().length,
       sensoresSinDatos: sinDatos.length,
       /** Con un solo sensor sin datos se dice desde cuándo no reporta. */
@@ -297,10 +304,12 @@ export class PanelPage {
           : `${h.mysqlEsPrimario ? 'Primario' : 'Secundario'} · Group Replication`;
       const peor = Math.min(...alertas.map((a) => SEVERIDADES[a.severidad].rango), RANGO_SIN_DATOS);
       let chips = chipsPorSeveridad(alertas);
-      if (chips.length === 0) {
+      if (h.estado === 'en falla') {
+        // Que no responda es lo primero que hay que ver, aunque además tenga problemas abiertos.
+        chips = [{ texto: 'En falla', color: 'danger' }, ...chips];
+      } else if (chips.length === 0) {
         chips = [
-          h.estado === 'en falla' ? { texto: 'En falla', color: 'danger' }
-          : h.estado === 'en mantencion' ? { texto: 'En mantención', color: 'warning' }
+          h.estado === 'en mantencion' ? { texto: 'En mantención', color: 'warning' }
           : { texto: 'Sin problemas', color: 'success' },
         ];
       }
