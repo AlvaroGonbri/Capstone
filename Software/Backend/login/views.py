@@ -20,6 +20,7 @@ from .permissions import es_privilegiado
 from .permissions import AdministratorPermission
 from .serializers import (
     DesbloqueoDispositivoSerializer,
+    VerificacionDosPasosSerializer,
     PasswordChangeSerializer,
     PasswordPolicySerializer,
     PasswordResetConfirmSerializer,
@@ -333,3 +334,53 @@ class RevocarSesionesView(APIView):
             sesiones.cerrar(sesion, SesionUsuario.CIERRE_REVOCADA)
             revocadas += 1
         return Response({'revocadas': revocadas})
+
+
+class VerificacionDosPasosView(APIView):
+    """POST {"mfa_token", "codigo"}: segundo paso del login con verificación en dos pasos."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_scope = 'login'
+
+    def get_authenticate_header(self, request):
+        return 'Bearer realm="api"'  # código incorrecto o vencido: 401
+
+    def post(self, request, format=None):
+        serializer = VerificacionDosPasosSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data)
+
+
+class UsuarioMfaView(APIView):
+    """POST {"accion": "exigir" | "restablecer" | "quitar"} (solo Administrador Privilegiado).
+
+    exigir: la persona configura su app de autenticación en el próximo inicio de sesión.
+    restablecer: perdió el teléfono; vuelve a configurarla (la exigencia se mantiene).
+    quitar: deja de pedirse; se borran el secreto y los códigos de respaldo.
+    """
+
+    permission_classes = [AdministratorPermission]
+    ACCIONES = ('exigir', 'restablecer', 'quitar')
+
+    def post(self, request, user_id, format=None):
+        if not es_privilegiado(request.user):
+            return Response({'detail': 'Solo un Administrador Privilegiado cambia la verificación en dos pasos.'},
+                            status=status.HTTP_403_FORBIDDEN)
+        accion = request.data.get('accion')
+        if accion not in self.ACCIONES:
+            return Response({'accion': 'Debe ser exigir, restablecer o quitar.'}, status=status.HTTP_400_BAD_REQUEST)
+        usuario = User.objects.filter(pk=user_id).first()
+        if usuario is None:
+            return Response({'detail': 'El usuario no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        ajustes = UserSessionSettings.objects.get_or_create(user=usuario)[0]
+        if accion == 'exigir':
+            ajustes.mfa_requerida = True
+        else:
+            ajustes.mfa_requerida = accion == 'restablecer'
+            ajustes.mfa_secreto, ajustes.mfa_activa = '', False
+            ajustes.mfa_codigos_respaldo, ajustes.mfa_ultimo_paso = [], 0
+        ajustes.save(update_fields=['mfa_requerida', 'mfa_secreto', 'mfa_activa', 'mfa_codigos_respaldo',
+                                    'mfa_ultimo_paso'])
+        estado = 'activa' if ajustes.mfa_requerida and ajustes.mfa_activa else 'pendiente' if ajustes.mfa_requerida else 'no'
+        return Response({'mfa': estado})

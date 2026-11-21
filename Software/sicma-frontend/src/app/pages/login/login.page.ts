@@ -1,4 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { PantallaIngresoComponent } from '../../shared/pantalla-ingreso.component';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -17,12 +19,13 @@ import {
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { fingerPrintOutline } from 'ionicons/icons';
-import { AuthService } from '../../core/services/auth.service';
+import { AuthService, DesafioMfa } from '../../core/services/auth.service';
 import { BiometriaService } from '../../core/services/biometria.service';
 
 @Component({
   selector: 'app-login',
   imports: [
+    NgTemplateOutlet,
     PantallaIngresoComponent,
     ReactiveFormsModule,
     RouterLink,
@@ -54,6 +57,19 @@ export class LoginPage {
   protected readonly aviso = signal<string | null>(null);
   /** App móvil: nombre de quien activó la huella en este teléfono (null = no está activa). */
   protected readonly huella = signal<string | null>(null);
+
+  // ------------------------------------------------- verificación en dos pasos
+  private readonly sanitizador = inject(DomSanitizer);
+  /** 'credenciales' → ('codigo' | 'configurar') → ('respaldo', solo al terminar de configurar). */
+  protected readonly paso = signal<'credenciales' | 'codigo' | 'configurar' | 'respaldo'>('credenciales');
+  protected readonly desafio = signal<DesafioMfa | null>(null);
+  /** QR de la app de autenticación: SVG generado por el API (en <img> no ejecuta nada). */
+  protected readonly qr = signal<SafeUrl | null>(null);
+  protected readonly codigosRespaldo = signal<string[]>([]);
+  protected readonly copiado = signal(false);
+  protected readonly formularioCodigo = this.fb.nonNullable.group({
+    codigo: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(20)]],
+  });
 
   protected readonly formulario = this.fb.nonNullable.group({
     identificador: ['', [Validators.required]],
@@ -145,11 +161,17 @@ export class LoginPage {
 
     const { identificador, clave } = this.formulario.getRawValue();
     this.auth.iniciarSesion(identificador, clave).subscribe({
-      next: () => {
-        void this.ofrecerHuella().finally(() => {
+      next: (resultado) => {
+        if ('mfa' in resultado) {
+          // La cuenta exige verificación en dos pasos: falta el código de la app de autenticación.
           this.cargando.set(false);
-          this.irAlDestino();
-        });
+          this.desafio.set(resultado);
+          this.qr.set(resultado.qr ? this.sanitizador.bypassSecurityTrustUrl(resultado.qr) : null);
+          this.formularioCodigo.reset();
+          this.paso.set(resultado.mfa);
+          return;
+        }
+        this.finalizar();
       },
       error: (e: Error & { codigo?: string }) => {
         this.cargando.set(false);
@@ -162,5 +184,72 @@ export class LoginPage {
         this.error.set(e.message || 'No fue posible iniciar sesion.');
       },
     });
+  }
+
+  /** Tras entrar: en la app móvil se ofrece la huella; después, a la pantalla pedida. */
+  private finalizar(): void {
+    void this.ofrecerHuella().finally(() => {
+      this.cargando.set(false);
+      this.irAlDestino();
+    });
+  }
+
+  protected verificarCodigo(): void {
+    const desafio = this.desafio();
+    if (!desafio || this.formularioCodigo.invalid || this.cargando()) {
+      this.formularioCodigo.markAllAsTouched();
+      return;
+    }
+    this.cargando.set(true);
+    this.error.set(null);
+    this.auth.verificarCodigo(desafio.mfa_token, this.formularioCodigo.getRawValue().codigo).subscribe({
+      next: ({ codigosRespaldo }) => {
+        if (codigosRespaldo?.length) {
+          // Recién configurada: los códigos de respaldo se muestran una sola vez.
+          this.cargando.set(false);
+          this.codigosRespaldo.set(codigosRespaldo);
+          this.paso.set('respaldo');
+          return;
+        }
+        this.finalizar();
+      },
+      error: (e: Error & { codigo?: string }) => {
+        this.cargando.set(false);
+        if (e.codigo === 'mfa_vencido' || e.codigo === 'account_locked') {
+          this.volverAlInicio();
+        }
+        this.error.set(e.message);
+      },
+    });
+  }
+
+  protected continuarTrasRespaldo(): void {
+    this.cargando.set(true);
+    this.auth.continuarSesionPendiente().subscribe({
+      next: () => this.finalizar(),
+      error: (e: Error) => {
+        this.cargando.set(false);
+        this.volverAlInicio();
+        this.error.set(e.message);
+      },
+    });
+  }
+
+  protected volverAlInicio(): void {
+    this.paso.set('credenciales');
+    this.desafio.set(null);
+    this.qr.set(null);
+    this.formulario.controls.clave.reset();
+    this.error.set(null);
+  }
+
+  protected async copiar(texto: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(texto);
+      this.copiado.set(true);
+      setTimeout(() => this.copiado.set(false), 2000);
+    } catch {
+      /* sin permiso de portapapeles: se puede copiar a mano */
+    }
   }
 }

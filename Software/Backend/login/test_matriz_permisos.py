@@ -74,6 +74,7 @@ MATRIZ = {
     'managed_user_list': {'GET': ADMIN, 'POST': ADMIN},
     'managed_user_detail': {'PATCH': ADMIN},
     'user_session_timeout': {'PATCH': PRIV},
+    'usuario_mfa': {'POST': PRIV},  # exigir, restablecer o quitar la verificación en dos pasos
     # Sesiones activas: ambos administradores las ven y las revocan.
     'sesiones_lista': {'GET': ADMIN},
     'sesiones_revocar': {'POST': ADMIN},
@@ -145,6 +146,7 @@ PUBLICAS = {
     'token_obtain_pair': 'login',
     'token_refresh': 'renueva el token con el refresh token',
     'token_dispositivo': 'app móvil: entra con huella o PIN canjeando la llave del dispositivo',
+    'token_mfa': 'segundo paso del login: código de la app de autenticación',
     'password_reset': 'pide el correo de recuperación',
     'password_reset_confirm': 'fija la contraseña nueva con el enlace del correo',
     'password_change': 'cambio de contraseña vencida antes de iniciar sesión (pide la actual)',

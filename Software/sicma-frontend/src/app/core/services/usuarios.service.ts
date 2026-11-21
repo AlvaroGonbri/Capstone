@@ -34,6 +34,11 @@ export class UsuariosService {
     return this.http.patch<UsuarioGestion>(`${this.url}${id}/`, datos);
   }
 
+  /** Solo Administrador Privilegiado: exigir, restablecer (perdió el teléfono) o quitar la verificación en dos pasos. */
+  cambiarMfa(id: number, accion: 'exigir' | 'restablecer' | 'quitar'): Observable<{ mfa: UsuarioGestion['mfa'] }> {
+    return this.http.post<{ mfa: UsuarioGestion['mfa'] }>(`${this.url}${id}/mfa/`, { accion });
+  }
+
   obtenerPolitica(): Observable<PoliticaContrasenas> {
     return this.http.get<PoliticaContrasenas>(this.urlPolitica);
   }

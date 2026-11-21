@@ -12,7 +12,7 @@ from rest_framework_simplejwt.serializers import (
     TokenRefreshSerializer,
 )
 
-from . import bloqueo, sesiones
+from . import bloqueo, mfa, sesiones
 from .authentication import CLAIM_SOLO_LECTURA
 from .dispositivo import CLAIM_CLAVE, LlaveDispositivo, emitir_llave, resumen_clave
 from .models import PasswordPolicy, UserSessionSettings
@@ -58,6 +58,20 @@ def get_inactivity_timeout_minutes(user):
     return UserSessionSettings.objects.get_or_create(user=user)[0].inactivity_timeout_minutes
 
 
+def emitir_sesion(request, user, canal):
+    """Tokens de una sesión nueva (y su registro en Sesiones activas). App móvil: de solo lectura,
+    con la llave para entrar después con huella o PIN (la app solo la guarda si la persona acepta)."""
+    refresh = EmailTokenObtainPairSerializer.get_token(user)
+    datos, llave = {}, None
+    if canal == 'movil':
+        refresh[CLAIM_SOLO_LECTURA] = True
+        llave = emitir_llave(user)
+        datos['llave'] = str(llave)
+    datos['refresh'], datos['access'] = str(refresh), str(refresh.access_token)
+    sesiones.registrar(request, user, refresh, canal, llave)
+    return datos
+
+
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     # 'movil': la app móvil recibe tokens de solo lectura (RF-PLT-02). El claim viaja en el
     # refresh token, así que también lo heredan los access tokens renovados.
@@ -73,19 +87,13 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         canal = attrs.pop('canal', 'web')
-        data = self._validar_credenciales(attrs)
-        request = self.context.get('request')
-        if canal == 'movil':
-            refresh = self.get_token(self.user)
-            refresh[CLAIM_SOLO_LECTURA] = True
-            data['refresh'], data['access'] = str(refresh), str(refresh.access_token)
-            # Para entrar después con huella o PIN; la app solo la guarda si la persona lo acepta.
-            llave = emitir_llave(self.user)
-            data['llave'] = str(llave)
-            sesiones.registrar(request, self.user, refresh, 'movil', llave)
-        else:
-            sesiones.registrar(request, self.user, self.token_class(data['refresh']), 'web')
-        return data
+        self._validar_credenciales(attrs)
+        ajustes = UserSessionSettings.objects.get_or_create(user=self.user)[0]
+        if ajustes.mfa_requerida:
+            # Falta el segundo paso: el contador de intentos se reinicia recién con el código correcto.
+            return mfa.desafio(self.user, ajustes, canal)
+        bloqueo.registrar_exito(self.user)
+        return emitir_sesion(self.context.get('request'), self.user, canal)
 
     def _validar_credenciales(self, attrs):
         login = attrs.get(self.username_field, '').strip()
@@ -102,7 +110,6 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             if user:
                 bloqueo.registrar_fallo(user)
             raise
-        bloqueo.registrar_exito(self.user)
         # Se revisa después de validar la clave, para no revelar el estado de cuentas ajenas.
         if password_is_expired(self.user):
             raise PasswordExpired()
@@ -156,6 +163,10 @@ class DesbloqueoDispositivoSerializer(serializers.Serializer):
         get_user_role(user)
         if password_is_expired(user):
             raise PasswordExpired()
+        ajustes = UserSessionSettings.objects.get_or_create(user=user)[0]
+        if ajustes.mfa_requerida and not ajustes.mfa_activa:
+            # Le exigieron (o restablecieron) la verificación en dos pasos: debe configurarla con su contraseña.
+            raise no_valida
 
         llave.blacklist()  # un solo uso
         nueva = emitir_llave(user, vence=llave['exp'])
@@ -164,6 +175,45 @@ class DesbloqueoDispositivoSerializer(serializers.Serializer):
         UserSessionSettings.objects.update_or_create(user=user, defaults={'last_activity_at': timezone.now()})
         sesiones.registrar(self.context.get('request'), user, refresh, 'movil', nueva)
         return {'access': str(refresh.access_token), 'refresh': str(refresh), 'llave': str(nueva)}
+
+
+class VerificacionDosPasosSerializer(serializers.Serializer):
+    """Segundo paso del login: el código de la app de autenticación (o uno de respaldo)."""
+
+    mfa_token = serializers.CharField()
+    codigo = serializers.CharField(max_length=20)
+
+    def validate(self, attrs):
+        datos = mfa.leer_desafio(attrs['mfa_token'])
+        user = User.objects.filter(pk=datos.get('u'), is_active=True).first()
+        if user is None or datos.get('k') != resumen_clave(user):
+            raise AuthenticationFailed({'detail': 'La verificación venció. Vuelve a ingresar tu contraseña.',
+                                        'code': 'mfa_vencido'})
+        bloqueo.comprobar(user)
+        ajustes = UserSessionSettings.objects.get_or_create(user=user)[0]
+        if not ajustes.mfa_requerida:  # se la quitaron entre el primer y el segundo paso
+            raise AuthenticationFailed({'detail': 'Vuelve a ingresar tu contraseña.', 'code': 'mfa_vencido'})
+
+        codigo = ''.join(attrs['codigo'].split())
+        codigos_nuevos = None
+        paso = mfa.verificar_totp(ajustes.mfa_secreto, codigo, ajustes.mfa_ultimo_paso)
+        if paso is not None:
+            ajustes.mfa_ultimo_paso = paso
+            if not ajustes.mfa_activa:  # primera configuración: queda activa y se entregan los de respaldo
+                ajustes.mfa_activa = True
+                codigos_nuevos, resumenes = mfa.nuevos_codigos_respaldo()
+                ajustes.mfa_codigos_respaldo = resumenes
+            ajustes.save(update_fields=['mfa_ultimo_paso', 'mfa_activa', 'mfa_codigos_respaldo'])
+        elif not (ajustes.mfa_activa and mfa.usar_codigo_respaldo(ajustes, codigo)):
+            bloqueo.registrar_fallo(user)  # cuenta para el bloqueo igual que una contraseña errónea
+            raise AuthenticationFailed({'detail': 'El código no es correcto.', 'code': 'mfa_incorrecto'})
+
+        bloqueo.registrar_exito(user)
+        UserSessionSettings.objects.filter(user=user).update(last_activity_at=timezone.now())
+        sesion = emitir_sesion(self.context.get('request'), user, datos.get('c', 'web'))
+        if codigos_nuevos:
+            sesion['codigos_respaldo'] = codigos_nuevos
+        return sesion
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
@@ -291,6 +341,11 @@ class ManagedUserSerializer(serializers.ModelSerializer):
         data['password_changed_at'] = session_settings.password_changed_at
         data['password_expires_at'] = expires_at
         data['password_expired'] = expires_at is not None and timezone.now() >= expires_at
+        # Verificación en dos pasos: 'activa', 'pendiente' (exigida, aún sin configurar) o 'no'.
+        data['mfa'] = (
+            'activa' if session_settings.mfa_requerida and session_settings.mfa_activa
+            else 'pendiente' if session_settings.mfa_requerida else 'no'
+        )
         return data
 
     def validate(self, attrs):

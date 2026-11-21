@@ -2,76 +2,150 @@
   <app-pantalla-ingreso titulo="Ingresar">
   <div class="ingreso">
 
-    @if (aviso()) {
+    @if (aviso() && paso() === 'credenciales') {
       <p class="ingreso__aviso" role="status">{{ aviso() }}</p>
     }
 
-    <!-- App móvil: ingreso con la huella o el PIN del teléfono -->
-    @if (huella(); as nombre) {
-      <ion-button expand="block" class="ingreso__huella" (click)="entrarConHuella()" [disabled]="cargando()">
-        <ion-icon slot="start" name="finger-print-outline" aria-hidden="true"></ion-icon>
-        Entrar con huella o PIN
-      </ion-button>
-      <p class="ingreso__huella-nota">Como {{ nombre }} · o ingresa con tu contraseña</p>
-    }
+    @switch (paso()) {
+      <!-- Paso 1: usuario y contraseña -->
+      @case ('credenciales') {
+        <!-- App móvil: ingreso con la huella o el PIN del teléfono -->
+        @if (huella(); as nombre) {
+          <ion-button expand="block" class="ingreso__huella" (click)="entrarConHuella()" [disabled]="cargando()">
+            <ion-icon slot="start" name="finger-print-outline" aria-hidden="true"></ion-icon>
+            Entrar con huella o PIN
+          </ion-button>
+          <p class="ingreso__huella-nota">Como {{ nombre }} · o ingresa con tu contraseña</p>
+        }
 
-    <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
-      <ion-list lines="full">
-        <ion-item>
-          <ion-input
-            id="identificador"
-            label="Usuario o correo"
-            labelPlacement="stacked"
-            type="text"
-            autocomplete="username"
-            formControlName="identificador"
-            placeholder="usuario o usuario@dominio.cl"
-          ></ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-input
-            id="clave"
-            label="Clave"
-            labelPlacement="stacked"
-            type="password"
-            autocomplete="current-password"
-            formControlName="clave"
-          >
-            <ion-input-password-toggle slot="end"></ion-input-password-toggle>
-          </ion-input>
-        </ion-item>
-      </ion-list>
+        <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+          <ion-list lines="full">
+            <ion-item>
+              <ion-input
+                id="identificador"
+                label="Usuario o correo"
+                labelPlacement="stacked"
+                type="text"
+                autocomplete="username"
+                formControlName="identificador"
+                placeholder="usuario o usuario@dominio.cl"
+              ></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-input
+                id="clave"
+                label="Clave"
+                labelPlacement="stacked"
+                type="password"
+                autocomplete="current-password"
+                formControlName="clave"
+              >
+                <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+              </ion-input>
+            </ion-item>
+          </ion-list>
 
-      @if (error()) {
-        <ion-text color="danger">
-          <p class="ingreso__error" role="alert">{{ error() }}</p>
-        </ion-text>
+          @if (error()) {
+            <ion-text color="danger">
+              <p class="ingreso__error" role="alert">{{ error() }}</p>
+            </ion-text>
+          }
+
+          <ion-button type="submit" expand="block" class="ion-margin-top" [disabled]="cargando()">
+            @if (cargando()) {
+              <ion-spinner name="dots" aria-label="Verificando"></ion-spinner>
+            } @else {
+              Entrar
+            }
+          </ion-button>
+        </form>
+
+        <ion-button fill="clear" expand="block" routerLink="/recuperar">
+          ¿Olvidaste tu contraseña?
+        </ion-button>
+        <ion-button fill="clear" expand="block" size="small" routerLink="/cambiar-clave">
+          Cambiar mi contraseña
+        </ion-button>
+
+        <ion-note class="ingreso__ayuda">
+          Usa las credenciales de tu cuenta SICMA.
+        </ion-note>
       }
 
-      <ion-button
-        type="submit"
-        expand="block"
-        class="ion-margin-top"
-        [disabled]="cargando()"
-      >
-        @if (cargando()) {
-          <ion-spinner name="dots" aria-label="Verificando"></ion-spinner>
-        } @else {
-          Entrar
+      <!-- Paso 2 (primera vez): configurar la app de autenticación -->
+      @case ('configurar') {
+        <h2 class="mfa__titulo">Configura la verificación en dos pasos</h2>
+        <ol class="mfa__pasos">
+          <li>Instala <b>Google Authenticator</b> o <b>Microsoft Authenticator</b> en tu teléfono.</li>
+          <li>En la app, agrega una cuenta y escanea este código:</li>
+        </ol>
+        @if (qr(); as imagen) {
+          <img class="mfa__qr" [src]="imagen" width="200" height="200" alt="Código QR para la app de autenticación" />
         }
-      </ion-button>
-    </form>
+        @if (desafio()?.secreto; as secreto) {
+          <p class="mfa__secreto">
+            ¿No puedes escanear? Ingresa esta clave a mano:
+            <code>{{ secreto }}</code>
+            <ion-button size="small" fill="clear" (click)="copiar(secreto)">{{ copiado() ? 'Copiada ✓' : 'Copiar' }}</ion-button>
+          </p>
+        }
+        <ol class="mfa__pasos" start="3">
+          <li>Escribe el código de 6 dígitos que muestra la app:</li>
+        </ol>
+        <ng-container *ngTemplateOutlet="formCodigo"></ng-container>
+      }
 
-    <ion-button fill="clear" expand="block" routerLink="/recuperar">
-      ¿Olvidaste tu contraseña?
-    </ion-button>
-    <ion-button fill="clear" expand="block" size="small" routerLink="/cambiar-clave">
-      Cambiar mi contraseña
-    </ion-button>
+      <!-- Paso 2: código de la app de autenticación -->
+      @case ('codigo') {
+        <h2 class="mfa__titulo">Verificación en dos pasos</h2>
+        <p class="mfa__texto">Escribe el código de 6 dígitos de tu app de autenticación.</p>
+        <ng-container *ngTemplateOutlet="formCodigo"></ng-container>
+        <p class="mfa__ayuda">¿Perdiste el teléfono? Escribe uno de tus códigos de respaldo en el mismo campo.</p>
+      }
 
-    <ion-note class="ingreso__ayuda">
-      Usa las credenciales de tu cuenta SICMA.
-    </ion-note>
+      <!-- Recién configurada: códigos de respaldo, una sola vez -->
+      @case ('respaldo') {
+        <h2 class="mfa__titulo">Guarda tus códigos de respaldo</h2>
+        <p class="mfa__texto">
+          Sirven para entrar si pierdes el teléfono. Cada uno funciona <b>una sola vez</b> y
+          <b>no se volverán a mostrar</b>: guárdalos en un lugar seguro.
+        </p>
+        <ul class="mfa__codigos">
+          @for (c of codigosRespaldo(); track c) { <li><code>{{ c }}</code></li> }
+        </ul>
+        <ion-button expand="block" fill="outline" (click)="copiar(codigosRespaldo().join('\n'))">
+          {{ copiado() ? 'Copiados ✓' : 'Copiar los códigos' }}
+        </ion-button>
+        <ion-button expand="block" class="ion-margin-top" [disabled]="cargando()" (click)="continuarTrasRespaldo()">
+          @if (cargando()) { <ion-spinner name="dots"></ion-spinner> } @else { Ya los guardé, continuar }
+        </ion-button>
+      }
+    }
+
+    <ng-template #formCodigo>
+      <form [formGroup]="formularioCodigo" (ngSubmit)="verificarCodigo()" novalidate>
+        <ion-list lines="full">
+          <ion-item>
+            <ion-input
+              label="Código"
+              labelPlacement="stacked"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="20"
+              formControlName="codigo"
+              placeholder="123456"
+            ></ion-input>
+          </ion-item>
+        </ion-list>
+        @if (error()) {
+          <ion-text color="danger"><p class="ingreso__error" role="alert">{{ error() }}</p></ion-text>
+        }
+        <ion-button type="submit" expand="block" class="ion-margin-top" [disabled]="cargando()">
+          @if (cargando()) { <ion-spinner name="dots" aria-label="Verificando"></ion-spinner> } @else { Verificar }
+        </ion-button>
+        <ion-button fill="clear" expand="block" size="small" (click)="volverAlInicio()">Volver</ion-button>
+      </form>
+    </ng-template>
   </div>
   </app-pantalla-ingreso>
 </ion-content>

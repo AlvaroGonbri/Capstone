@@ -52,3 +52,68 @@
     --color: var(--ion-color-primary);
   }
 }
+
+/* Verificación en dos pasos */
+.mfa__titulo {
+  margin: 4px 0 10px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.mfa__texto,
+.mfa__ayuda,
+.mfa__pasos {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--sicma-tinta-2);
+}
+
+.mfa__pasos {
+  padding-left: 20px;
+}
+
+.mfa__ayuda {
+  margin-top: 12px;
+  font-size: 0.76rem;
+  color: var(--sicma-tenue);
+}
+
+.mfa__qr {
+  display: block;
+  margin: 6px auto 10px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #fff; /* el QR necesita fondo claro también en modo oscuro */
+}
+
+.mfa__secreto {
+  margin: 0 0 12px;
+  font-size: 0.76rem;
+  color: var(--sicma-tenue);
+  text-align: center;
+  overflow-wrap: anywhere;
+
+  code {
+    display: block;
+    margin: 4px 0;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    color: var(--sicma-tinta);
+  }
+}
+
+.mfa__codigos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 14px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--sicma-linea);
+  border-radius: 8px;
+  list-style: none;
+
+  code {
+    font-size: 0.88rem;
+  }
+}

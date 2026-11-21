@@ -71,6 +71,11 @@
                     <small>
                       {{ (usuario.first_name + ' ' + usuario.last_name).trim() || 'Sin nombre' }} · {{ usuario.email || 'sin correo' }}
                     </small>
+                    @if (usuario.mfa === 'activa') {
+                      <small class="mfa-etiqueta mfa-etiqueta--activa" title="Verificación en dos pasos activa">✓ 2 pasos</small>
+                    } @else if (usuario.mfa === 'pendiente') {
+                      <small class="mfa-etiqueta mfa-etiqueta--pendiente" title="Exigida: la configura en su próximo ingreso">2 pasos pendiente</small>
+                    }
                   </span>
                 </span>
                 <span role="cell" class="celda-fin celda-rol">
@@ -144,6 +149,34 @@
             <ion-item>
               <ion-toggle formControlName="is_active" justify="space-between">Cuenta activa</ion-toggle>
             </ion-item>
+
+            <!-- Verificación en dos pasos: la exige, restablece o quita el Administrador Privilegiado -->
+            @if (usuarioEditado(); as u) {
+              <section class="mfa" aria-labelledby="mfa-titulo">
+                <h3 id="mfa-titulo">Verificación en dos pasos</h3>
+                <p class="mfa__estado">
+                  @switch (u.mfa) {
+                    @case ('activa') { <ion-badge color="success">Activa</ion-badge> Ingresa con contraseña y el código de su app de autenticación. }
+                    @case ('pendiente') { <ion-badge color="warning">Pendiente</ion-badge> La configurará en su próximo inicio de sesión. }
+                    @default { <ion-badge color="medium">No exigida</ion-badge> Ingresa solo con contraseña. }
+                  }
+                </p>
+                @if (esPrivilegiado) {
+                  <div class="mfa__acciones">
+                    @if (u.mfa === 'no') {
+                      <ion-button size="small" fill="outline" [disabled]="cambiandoMfa()" (click)="cambiarMfa(u, 'exigir')">Exigir</ion-button>
+                    } @else {
+                      @if (u.mfa === 'activa') {
+                        <ion-button size="small" fill="outline" [disabled]="cambiandoMfa()" (click)="cambiarMfa(u, 'restablecer')">Restablecer</ion-button>
+                      }
+                      <ion-button size="small" fill="outline" color="danger" [disabled]="cambiandoMfa()" (click)="cambiarMfa(u, 'quitar')">Quitar</ion-button>
+                    }
+                  </div>
+                } @else {
+                  <ion-note class="mfa__nota">Solo un Administrador Privilegiado puede cambiarla.</ion-note>
+                }
+              </section>
+            }
             <div class="acciones-form">
               <ion-button fill="outline" color="medium" (click)="cerrarPanel()">Cancelar</ion-button>
               <ion-button type="submit" [disabled]="guardando()">

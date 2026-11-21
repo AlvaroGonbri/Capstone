@@ -16,6 +16,16 @@ class UserSessionSettings(models.Model):
     # RNF-SEG-02: intentos fallidos seguidos y hasta cuándo queda bloqueada la cuenta.
     failed_login_attempts = models.PositiveSmallIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
+    # Verificación en dos pasos (TOTP). La exige o la quita el Administrador Privilegiado.
+    mfa_requerida = models.BooleanField(default=False)
+    # Secreto base32 de la app de autenticación (como django-otp: en la base, que es interna). Mientras
+    # mfa_activa es False, es el secreto pendiente que la persona está configurando.
+    mfa_secreto = models.CharField(max_length=64, blank=True, default='')
+    mfa_activa = models.BooleanField(default=False)
+    # Resúmenes SHA-256 de los códigos de respaldo que quedan sin usar.
+    mfa_codigos_respaldo = models.JSONField(default=list, blank=True)
+    # Último intervalo de 30 s aceptado: un mismo código no sirve dos veces.
+    mfa_ultimo_paso = models.BigIntegerField(default=0)
 
     class Meta:
         verbose_name = 'configuración de sesión'

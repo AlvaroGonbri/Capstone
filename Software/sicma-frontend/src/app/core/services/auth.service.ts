@@ -18,6 +18,17 @@ interface RespuestaToken {
   refresh: string;
   /** App móvil: llave para entrar después con huella o PIN (ver BiometriaService). */
   llave?: string;
+  /** Al terminar de configurar la verificación en dos pasos: se muestran una sola vez. */
+  codigos_respaldo?: string[];
+}
+
+/** La cuenta tiene exigida la verificación en dos pasos: falta el código de la app de autenticación. */
+export interface DesafioMfa {
+  /** 'codigo': ya la configuró; 'configurar': primera vez (o restablecida), trae el QR y el secreto. */
+  mfa: 'codigo' | 'configurar';
+  mfa_token: string;
+  secreto?: string;
+  qr?: string;
 }
 
 interface RespuestaUsuario extends Omit<Usuario, 'inactivityTimeoutMinutes'> {
@@ -36,6 +47,8 @@ export class AuthService {
   private ultimaActividadPersistida = 0;
   /** Llave recibida en el último ingreso con contraseña, hasta que la persona decida activar la huella. */
   private llavePendiente: string | null = null;
+  /** Tokens ya emitidos tras configurar la verificación, a la espera de que se guarden los códigos de respaldo. */
+  private tokensPendientes: RespuestaToken | null = null;
 
   readonly usuario = computed<Usuario | null>(() => this.sesion()?.usuario ?? null);
   readonly token = computed<string | null>(() => this.sesion()?.token ?? null);
@@ -73,7 +86,8 @@ export class AuthService {
     }
   }
 
-  iniciarSesion(identificador: string, clave: string): Observable<SesionIniciada> {
+  /** Devuelve la sesión, o un desafío si la cuenta exige verificación en dos pasos (ver verificarCodigo). */
+  iniciarSesion(identificador: string, clave: string): Observable<SesionIniciada | DesafioMfa> {
     if (environment.usarDatosSimulados) {
       const encontrado = USUARIOS_DEMO.find(
         (u) =>
@@ -98,14 +112,19 @@ export class AuthService {
     this.sesion.set(null);
     this.llavePendiente = null;
     return this.http
-      .post<RespuestaToken>(`${environment.apiUrl}/auth/token/`, {
+      .post<RespuestaToken | DesafioMfa>(`${environment.apiUrl}/auth/token/`, {
         username: identificador.trim(),
         password: clave,
         canal: environment.soloConsulta ? 'movil' : 'web',
       })
       .pipe(
-        tap((tokens) => (this.llavePendiente = tokens.llave ?? null)),
-        switchMap((tokens) => this.abrirSesion(tokens)),
+        switchMap((respuesta): Observable<SesionIniciada | DesafioMfa> => {
+          if ('mfa' in respuesta) {
+            return of(respuesta); // falta el segundo paso
+          }
+          this.llavePendiente = respuesta.llave ?? null;
+          return this.abrirSesion(respuesta);
+        }),
         catchError((error: { error?: { detail?: string; code?: string } }) =>
           throwError(() =>
             Object.assign(new Error(error.error?.detail ?? 'No fue posible iniciar sesión.'), {
@@ -114,6 +133,41 @@ export class AuthService {
           ),
         ),
       );
+  }
+
+  /**
+   * Segundo paso del login: el código de 6 dígitos de la app de autenticación, o uno de respaldo.
+   * `codigosRespaldo` llega solo al terminar de configurarla (hay que mostrarlos una vez).
+   */
+  verificarCodigo(mfaToken: string, codigo: string): Observable<{ codigosRespaldo: string[] | null }> {
+    return this.http
+      .post<RespuestaToken>(`${environment.apiUrl}/auth/token/mfa/`, { mfa_token: mfaToken, codigo: codigo.trim() })
+      .pipe(
+        switchMap((tokens) => {
+          this.llavePendiente = tokens.llave ?? null;
+          if (tokens.codigos_respaldo?.length) {
+            // Recién configurada: la sesión se abre cuando la persona confirma que guardó los códigos
+            // (así no aparece el menú del sistema encima de la pantalla de los códigos).
+            this.tokensPendientes = tokens;
+            return of({ codigosRespaldo: tokens.codigos_respaldo });
+          }
+          return this.abrirSesion(tokens).pipe(map(() => ({ codigosRespaldo: null })));
+        }),
+        catchError((error: { error?: { detail?: string; code?: string } }) =>
+          throwError(() =>
+            Object.assign(new Error(error.error?.detail ?? 'No fue posible verificar el código.'), {
+              codigo: error.error?.code,
+            }),
+          ),
+        ),
+      );
+  }
+
+  /** Abre la sesión que quedó en espera mientras se mostraban los códigos de respaldo. */
+  continuarSesionPendiente(): Observable<SesionIniciada> {
+    const tokens = this.tokensPendientes;
+    this.tokensPendientes = null;
+    return tokens ? this.abrirSesion(tokens) : throwError(() => new Error('La verificación venció. Vuelve a ingresar.'));
   }
 
   /** La llave del último ingreso con contraseña (una sola vez), para ofrecer activar la huella. */

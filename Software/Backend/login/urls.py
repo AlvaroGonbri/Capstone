@@ -16,6 +16,8 @@ from .views import (
     DesbloqueoDispositivoView,
     InactivityAwareTokenRefreshView,
     RevocarSesionesView,
+    UsuarioMfaView,
+    VerificacionDosPasosView,
     SesionesActivasView,
 )
 
@@ -29,6 +31,8 @@ urlpatterns = [
     path('token/refresh/', InactivityAwareTokenRefreshView.as_view(), name='token_refresh'),
     # App móvil: entrar con huella o PIN del teléfono (canjea la llave del dispositivo).
     path('token/dispositivo/', DesbloqueoDispositivoView.as_view(), name='token_dispositivo'),
+    # Segundo paso del login: código de la app de autenticación (verificación en dos pasos).
+    path('token/mfa/', VerificacionDosPasosView.as_view(), name='token_mfa'),
     path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
     path('password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('password-change/', PasswordChangeView.as_view(), name='password_change'),
@@ -38,6 +42,7 @@ urlpatterns = [
     path('users/<int:user_id>/session-timeout/', SessionTimeoutView.as_view(), name='user_session_timeout'),
     path('users/', ManagedUserListView.as_view(), name='managed_user_list'),
     path('users/<int:user_id>/', ManagedUserDetailView.as_view(), name='managed_user_detail'),
+    path('users/<int:user_id>/mfa/', UsuarioMfaView.as_view(), name='usuario_mfa'),
     path('logout/', LogoutView.as_view(), name='logout'),
     # Sesiones activas: las ven y revocan el Administrador y el Administrador Privilegiado.
     path('sesiones/', SesionesActivasView.as_view(), name='sesiones_lista'),

@@ -57,7 +57,8 @@ form.politica {
 
 /* Tabla de cuentas */
 .tabla-usuarios {
-  --columnas: minmax(0, 1.6fr) minmax(0, 1fr) 90px 150px 90px;
+  /* La flecha "›" solo necesita su ancho: el resto queda para la cuenta y el rol */
+  --columnas: minmax(0, 1.6fr) minmax(0, 1fr) 86px 118px 20px;
 
   .inactiva b {
     color: var(--sicma-tenue);
@@ -106,5 +107,76 @@ form.politica {
   ion-button {
     margin: 0;
     min-width: 110px;
+  }
+}
+
+/* Verificación en dos pasos (panel de edición) */
+.mfa {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--sicma-linea);
+  border-radius: var(--sicma-radio);
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  &__estado {
+    margin: 0 0 8px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--sicma-tinta-2);
+
+    ion-badge {
+      margin-right: 4px;
+    }
+  }
+
+  &__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    ion-button {
+      margin: 0;
+    }
+  }
+
+  &__nota {
+    font-size: 0.75rem;
+  }
+}
+
+/* La etiqueta del rol no invade la columna siguiente cuando el panel lateral deja la tabla angosta */
+.celda-rol {
+  min-width: 0;
+
+  > span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.mfa-etiqueta {
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 3px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+
+  &--activa {
+    background: var(--sicma-normal-suave);
+    color: var(--sicma-normal) !important;
+  }
+
+  &--pendiente {
+    background: var(--sicma-advertencia-suave);
+    color: var(--sicma-advertencia) !important;
   }
 }

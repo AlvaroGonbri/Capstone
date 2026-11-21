@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   IonBadge, IonButton, IonButtons, IonContent, IonIcon, IonInput, IonItem, IonNote,
@@ -123,6 +123,34 @@ export class UsuariosPage {
   protected nuevo(): void {
     this.reiniciarFormulario();
     this.panelAbierto.set(true);
+  }
+
+  /** La cuenta abierta en el panel (con su estado actual de la lista). */
+  protected readonly usuarioEditado = computed(() => this.usuarios().find((u) => u.id === this.editando()) ?? null);
+  protected readonly cambiandoMfa = signal(false);
+
+  protected cambiarMfa(usuario: UsuarioGestion, accion: 'exigir' | 'restablecer' | 'quitar'): void {
+    const nombre = usuario.username;
+    const preguntas = {
+      exigir: `¿Exigir verificación en dos pasos a ${nombre}?\n\nEn su próximo inicio de sesión deberá configurar una app de autenticación (Google o Microsoft Authenticator).`,
+      restablecer: `¿Restablecer la verificación de ${nombre}?\n\nÚsalo si perdió el teléfono: su app actual y sus códigos de respaldo dejan de servir, y la configura de nuevo al ingresar.`,
+      quitar: `¿Quitar la verificación en dos pasos a ${nombre}?\n\nVolverá a ingresar solo con contraseña.`,
+    };
+    if (!confirm(preguntas[accion])) {
+      return;
+    }
+    this.cambiandoMfa.set(true);
+    this.error.set(null);
+    this.usuariosService.cambiarMfa(usuario.id, accion).subscribe({
+      next: ({ mfa }) => {
+        this.cambiandoMfa.set(false);
+        this.usuarios.update((lista) => lista.map((u) => (u.id === usuario.id ? { ...u, mfa } : u)));
+      },
+      error: (error: { error?: { detail?: string } }) => {
+        this.cambiandoMfa.set(false);
+        this.error.set(error.error?.detail ?? 'No fue posible cambiar la verificación en dos pasos.');
+      },
+    });
   }
 
   protected cerrarPanel(): void {

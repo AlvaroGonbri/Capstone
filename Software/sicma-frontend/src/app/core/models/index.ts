@@ -38,6 +38,8 @@ export interface UsuarioGestion {
   /** null si la contraseña no expira (cuenta exenta o política en 0). */
   password_expires_at: string | null;
   password_expired: boolean;
+  /** Verificación en dos pasos: activa, exigida pero aún sin configurar, o no exigida. */
+  mfa: 'activa' | 'pendiente' | 'no';
 }
 
 /** Política global de contraseñas. max_age_days = 0 significa sin expiración. */
