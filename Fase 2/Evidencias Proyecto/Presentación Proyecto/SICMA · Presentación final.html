@@ -187,7 +187,6 @@ h1{font:900 50px/1.1 var(--fh);margin-top:8px;letter-spacing:.01em}
   clip-path:none;position:relative} .step.done .ck::after{content:"";position:absolute;left:5px;top:6px;width:14px;height:8px;border-left:4px solid #fff;border-bottom:4px solid #fff;transform:rotate(-45deg)}
 .show li{font:600 37px/1.25 var(--fb);list-style:none;padding:10px 0 10px 40px;position:relative;border-bottom:1px dashed var(--line)}
 .show li::before{content:"";position:absolute;left:4px;top:20px;width:18px;height:18px;background:var(--cy);clip-path:polygon(0 0,100% 50%,0 100%)}
-#dClock{font:900 46px var(--fh)}
 
 /* results */
 .res{display:grid;grid-template-columns:880px 1fr;gap:34px;height:100%}
@@ -339,11 +338,8 @@ h1{font:900 50px/1.1 var(--fh);margin-top:8px;letter-spacing:.01em}
       <div class="steps" id="steps"></div>
       <div style="display:flex;flex-direction:column;gap:20px">
         <div class="panel" style="flex:1" id="dBody"></div>
-        <div class="panel gold" style="display:flex;align-items:center;gap:22px;padding:16px 26px">
-          <div id="dClock">0:00 / 7:30</div>
-          <button class="btn gold" id="dGo">INICIAR</button>
-          <button class="btn ghost" id="dReset">0</button>
-          <a class="btn" href="https://sicma.brionessolutions.cl" target="_blank" rel="noopener" style="text-decoration:none;margin-left:auto;white-space:nowrap;font-size:22px">ABRIR SICMA ↗</a>
+        <div class="panel gold" style="padding:16px 26px">
+          <a class="btn" href="https://sicma.brionessolutions.cl" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;white-space:nowrap;font-size:30px">ABRIR SICMA ↗</a>
         </div>
       </div>
     </div></div>
@@ -637,12 +633,6 @@ function renderSteps(){
 }
 function selStep(i){dSel=Math.max(0,Math.min(DEMO.length-1,i));renderSteps()}
 function toggleDone(i){dDone.has(i)?dDone.delete(i):dDone.add(i);renderSteps()}
-let dRun=false,dEl=0,dLast=0;
-$('#dGo').onclick=()=>{dRun=!dRun;dLast=Date.now();$('#dGo').textContent=dRun?'PAUSAR':'SEGUIR'};
-$('#dReset').onclick=()=>{dRun=false;dEl=0;$('#dGo').textContent='INICIAR';drawD()};
-function drawD(){if(dRun){const n=Date.now();dEl+=(n-dLast)/1000;dLast=n}
-  const s=Math.round(dEl),el=$('#dClock');el.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+' / 7:30';el.style.color=dEl>450?'var(--red)':'var(--ink)'}
-setInterval(drawD,300);
 hooks.enterDemo=renderSteps;
 
 /* resultados */
