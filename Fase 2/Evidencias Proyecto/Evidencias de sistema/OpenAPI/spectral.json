@@ -1,0 +1,1430 @@
+[
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/token/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 64,
+				"character": 19
+			},
+			"end": {
+				"line": 106,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/token/refresh/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 107,
+				"character": 27
+			},
+			"end": {
+				"line": 141,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/logout/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 142,
+				"character": 20
+			},
+			"end": {
+				"line": 165,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/me/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 166,
+				"character": 16
+			},
+			"end": {
+				"line": 185,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/activity/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 186,
+				"character": 22
+			},
+			"end": {
+				"line": 201,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/password-reset/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 202,
+				"character": 28
+			},
+			"end": {
+				"line": 231,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/password-reset/confirm/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 232,
+				"character": 36
+			},
+			"end": {
+				"line": 254,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/password-change/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 255,
+				"character": 29
+			},
+			"end": {
+				"line": 284,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/password-policy/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 285,
+				"character": 29
+			},
+			"end": {
+				"line": 337,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/users/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 338,
+				"character": 19
+			},
+			"end": {
+				"line": 393,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/users/{user_id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 394,
+				"character": 29
+			},
+			"end": {
+				"line": 434,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/auth/users/{user_id}/session-timeout/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 435,
+				"character": 45
+			},
+			"end": {
+				"line": 473,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/mediciones/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 474,
+				"character": 19
+			},
+			"end": {
+				"line": 599,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/sensores/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 600,
+				"character": 17
+			},
+			"end": {
+				"line": 658,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/sensores/{id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 659,
+				"character": 22
+			},
+			"end": {
+				"line": 732,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/sensores/{id}/clave/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 733,
+				"character": 28
+			},
+			"end": {
+				"line": 764,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/ubicaciones/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 765,
+				"character": 20
+			},
+			"end": {
+				"line": 829,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/ubicaciones/{id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 830,
+				"character": 25
+			},
+			"end": {
+				"line": 903,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/umbrales/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 904,
+				"character": 17
+			},
+			"end": {
+				"line": 971,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/activos/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 972,
+				"character": 16
+			},
+			"end": {
+				"line": 1065,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/activos/{id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1066,
+				"character": 21
+			},
+			"end": {
+				"line": 1142,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/activos/{id}/historial/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1143,
+				"character": 31
+			},
+			"end": {
+				"line": 1180,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/activos/responsables/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1181,
+				"character": 29
+			},
+			"end": {
+				"line": 1208,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/activos/tipos/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1209,
+				"character": 22
+			},
+			"end": {
+				"line": 1273,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/activos/tipos/{id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1274,
+				"character": 27
+			},
+			"end": {
+				"line": 1313,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/activos/estados/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1314,
+				"character": 24
+			},
+			"end": {
+				"line": 1378,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/activos/estados/{id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1379,
+				"character": 29
+			},
+			"end": {
+				"line": 1419,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/alertas/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1420,
+				"character": 16
+			},
+			"end": {
+				"line": 1471,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/alertas/{id}/reconocer/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1472,
+				"character": 31
+			},
+			"end": {
+				"line": 1515,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/alertas/{id}/cerrar/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1516,
+				"character": 28
+			},
+			"end": {
+				"line": 1559,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/alertas/responsables/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1560,
+				"character": 29
+			},
+			"end": {
+				"line": 1587,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/alertas/responsables/{ubicacion_id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1588,
+				"character": 44
+			},
+			"end": {
+				"line": 1627,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/infraestructura/estado/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1628,
+				"character": 31
+			},
+			"end": {
+				"line": 1660,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/infraestructura/hosts/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1661,
+				"character": 30
+			},
+			"end": {
+				"line": 1695,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/infraestructura/activos/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1696,
+				"character": 32
+			},
+			"end": {
+				"line": 1730,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/infraestructura/hosts/{hostid}/eventos/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1731,
+				"character": 47
+			},
+			"end": {
+				"line": 1786,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/infraestructura/sincronizacion/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1787,
+				"character": 39
+			},
+			"end": {
+				"line": 1813,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/integraciones/zabbix/webhook/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1814,
+				"character": 37
+			},
+			"end": {
+				"line": 1850,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/intervenciones/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1851,
+				"character": 23
+			},
+			"end": {
+				"line": 1907,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/intervenciones/tecnicos/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1908,
+				"character": 32
+			},
+			"end": {
+				"line": 1936,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/intervenciones/{id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1937,
+				"character": 28
+			},
+			"end": {
+				"line": 1971,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/intervenciones/{id}/asignar/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 1972,
+				"character": 36
+			},
+			"end": {
+				"line": 2014,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/intervenciones/{id}/personal/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2015,
+				"character": 37
+			},
+			"end": {
+				"line": 2057,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/intervenciones/{id}/personal/{persona_id}/verificar/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2058,
+				"character": 60
+			},
+			"end": {
+				"line": 2108,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/intervenciones/{id}/iniciar/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2109,
+				"character": 36
+			},
+			"end": {
+				"line": 2145,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/intervenciones/{id}/cerrar/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2146,
+				"character": 35
+			},
+			"end": {
+				"line": 2189,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/intervenciones/{id}/cancelar/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2190,
+				"character": 37
+			},
+			"end": {
+				"line": 2232,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/personas/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2233,
+				"character": 25
+			},
+			"end": {
+				"line": 2310,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/personas/{id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2311,
+				"character": 30
+			},
+			"end": {
+				"line": 2420,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/personas/{id}/habilitacion/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2421,
+				"character": 43
+			},
+			"end": {
+				"line": 2499,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/personas/{id}/enrolar/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2500,
+				"character": 38
+			},
+			"end": {
+				"line": 2541,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/enrolamientos/{id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2542,
+				"character": 35
+			},
+			"end": {
+				"line": 2574,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/enrolamientos/{id}/cancelar/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2575,
+				"character": 44
+			},
+			"end": {
+				"line": 2608,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/verificaciones/{id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2609,
+				"character": 36
+			},
+			"end": {
+				"line": 2643,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/puntos/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2644,
+				"character": 23
+			},
+			"end": {
+				"line": 2702,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/puntos/{id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2703,
+				"character": 28
+			},
+			"end": {
+				"line": 2776,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/puntos/{id}/clave/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2777,
+				"character": 34
+			},
+			"end": {
+				"line": 2808,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/permisos/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2809,
+				"character": 25
+			},
+			"end": {
+				"line": 2880,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/permisos/{id}/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2881,
+				"character": 30
+			},
+			"end": {
+				"line": 2954,
+				"character": 53
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/eventos/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 2955,
+				"character": 24
+			},
+			"end": {
+				"line": 3027,
+				"character": 51
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/lector/intentos/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 3028,
+				"character": 32
+			},
+			"end": {
+				"line": 3066,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/lector/enrolamientos/siguiente/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 3067,
+				"character": 47
+			},
+			"end": {
+				"line": 3092,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/lector/verificaciones/siguiente/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 3093,
+				"character": 48
+			},
+			"end": {
+				"line": 3118,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/lector/enrolamientos/{id}/progreso/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 3119,
+				"character": 51
+			},
+			"end": {
+				"line": 3157,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/lector/enrolamientos/{id}/resultado/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 3158,
+				"character": 52
+			},
+			"end": {
+				"line": 3200,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/lector/verificaciones/{id}/progreso/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 3201,
+				"character": 52
+			},
+			"end": {
+				"line": 3238,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/lector/verificaciones/{id}/resultado/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 3239,
+				"character": 53
+			},
+			"end": {
+				"line": 3281,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/lector/bajas/siguiente/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 3282,
+				"character": 39
+			},
+			"end": {
+				"line": 3307,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "path-keys-no-trailing-slash",
+		"path": [
+			"paths",
+			"/api/accesos/lector/bajas/{id}/resultado/"
+		],
+		"message": "Path must not end with slash.",
+		"severity": 1,
+		"range": {
+			"start": {
+				"line": 3308,
+				"character": 44
+			},
+			"end": {
+				"line": 3345,
+				"character": 50
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "no-$ref-siblings",
+		"path": [
+			"components",
+			"schemas",
+			"Persona",
+			"properties",
+			"enrolamiento",
+			"nullable"
+		],
+		"message": "$ref must not be placed next to any other properties",
+		"severity": 0,
+		"range": {
+			"start": {
+				"line": 4435,
+				"character": 20
+			},
+			"end": {
+				"line": 4435,
+				"character": 24
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	},
+	{
+		"code": "no-$ref-siblings",
+		"path": [
+			"components",
+			"schemas",
+			"PersonalExterno",
+			"properties",
+			"verificacion",
+			"nullable"
+		],
+		"message": "$ref must not be placed next to any other properties",
+		"severity": 0,
+		"range": {
+			"start": {
+				"line": 4814,
+				"character": 20
+			},
+			"end": {
+				"line": 4814,
+				"character": 24
+			}
+		},
+		"source": "c:/Users/Alvaro/Documents/CAPSTONE/Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml"
+	}
+]

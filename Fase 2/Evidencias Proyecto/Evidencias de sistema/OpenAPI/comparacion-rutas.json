@@ -1,0 +1,21 @@
+{
+ "rutas_django": 80,
+ "rutas_doc": 69,
+ "operaciones_django": 100,
+ "operaciones_documentadas": 89,
+ "faltan_en_openapi": [
+  "/api/auth/sesiones/",
+  "/api/auth/sesiones/revocar/",
+  "/api/auth/token/dispositivo/",
+  "/api/auth/token/mfa/",
+  "/api/auth/users/{x}/mfa/",
+  "/api/integraciones/secretos/{x}/renovar/",
+  "/api/reportes/pdf/",
+  "/api/reportes/resumen/",
+  "/api/sensores/{x}/historial/",
+  "/api/sistema/integraciones/",
+  "/api/sistema/integraciones/{x}/probar/"
+ ],
+ "sobran_en_openapi": [],
+ "metodos_distintos": []
+}

@@ -1,0 +1,1290 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites errors="0" failures="49" skipped="0" tests="90" time="39.561671">
+  <testsuite name="schemathesis" hostname="DESKTOP-OB0MC9V" errors="0" failures="49" skipped="0" tests="90" time="39.561671">
+    <testcase name="POST /api/accesos/lector/bajas/{id}/resultado/" time="4.082729">
+      <failure type="failure" message="ST105">1. Test Case ID: 9VpRHW
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'X-Punto-Acceso;' -H 'X-Device-Key: [Filtered]' -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.117.158' -H 'Content-Type: application/json' -d '{"exito": false, "mensaje": ""}' http://127.0.0.1:8010/api/accesos/lector/bajas/%20/resultado/</failure>
+    </testcase>
+    <testcase name="POST /api/accesos/lector/intentos/" time="2.016758" />
+    <testcase name="POST /api/accesos/lector/verificaciones/{id}/progreso/" time="1.066922">
+      <failure type="failure" message="ST105">1. Test Case ID: ayMT4i
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'X-Punto-Acceso;' -H 'X-Device-Key: [Filtered]' -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.199.99' -H 'Content-Type: application/json' -d '{"intento": 1, "total_intentos": 1, "indicacion": ""}' http://127.0.0.1:8010/api/accesos/lector/verificaciones/%20/progreso/</failure>
+    </testcase>
+    <testcase name="POST /api/accesos/lector/verificaciones/{id}/resultado/" time="1.055135">
+      <failure type="failure" message="ST105">1. Test Case ID: 7Sf68t
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'X-Punto-Acceso;' -H 'X-Device-Key: [Filtered]' -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.182.48' -H 'Content-Type: application/json' -d '{"coincide": false, "identificado": "", "mensaje": ""}' http://127.0.0.1:8010/api/accesos/lector/verificaciones/%20/resultado/</failure>
+    </testcase>
+    <testcase name="POST /api/accesos/permisos/" time="0.198421">
+      <failure type="failure" message="ST108">1. Test Case ID: Wd4S5u
+
+- ST108 Response violates schema
+
+    {"0":{"dia_semana":["This field is required."]}} is not valid under any of the schemas listed in the 'oneOf' keyword
+
+    Validated against the response schema for status code 400.
+
+    Schema at /additionalProperties:
+
+        {
+            "oneOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "type": "string"
+                }
+            ]
+        }
+
+    Value:
+
+        {
+            "0": {
+                "dia_semana": [
+                    "This field is required."
+                ]
+            }
+        }
+
+[400] Bad Request:
+
+    `{"persona":["Invalid pk \"0\" - object does not exist."],"punto_acceso":["Invalid pk \"0\" - object does not exist."],"dias":{"0":{"dia_semana":["This field is required."]}}}`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.114.220' -H 'Content-Type: application/json' -d '{"persona": 0, "punto_acceso": 0, "vigencia_inicio": "2000-01-01", "vigencia_fin": "2000-01-01", "estado": "Activo", "dias": [{"hora_inicio": "00:00:00Z", "hora_fin": "00:00:00Z"}]}' http://127.0.0.1:8010/api/accesos/permisos/</failure>
+    </testcase>
+    <testcase name="POST /api/accesos/personas/" time="0.553107" />
+    <testcase name="POST /api/accesos/puntos/" time="0.370128" />
+    <testcase name="POST /api/activos/" time="0.969450" />
+    <testcase name="POST /api/activos/estados/" time="0.659504" />
+    <testcase name="POST /api/activos/tipos/" time="0.487973" />
+    <testcase name="POST /api/auth/activity/" time="0.204645" />
+    <testcase name="POST /api/auth/logout/" time="0.185983">
+      <failure type="failure" message="ST101, ST103">1. Test Case ID: 4ALcom
+
+- ST101 Server error
+
+- ST103 Undocumented status code
+
+    Received: 500
+    Documented: 204, 400, 401, 403
+
+[500] Internal Server Error:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Server Error (500)&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Server Error (500)&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.157.94' -H 'Content-Type: application/json' -d '[null, null]' http://127.0.0.1:8010/api/auth/logout/</failure>
+    </testcase>
+    <testcase name="POST /api/auth/password-change/" time="1.952449" />
+    <testcase name="POST /api/auth/password-reset/" time="0.192312" />
+    <testcase name="POST /api/auth/password-reset/confirm/" time="0.188271" />
+    <testcase name="POST /api/auth/token/" time="4.610040" />
+    <testcase name="POST /api/auth/token/refresh/" time="1.137355" />
+    <testcase name="POST /api/auth/users/" time="0.807316" />
+    <testcase name="POST /api/integraciones/zabbix/webhook/" time="0.820568" />
+    <testcase name="POST /api/mediciones/" time="0.276675" />
+    <testcase name="POST /api/sensores/" time="0.526523" />
+    <testcase name="POST /api/ubicaciones/" time="0.609857" />
+    <testcase name="POST /api/umbrales/" time="0.394061" />
+    <testcase name="GET /api/accesos/eventos/" time="0.710153" />
+    <testcase name="GET /api/accesos/lector/bajas/siguiente/" time="1.048235" />
+    <testcase name="GET /api/accesos/lector/enrolamientos/siguiente/" time="1.020044" />
+    <testcase name="GET /api/accesos/lector/verificaciones/siguiente/" time="1.025036" />
+    <testcase name="GET /api/accesos/permisos/" time="0.263560">
+      <failure type="failure" message="ST101, ST103">1. Test Case ID: 99lhVY
+
+- ST101 Server error
+
+- ST103 Undocumented status code
+
+    Received: 500
+    Documented: 200, 401, 403
+
+[500] Internal Server Error:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Server Error (500)&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Server Error (500)&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.131.148' 'http://127.0.0.1:8010/api/accesos/permisos/?persona=0&amp;punto=9223372036854775808'</failure>
+    </testcase>
+    <testcase name="GET /api/accesos/personas/" time="0.250738" />
+    <testcase name="GET /api/accesos/puntos/" time="0.067056" />
+    <testcase name="GET /api/accesos/verificaciones/{id}/" time="0.079190">
+      <failure type="failure" message="ST105">1. Test Case ID: 1ZyPxs
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.189.76' http://127.0.0.1:8010/api/accesos/verificaciones/%20/</failure>
+    </testcase>
+    <testcase name="GET /api/activos/" time="0.324115">
+      <failure type="failure" message="ST101, ST103">1. Test Case ID: x1w6KD
+
+- ST101 Server error
+
+- ST103 Undocumented status code
+
+    Received: 500
+    Documented: 200, 400, 401, 403
+
+[500] Internal Server Error:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Server Error (500)&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Server Error (500)&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.47.180' 'http://127.0.0.1:8010/api/activos/?q=&amp;tipo=&amp;ubicacion=9223372036854775808&amp;estado=&amp;incluir_retirados=true'</failure>
+    </testcase>
+    <testcase name="GET /api/activos/estados/" time="0.100180" />
+    <testcase name="GET /api/activos/responsables/" time="0.106233" />
+    <testcase name="GET /api/activos/tipos/" time="0.108846" />
+    <testcase name="GET /api/alertas/" time="0.347771" />
+    <testcase name="GET /api/alertas/responsables/" time="0.132208" />
+    <testcase name="GET /api/auth/me/" time="0.129505" />
+    <testcase name="GET /api/auth/password-policy/" time="0.113317" />
+    <testcase name="GET /api/auth/users/" time="0.163171" />
+    <testcase name="GET /api/infraestructura/activos/" time="0.107368" />
+    <testcase name="GET /api/infraestructura/estado/" time="0.104375" />
+    <testcase name="GET /api/infraestructura/hosts/" time="0.107366" />
+    <testcase name="GET /api/infraestructura/hosts/{hostid}/eventos/" time="0.377329">
+      <failure type="failure" message="ST103">1. Test Case ID: fq2PrM
+
+- ST103 Undocumented status code
+
+    Received: 404
+    Documented: 200, 401, 403, 503, 400
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.42.217' 'http://127.0.0.1:8010/api/infraestructura/hosts/%20/eventos/?dias=30'</failure>
+    </testcase>
+    <testcase name="GET /api/infraestructura/sincronizacion/" time="0.132338" />
+    <testcase name="GET /api/intervenciones/" time="0.297050">
+      <failure type="failure" message="ST101, ST103">1. Test Case ID: BzG1hl
+
+- ST101 Server error
+
+- ST103 Undocumented status code
+
+    Received: 500
+    Documented: 200, 400, 401, 403
+
+[500] Internal Server Error:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Server Error (500)&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Server Error (500)&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.46.144' 'http://127.0.0.1:8010/api/intervenciones/?estado=Pendiente&amp;activo=9223372036854775808'</failure>
+    </testcase>
+    <testcase name="GET /api/intervenciones/tecnicos/" time="0.172793" />
+    <testcase name="GET /api/mediciones/" time="0.150707">
+      <failure type="failure" message="ST103">1. Test Case ID: PLH03j
+
+- ST103 Undocumented status code
+
+    Received: 404
+    Documented: 200, 400, 401, 403
+
+[404] Not Found:
+
+    `{"detail":"Invalid page."}`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.50.88' 'http://127.0.0.1:8010/api/mediciones/?desde=2000-01-01T00%3A00%3A00Z&amp;hasta=2000-01-01T00%3A00%3A00Z&amp;recibido_desde=2000-01-01T00%3A00%3A00Z&amp;origen=Real&amp;ordering=fecha_hora_medicion&amp;page=0&amp;page_size=500'</failure>
+    </testcase>
+    <testcase name="GET /api/sensores/" time="0.069521" />
+    <testcase name="GET /api/ubicaciones/" time="0.092630" />
+    <testcase name="GET /api/umbrales/" time="0.112245">
+      <failure type="failure" message="ST101, ST103">1. Test Case ID: jcSFuR
+
+- ST101 Server error
+
+- ST103 Undocumented status code
+
+    Received: 500
+    Documented: 200, 400, 401, 403
+
+[500] Internal Server Error:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Server Error (500)&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Server Error (500)&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.70.138' 'http://127.0.0.1:8010/api/umbrales/?ubicacion=9223372036854775808'</failure>
+    </testcase>
+    <testcase name="PATCH /api/auth/password-policy/" time="0.234352" />
+    <testcase name="GET /api/accesos/puntos/{id}/" time="0.092635">
+      <failure type="failure" message="ST105">1. Test Case ID: Oe5T25
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.221.158' http://127.0.0.1:8010/api/accesos/puntos/%20/</failure>
+    </testcase>
+    <testcase name="GET /api/sensores/{id}/" time="0.077411">
+      <failure type="failure" message="ST105">1. Test Case ID: UnliTQ
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.203.4' http://127.0.0.1:8010/api/sensores/%20/</failure>
+    </testcase>
+    <testcase name="PATCH /api/activos/estados/{id}/" time="0.193253">
+      <failure type="failure" message="ST105">1. Test Case ID: R6gC4O
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.103.219' -H 'Content-Type: application/json' -d '{"id": 6, "nombre": "0", "etiqueta": "", "color": "primary", "activo": false, "orden": 0}' http://127.0.0.1:8010/api/activos/estados/%20/</failure>
+    </testcase>
+    <testcase name="PATCH /api/activos/tipos/{id}/" time="0.217240">
+      <failure type="failure" message="ST105">1. Test Case ID: 0UtjvC
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.200.39' -H 'Content-Type: application/json' -d '{"id": 10, "nombre": "", "activo": false}' http://127.0.0.1:8010/api/activos/tipos/%20/</failure>
+    </testcase>
+    <testcase name="PATCH /api/auth/users/{user_id}/" time="0.218507">
+      <failure type="failure" message="ST105">1. Test Case ID: NLw3Ca
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.224.9' -H 'Content-Type: application/json' -d '{"username": "priv.prueba", "email": "0@0.com", "first_name": "", "last_name": "", "is_active": false, "role": "Administrador", "password": "[Filtered]", "inactivity_timeout_minutes": 1, "password_never_expires": "[Filtered]"}' http://127.0.0.1:8010/api/auth/users/%20/</failure>
+    </testcase>
+    <testcase name="PATCH /api/sensores/{id}/" time="0.235201">
+      <failure type="failure" message="ST105">1. Test Case ID: 4HhxdE
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.167.67' -H 'Content-Type: application/json' -d '{"codigo": "", "tipo": "", "ubicacion": 0, "estado": "Activo", "intervalo_esperado_segundos": 1}' http://127.0.0.1:8010/api/sensores/%20/</failure>
+    </testcase>
+    <testcase name="POST /api/sensores/{id}/clave/" time="0.134451">
+      <failure type="failure" message="ST105">1. Test Case ID: 1c1sxf
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.81.187' http://127.0.0.1:8010/api/sensores/%20/clave/</failure>
+    </testcase>
+    <testcase name="PATCH /api/accesos/puntos/{id}/" time="0.168545">
+      <failure type="failure" message="ST105">1. Test Case ID: OSVmY7
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.224.220' -H 'Content-Type: application/json' -d '{"nombre": "", "ubicacion": 0, "estado": "Activo"}' http://127.0.0.1:8010/api/accesos/puntos/%20/</failure>
+    </testcase>
+    <testcase name="PATCH /api/auth/users/{user_id}/session-timeout/" time="0.222745">
+      <failure type="failure" message="ST105">1. Test Case ID: ImL9gs
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.168.115' -H 'Content-Type: application/json' -d '{"inactivity_timeout_minutes": 1}' http://127.0.0.1:8010/api/auth/users/%20/session-timeout/</failure>
+    </testcase>
+    <testcase name="POST /api/accesos/puntos/{id}/clave/" time="0.101859">
+      <failure type="failure" message="ST105">1. Test Case ID: x8YdCM
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.42.94' http://127.0.0.1:8010/api/accesos/puntos/%20/clave/</failure>
+    </testcase>
+    <testcase name="POST /api/accesos/enrolamientos/{id}/cancelar/" time="0.109725">
+      <failure type="failure" message="ST105">1. Test Case ID: tRPBWU
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.83.15' http://127.0.0.1:8010/api/accesos/enrolamientos/%20/cancelar/</failure>
+    </testcase>
+    <testcase name="POST /api/accesos/lector/enrolamientos/{id}/progreso/" time="1.085340">
+      <failure type="failure" message="ST105">1. Test Case ID: ymRsPK
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'X-Punto-Acceso;' -H 'X-Device-Key: [Filtered]' -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.78.33' -H 'Content-Type: application/json' -d '{"muestra": 1, "total_muestras": 1, "indicacion": ""}' http://127.0.0.1:8010/api/accesos/lector/enrolamientos/%20/progreso/</failure>
+    </testcase>
+    <testcase name="POST /api/accesos/lector/enrolamientos/{id}/resultado/" time="1.241474">
+      <failure type="failure" message="ST105">1. Test Case ID: B3Urqq
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'X-Punto-Acceso;' -H 'X-Device-Key: [Filtered]' -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.221.229' -H 'Content-Type: application/json' -d '{"exito": false, "mensaje": ""}' http://127.0.0.1:8010/api/accesos/lector/enrolamientos/%20/resultado/</failure>
+    </testcase>
+    <testcase name="POST /api/accesos/personas/{id}/enrolar/" time="0.218099">
+      <failure type="failure" message="ST105">1. Test Case ID: 13YUk8
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.56.36' -H 'Content-Type: application/json' -d '{"punto_acceso": 0}' http://127.0.0.1:8010/api/accesos/personas/%20/enrolar/</failure>
+    </testcase>
+    <testcase name="POST /api/accesos/personas/{id}/habilitacion/" time="0.204897">
+      <failure type="failure" message="ST105">1. Test Case ID: f9xFZl
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.101.90' -H 'Content-Type: application/json' -d '{"habilitada": false, "motivo": ""}' http://127.0.0.1:8010/api/accesos/personas/%20/habilitacion/</failure>
+    </testcase>
+    <testcase name="POST /api/alertas/{id}/cerrar/" time="0.208997">
+      <failure type="failure" message="ST105">1. Test Case ID: SzFy9K
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.243.232' -H 'Content-Type: application/json' -d '{"comentario": ""}' http://127.0.0.1:8010/api/alertas/%20/cerrar/</failure>
+    </testcase>
+    <testcase name="POST /api/alertas/{id}/reconocer/" time="0.178646">
+      <failure type="failure" message="ST105">1. Test Case ID: MOVc0U
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.102.36' -H 'Content-Type: application/json' -d '{"comentario": ""}' http://127.0.0.1:8010/api/alertas/%20/reconocer/</failure>
+    </testcase>
+    <testcase name="POST /api/intervenciones/{id}/asignar/" time="0.162230">
+      <failure type="failure" message="ST105">1. Test Case ID: oKXoKV
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.189.211' -H 'Content-Type: application/json' -d '{"tecnico": 0, "fecha_inicio": "2000-01-01T00:00:00Z", "fecha_termino": "2000-01-01T00:00:00Z", "activos": [], "personal_externo": []}' http://127.0.0.1:8010/api/intervenciones/%20/asignar/</failure>
+    </testcase>
+    <testcase name="POST /api/intervenciones/{id}/cancelar/" time="0.156498">
+      <failure type="failure" message="ST105">1. Test Case ID: kZBuPW
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.173.207' -H 'Content-Type: application/json' -d '{"motivo": ""}' http://127.0.0.1:8010/api/intervenciones/%20/cancelar/</failure>
+    </testcase>
+    <testcase name="POST /api/intervenciones/{id}/cerrar/" time="0.160255">
+      <failure type="failure" message="ST105">1. Test Case ID: eg9Ovo
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.66.26' -H 'Content-Type: application/json' -d '{"exitosa": false, "observacion": ""}' http://127.0.0.1:8010/api/intervenciones/%20/cerrar/</failure>
+    </testcase>
+    <testcase name="POST /api/intervenciones/{id}/iniciar/" time="0.128724">
+      <failure type="failure" message="ST105">1. Test Case ID: kIiiXM
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.197.158' http://127.0.0.1:8010/api/intervenciones/%20/iniciar/</failure>
+    </testcase>
+    <testcase name="POST /api/intervenciones/{id}/personal/" time="0.145238">
+      <failure type="failure" message="ST105">1. Test Case ID: UKVfEq
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.149.39' -H 'Content-Type: application/json' -d '{"personal_externo": []}' http://127.0.0.1:8010/api/intervenciones/%20/personal/</failure>
+    </testcase>
+    <testcase name="POST /api/intervenciones/{id}/personal/{persona_id}/verificar/" time="0.141591">
+      <failure type="failure" message="ST105">1. Test Case ID: Gsx3rc
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.158.174' -H 'Content-Type: application/json' -d '{"punto_acceso": 0}' http://127.0.0.1:8010/api/intervenciones/0/personal/%20/verificar/</failure>
+    </testcase>
+    <testcase name="PUT /api/alertas/responsables/{ubicacion_id}/" time="0.259814">
+      <failure type="failure" message="ST105">1. Test Case ID: Ga7WCq
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X PUT -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.152.225' -H 'Content-Type: application/json' -d '{"correos": []}' http://127.0.0.1:8010/api/alertas/responsables/%20/</failure>
+    </testcase>
+    <testcase name="GET /api/accesos/enrolamientos/{id}/" time="0.123431">
+      <failure type="failure" message="ST105">1. Test Case ID: uTft96
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.101.170' http://127.0.0.1:8010/api/accesos/enrolamientos/%20/</failure>
+    </testcase>
+    <testcase name="GET /api/accesos/permisos/{id}/" time="0.117845">
+      <failure type="failure" message="ST105">1. Test Case ID: TAY1dz
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.141.27' http://127.0.0.1:8010/api/accesos/permisos/%20/</failure>
+    </testcase>
+    <testcase name="GET /api/accesos/personas/{id}/" time="0.124266">
+      <failure type="failure" message="ST105">1. Test Case ID: q13NjV
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.108.203' http://127.0.0.1:8010/api/accesos/personas/%20/</failure>
+    </testcase>
+    <testcase name="GET /api/accesos/personas/{id}/habilitacion/" time="0.092432">
+      <failure type="failure" message="ST105">1. Test Case ID: V7jRcf
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.197.6' http://127.0.0.1:8010/api/accesos/personas/%20/habilitacion/</failure>
+    </testcase>
+    <testcase name="GET /api/activos/{id}/" time="0.102522">
+      <failure type="failure" message="ST105">1. Test Case ID: xzJ0Q9
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.52.22' http://127.0.0.1:8010/api/activos/%20/</failure>
+    </testcase>
+    <testcase name="GET /api/activos/{id}/historial/" time="0.113315">
+      <failure type="failure" message="ST105">1. Test Case ID: 92W63w
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.226.119' http://127.0.0.1:8010/api/activos/%20/historial/</failure>
+    </testcase>
+    <testcase name="GET /api/intervenciones/{id}/" time="0.141469">
+      <failure type="failure" message="ST105">1. Test Case ID: aDvjKd
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.207.71' http://127.0.0.1:8010/api/intervenciones/%20/</failure>
+    </testcase>
+    <testcase name="GET /api/ubicaciones/{id}/" time="0.127437">
+      <failure type="failure" message="ST105">1. Test Case ID: M9mesP
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.74.104' http://127.0.0.1:8010/api/ubicaciones/%20/</failure>
+    </testcase>
+    <testcase name="PATCH /api/accesos/permisos/{id}/" time="0.118950">
+      <failure type="failure" message="ST105">1. Test Case ID: OhllEa
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.3.128' -H 'Content-Type: application/json' -d '{"persona": 0, "punto_acceso": 0, "vigencia_inicio": "2000-01-01", "vigencia_fin": "2000-01-01", "estado": "Activo", "dias": []}' http://127.0.0.1:8010/api/accesos/permisos/%20/</failure>
+    </testcase>
+    <testcase name="PATCH /api/accesos/personas/{id}/" time="0.171094">
+      <failure type="failure" message="ST105">1. Test Case ID: TU3bDu
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.236.89' -H 'Content-Type: application/json' -d '{"nombre": "0", "rut": "", "empresa": "", "identificador_biometrico_externo": "", "usuario": null}' http://127.0.0.1:8010/api/accesos/personas/%20/</failure>
+    </testcase>
+    <testcase name="PATCH /api/activos/{id}/" time="0.124035">
+      <failure type="failure" message="ST105">1. Test Case ID: XnKoAe
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.57.1' -H 'Content-Type: application/json' -d '{"codigo": "", "nombre": "", "tipo": null, "marca": null, "modelo": null, "numero_serie": null, "estado": "", "criticidad": "Baja", "ubicacion": 0, "responsable": null, "observaciones": null}' http://127.0.0.1:8010/api/activos/%20/</failure>
+    </testcase>
+    <testcase name="PATCH /api/ubicaciones/{id}/" time="0.183622">
+      <failure type="failure" message="ST105">1. Test Case ID: 7elZVP
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.147.54' -H 'Content-Type: application/json' -d '{"sala": "", "zona": "", "rack": "", "posicion": "", "ubicacion_padre": null, "activa": false}' http://127.0.0.1:8010/api/ubicaciones/%20/</failure>
+    </testcase>
+    <testcase name="DELETE /api/accesos/personas/{id}/" time="0.094639">
+      <failure type="failure" message="ST105">1. Test Case ID: V601Rq
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    &lt;!doctype html&gt;
+    &lt;html lang="en"&gt;
+    &lt;head&gt;
+      &lt;title&gt;Not Found&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;h1&gt;Not Found&lt;/h1&gt;&lt;p&gt;The requested resource was not found on this server.&lt;/p&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;`
+
+Reproduce with:
+
+    curl -X DELETE -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.27.240' http://127.0.0.1:8010/api/accesos/personas/%20/</failure>
+    </testcase>
+    <testcase name="Stateful tests" time="0.549625" />
+  </testsuite>
+</testsuites>

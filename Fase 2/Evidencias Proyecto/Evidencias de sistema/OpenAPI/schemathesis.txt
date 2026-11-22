@@ -1,0 +1,1458 @@
+Schemathesis v4.33.1
+━━━━━━━━━━━━━━━━━━━━
+
+ ✅  Loaded specification from C:/Users/Alvaro/Documents/CAPSTONE/Fase
+ 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/openapi.yaml (in
+ 1.12s)
+
+     Base URL:         http://127.0.0.1:8010
+     Specification:    Open API 3.0.3
+     Operations:       89 selected / 89 total
+
+ ✅  API capabilities:
+
+     Supports NULL byte in headers:                            ✓
+     Accepts backslash and control characters in URL paths:    ✓
+
+ ⏭   Examples (in 0.06s)
+
+     ⏭  89 skipped
+
+ ❌  Coverage (in 25.37s)
+
+     ✅ 40 passed  ❌ 49 failed
+
+ ❌  Fuzzing (in 13.77s)
+
+     ✅ 63 passed  ❌ 26 failed
+
+ ✅  Stateful (in 0.62s)
+
+     Scenarios:    5
+     API Links:    1 covered / 194 selected / 194 total (194 inferred)
+
+     ✅ 5 passed
+
+=================================== FAILURES ===================================
+______________________ DELETE /api/accesos/personas/{id}/ ______________________
+1. Test Case ID: V601Rq
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X DELETE -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.27.240' http://127.0.0.1:8010/api/accesos/personas/%20/
+
+    st replay V601Rq
+
+_____________________ GET /api/accesos/enrolamientos/{id}/ _____________________
+1. Test Case ID: uTft96
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.101.170' http://127.0.0.1:8010/api/accesos/enrolamientos/%20/
+
+    st replay uTft96
+
+__________________________ GET /api/accesos/permisos/ __________________________
+1. Test Case ID: 99lhVY
+
+- ST101 Server error
+
+- ST103 Undocumented status code
+
+    Received: 500
+    Documented: 200, 401, 403
+
+[500] Internal Server Error:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Server Error (500)</title>
+    </head>
+    <body>
+      <h1>Server Error (500)</h1><p></p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.131.148' 'http://127.0.0.1:8010/api/accesos/permisos/?persona=0&punto=9223372036854775808'
+
+    st replay 99lhVY
+
+_______________________ GET /api/accesos/permisos/{id}/ ________________________
+1. Test Case ID: TAY1dz
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.141.27' http://127.0.0.1:8010/api/accesos/permisos/%20/
+
+    st replay TAY1dz
+
+_______________________ GET /api/accesos/personas/{id}/ ________________________
+1. Test Case ID: q13NjV
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.108.203' http://127.0.0.1:8010/api/accesos/personas/%20/
+
+    st replay q13NjV
+
+_________________ GET /api/accesos/personas/{id}/habilitacion/ _________________
+1. Test Case ID: V7jRcf
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.197.6' http://127.0.0.1:8010/api/accesos/personas/%20/habilitacion/
+
+    st replay V7jRcf
+
+________________________ GET /api/accesos/puntos/{id}/ _________________________
+1. Test Case ID: Oe5T25
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.221.158' http://127.0.0.1:8010/api/accesos/puntos/%20/
+
+    st replay Oe5T25
+
+____________________ GET /api/accesos/verificaciones/{id}/ _____________________
+1. Test Case ID: 1ZyPxs
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.189.76' http://127.0.0.1:8010/api/accesos/verificaciones/%20/
+
+    st replay 1ZyPxs
+
+______________________________ GET /api/activos/ _______________________________
+1. Test Case ID: x1w6KD
+
+- ST101 Server error
+
+- ST103 Undocumented status code
+
+    Received: 500
+    Documented: 200, 400, 401, 403
+
+[500] Internal Server Error:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Server Error (500)</title>
+    </head>
+    <body>
+      <h1>Server Error (500)</h1><p></p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.47.180' 'http://127.0.0.1:8010/api/activos/?q=&tipo=&ubicacion=9223372036854775808&estado=&incluir_retirados=true'
+
+    st replay x1w6KD
+
+____________________________ GET /api/activos/{id}/ ____________________________
+1. Test Case ID: xzJ0Q9
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.52.22' http://127.0.0.1:8010/api/activos/%20/
+
+    st replay xzJ0Q9
+
+_______________________ GET /api/activos/{id}/historial/ _______________________
+1. Test Case ID: 92W63w
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.226.119' http://127.0.0.1:8010/api/activos/%20/historial/
+
+    st replay 92W63w
+
+_______________ GET /api/infraestructura/hosts/{hostid}/eventos/ _______________
+1. Test Case ID: fq2PrM
+
+- ST103 Undocumented status code
+
+    Received: 404
+    Documented: 200, 401, 403, 503, 400
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.42.217' 'http://127.0.0.1:8010/api/infraestructura/hosts/%20/eventos/?dias=30'
+
+    st replay fq2PrM
+
+___________________________ GET /api/intervenciones/ ___________________________
+1. Test Case ID: BzG1hl
+
+- ST101 Server error
+
+- ST103 Undocumented status code
+
+    Received: 500
+    Documented: 200, 400, 401, 403
+
+[500] Internal Server Error:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Server Error (500)</title>
+    </head>
+    <body>
+      <h1>Server Error (500)</h1><p></p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.46.144' 'http://127.0.0.1:8010/api/intervenciones/?estado=Pendiente&activo=9223372036854775808'
+
+    st replay BzG1hl
+
+________________________ GET /api/intervenciones/{id}/ _________________________
+1. Test Case ID: aDvjKd
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.207.71' http://127.0.0.1:8010/api/intervenciones/%20/
+
+    st replay aDvjKd
+
+_____________________________ GET /api/mediciones/ _____________________________
+1. Test Case ID: PLH03j
+
+- ST103 Undocumented status code
+
+    Received: 404
+    Documented: 200, 400, 401, 403
+
+[404] Not Found:
+
+    `{"detail":"Invalid page."}`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.50.88' 'http://127.0.0.1:8010/api/mediciones/?desde=2000-01-01T00%3A00%3A00Z&hasta=2000-01-01T00%3A00%3A00Z&recibido_desde=2000-01-01T00%3A00%3A00Z&origen=Real&ordering=fecha_hora_medicion&page=0&page_size=500'
+
+    st replay PLH03j
+
+___________________________ GET /api/sensores/{id}/ ____________________________
+1. Test Case ID: UnliTQ
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.203.4' http://127.0.0.1:8010/api/sensores/%20/
+
+    st replay UnliTQ
+
+__________________________ GET /api/ubicaciones/{id}/ __________________________
+1. Test Case ID: M9mesP
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.74.104' http://127.0.0.1:8010/api/ubicaciones/%20/
+
+    st replay M9mesP
+
+______________________________ GET /api/umbrales/ ______________________________
+1. Test Case ID: jcSFuR
+
+- ST101 Server error
+
+- ST103 Undocumented status code
+
+    Received: 500
+    Documented: 200, 400, 401, 403
+
+[500] Internal Server Error:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Server Error (500)</title>
+    </head>
+    <body>
+      <h1>Server Error (500)</h1><p></p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X GET -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.70.138' 'http://127.0.0.1:8010/api/umbrales/?ubicacion=9223372036854775808'
+
+    st replay jcSFuR
+
+______________________ PATCH /api/accesos/permisos/{id}/ _______________________
+1. Test Case ID: OhllEa
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.3.128' -H 'Content-Type: application/json' -d '{"persona": 0, "punto_acceso": 0, "vigencia_inicio": "2000-01-01", "vigencia_fin": "2000-01-01", "estado": "Activo", "dias": []}' http://127.0.0.1:8010/api/accesos/permisos/%20/
+
+    st replay OhllEa
+
+______________________ PATCH /api/accesos/personas/{id}/ _______________________
+1. Test Case ID: TU3bDu
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.236.89' -H 'Content-Type: application/json' -d '{"nombre": "0", "rut": "", "empresa": "", "identificador_biometrico_externo": "", "usuario": null}' http://127.0.0.1:8010/api/accesos/personas/%20/
+
+    st replay TU3bDu
+
+_______________________ PATCH /api/accesos/puntos/{id}/ ________________________
+1. Test Case ID: OSVmY7
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.224.220' -H 'Content-Type: application/json' -d '{"nombre": "", "ubicacion": 0, "estado": "Activo"}' http://127.0.0.1:8010/api/accesos/puntos/%20/
+
+    st replay OSVmY7
+
+_______________________ PATCH /api/activos/estados/{id}/ _______________________
+1. Test Case ID: R6gC4O
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.103.219' -H 'Content-Type: application/json' -d '{"id": 6, "nombre": "0", "etiqueta": "", "color": "primary", "activo": false, "orden": 0}' http://127.0.0.1:8010/api/activos/estados/%20/
+
+    st replay R6gC4O
+
+________________________ PATCH /api/activos/tipos/{id}/ ________________________
+1. Test Case ID: 0UtjvC
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.200.39' -H 'Content-Type: application/json' -d '{"id": 10, "nombre": "", "activo": false}' http://127.0.0.1:8010/api/activos/tipos/%20/
+
+    st replay 0UtjvC
+
+___________________________ PATCH /api/activos/{id}/ ___________________________
+1. Test Case ID: XnKoAe
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.57.1' -H 'Content-Type: application/json' -d '{"codigo": "", "nombre": "", "tipo": null, "marca": null, "modelo": null, "numero_serie": null, "estado": "", "criticidad": "Baja", "ubicacion": 0, "responsable": null, "observaciones": null}' http://127.0.0.1:8010/api/activos/%20/
+
+    st replay XnKoAe
+
+_______________________ PATCH /api/auth/users/{user_id}/ _______________________
+1. Test Case ID: NLw3Ca
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.224.9' -H 'Content-Type: application/json' -d '{"username": "priv.prueba", "email": "0@0.com", "first_name": "", "last_name": "", "is_active": false, "role": "Administrador", "password": "[Filtered]", "inactivity_timeout_minutes": 1, "password_never_expires": "[Filtered]"}' http://127.0.0.1:8010/api/auth/users/%20/
+
+    st replay NLw3Ca
+
+_______________ PATCH /api/auth/users/{user_id}/session-timeout/ _______________
+1. Test Case ID: ImL9gs
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.168.115' -H 'Content-Type: application/json' -d '{"inactivity_timeout_minutes": 1}' http://127.0.0.1:8010/api/auth/users/%20/session-timeout/
+
+    st replay ImL9gs
+
+__________________________ PATCH /api/sensores/{id}/ ___________________________
+1. Test Case ID: 4HhxdE
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.167.67' -H 'Content-Type: application/json' -d '{"codigo": "", "tipo": "", "ubicacion": 0, "estado": "Activo", "intervalo_esperado_segundos": 1}' http://127.0.0.1:8010/api/sensores/%20/
+
+    st replay 4HhxdE
+
+_________________________ PATCH /api/ubicaciones/{id}/ _________________________
+1. Test Case ID: 7elZVP
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X PATCH -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.147.54' -H 'Content-Type: application/json' -d '{"sala": "", "zona": "", "rack": "", "posicion": "", "ubicacion_padre": null, "activa": false}' http://127.0.0.1:8010/api/ubicaciones/%20/
+
+    st replay 7elZVP
+
+________________ POST /api/accesos/enrolamientos/{id}/cancelar/ ________________
+1. Test Case ID: tRPBWU
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.83.15' http://127.0.0.1:8010/api/accesos/enrolamientos/%20/cancelar/
+
+    st replay tRPBWU
+
+________________ POST /api/accesos/lector/bajas/{id}/resultado/ ________________
+1. Test Case ID: 9VpRHW
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'X-Punto-Acceso;' -H 'X-Device-Key: [Filtered]' -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.117.158' -H 'Content-Type: application/json' -d '{"exito": false, "mensaje": ""}' http://127.0.0.1:8010/api/accesos/lector/bajas/%20/resultado/
+
+    st replay 9VpRHW
+
+____________ POST /api/accesos/lector/enrolamientos/{id}/progreso/ _____________
+1. Test Case ID: ymRsPK
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'X-Punto-Acceso;' -H 'X-Device-Key: [Filtered]' -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.78.33' -H 'Content-Type: application/json' -d '{"muestra": 1, "total_muestras": 1, "indicacion": ""}' http://127.0.0.1:8010/api/accesos/lector/enrolamientos/%20/progreso/
+
+    st replay ymRsPK
+
+____________ POST /api/accesos/lector/enrolamientos/{id}/resultado/ ____________
+1. Test Case ID: B3Urqq
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'X-Punto-Acceso;' -H 'X-Device-Key: [Filtered]' -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.221.229' -H 'Content-Type: application/json' -d '{"exito": false, "mensaje": ""}' http://127.0.0.1:8010/api/accesos/lector/enrolamientos/%20/resultado/
+
+    st replay B3Urqq
+
+____________ POST /api/accesos/lector/verificaciones/{id}/progreso/ ____________
+1. Test Case ID: ayMT4i
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'X-Punto-Acceso;' -H 'X-Device-Key: [Filtered]' -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.199.99' -H 'Content-Type: application/json' -d '{"intento": 1, "total_intentos": 1, "indicacion": ""}' http://127.0.0.1:8010/api/accesos/lector/verificaciones/%20/progreso/
+
+    st replay ayMT4i
+
+___________ POST /api/accesos/lector/verificaciones/{id}/resultado/ ____________
+1. Test Case ID: 7Sf68t
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'X-Punto-Acceso;' -H 'X-Device-Key: [Filtered]' -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.182.48' -H 'Content-Type: application/json' -d '{"coincide": false, "identificado": "", "mensaje": ""}' http://127.0.0.1:8010/api/accesos/lector/verificaciones/%20/resultado/
+
+    st replay 7Sf68t
+
+_________________________ POST /api/accesos/permisos/ __________________________
+1. Test Case ID: Wd4S5u
+
+- ST108 Response violates schema
+
+    {"0":{"dia_semana":["This field is required."]}} is not valid under any of the schemas listed in the 'oneOf' keyword
+
+    Validated against the response schema for status code 400.
+
+    Schema at /additionalProperties:
+
+        {
+            "oneOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "type": "string"
+                }
+            ]
+        }
+
+    Value:
+
+        {
+            "0": {
+                "dia_semana": [
+                    "This field is required."
+                ]
+            }
+        }
+
+[400] Bad Request:
+
+    `{"persona":["Invalid pk \"0\" - object does not exist."],"punto_acceso":["Invalid pk \"0\" - object does not exist."],"dias":{"0":{"dia_semana":["This field is required."]}}}`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.114.220' -H 'Content-Type: application/json' -d '{"persona": 0, "punto_acceso": 0, "vigencia_inicio": "2000-01-01", "vigencia_fin": "2000-01-01", "estado": "Activo", "dias": [{"hora_inicio": "00:00:00Z", "hora_fin": "00:00:00Z"}]}' http://127.0.0.1:8010/api/accesos/permisos/
+
+    st replay Wd4S5u
+
+___________________ POST /api/accesos/personas/{id}/enrolar/ ___________________
+1. Test Case ID: 13YUk8
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.56.36' -H 'Content-Type: application/json' -d '{"punto_acceso": 0}' http://127.0.0.1:8010/api/accesos/personas/%20/enrolar/
+
+    st replay 13YUk8
+
+________________ POST /api/accesos/personas/{id}/habilitacion/ _________________
+1. Test Case ID: f9xFZl
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.101.90' -H 'Content-Type: application/json' -d '{"habilitada": false, "motivo": ""}' http://127.0.0.1:8010/api/accesos/personas/%20/habilitacion/
+
+    st replay f9xFZl
+
+_____________________ POST /api/accesos/puntos/{id}/clave/ _____________________
+1. Test Case ID: x8YdCM
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.42.94' http://127.0.0.1:8010/api/accesos/puntos/%20/clave/
+
+    st replay x8YdCM
+
+________________________ POST /api/alertas/{id}/cerrar/ ________________________
+1. Test Case ID: SzFy9K
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.243.232' -H 'Content-Type: application/json' -d '{"comentario": ""}' http://127.0.0.1:8010/api/alertas/%20/cerrar/
+
+    st replay SzFy9K
+
+______________________ POST /api/alertas/{id}/reconocer/ _______________________
+1. Test Case ID: MOVc0U
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.102.36' -H 'Content-Type: application/json' -d '{"comentario": ""}' http://127.0.0.1:8010/api/alertas/%20/reconocer/
+
+    st replay MOVc0U
+
+____________________________ POST /api/auth/logout/ ____________________________
+1. Test Case ID: 4ALcom
+
+- ST101 Server error
+
+- ST103 Undocumented status code
+
+    Received: 500
+    Documented: 204, 400, 401, 403
+
+[500] Internal Server Error:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Server Error (500)</title>
+    </head>
+    <body>
+      <h1>Server Error (500)</h1><p></p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.157.94' -H 'Content-Type: application/json' -d '[null, null]' http://127.0.0.1:8010/api/auth/logout/
+
+    st replay 4ALcom
+
+____________________ POST /api/intervenciones/{id}/asignar/ ____________________
+1. Test Case ID: oKXoKV
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.189.211' -H 'Content-Type: application/json' -d '{"tecnico": 0, "fecha_inicio": "2000-01-01T00:00:00Z", "fecha_termino": "2000-01-01T00:00:00Z", "activos": [], "personal_externo": []}' http://127.0.0.1:8010/api/intervenciones/%20/asignar/
+
+    st replay oKXoKV
+
+___________________ POST /api/intervenciones/{id}/cancelar/ ____________________
+1. Test Case ID: kZBuPW
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.173.207' -H 'Content-Type: application/json' -d '{"motivo": ""}' http://127.0.0.1:8010/api/intervenciones/%20/cancelar/
+
+    st replay kZBuPW
+
+____________________ POST /api/intervenciones/{id}/cerrar/ _____________________
+1. Test Case ID: eg9Ovo
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.66.26' -H 'Content-Type: application/json' -d '{"exitosa": false, "observacion": ""}' http://127.0.0.1:8010/api/intervenciones/%20/cerrar/
+
+    st replay eg9Ovo
+
+____________________ POST /api/intervenciones/{id}/iniciar/ ____________________
+1. Test Case ID: kIiiXM
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.197.158' http://127.0.0.1:8010/api/intervenciones/%20/iniciar/
+
+    st replay kIiiXM
+
+___________________ POST /api/intervenciones/{id}/personal/ ____________________
+1. Test Case ID: UKVfEq
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.149.39' -H 'Content-Type: application/json' -d '{"personal_externo": []}' http://127.0.0.1:8010/api/intervenciones/%20/personal/
+
+    st replay UKVfEq
+
+________ POST /api/intervenciones/{id}/personal/{persona_id}/verificar/ ________
+1. Test Case ID: Gsx3rc
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.158.174' -H 'Content-Type: application/json' -d '{"punto_acceso": 0}' http://127.0.0.1:8010/api/intervenciones/0/personal/%20/verificar/
+
+    st replay Gsx3rc
+
+________________________ POST /api/sensores/{id}/clave/ ________________________
+1. Test Case ID: 1c1sxf
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X POST -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.81.187' http://127.0.0.1:8010/api/sensores/%20/clave/
+
+    st replay 1c1sxf
+
+________________ PUT /api/alertas/responsables/{ubicacion_id}/ _________________
+1. Test Case ID: Ga7WCq
+
+- ST105 Undocumented Content-Type
+
+    Received: text/html; charset=utf-8
+    Documented: application/json
+
+[404] Not Found:
+
+    `
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <title>Not Found</title>
+    </head>
+    <body>
+      <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+    </body>
+    </html>`
+
+Reproduce with:
+
+    curl -X PUT -H 'Authorization: [Filtered]' -H 'CF-Connecting-IP: 10.91.152.225' -H 'Content-Type: application/json' -d '{"correos": []}' http://127.0.0.1:8010/api/alertas/responsables/%20/
+
+    st replay Ga7WCq
+
+=================================== WARNINGS ===================================
+
+Authentication failed: 9 operations returned only 401/403 responses
+
+401 Unauthorized (7 operations):
+  - GET /api/accesos/lector/bajas/siguiente/
+  - GET /api/accesos/lector/enrolamientos/siguiente/
+  - GET /api/accesos/lector/verificaciones/siguiente/
+  - POST /api/accesos/lector/bajas/{id}/resultado/
+  - POST /api/accesos/lector/enrolamientos/{id}/progreso/
+  - POST /api/accesos/lector/enrolamientos/{id}/resultado/
+  - POST /api/accesos/lector/intentos/
+403 Forbidden (2 operations):
+  - PATCH /api/auth/password-policy/
+  - POST /api/integraciones/zabbix/webhook/
+
+💡 Ensure valid authentication credentials are set via `--auth` or `-H`
+
+Missing test data: 1 operation repeatedly returned 404 Not Found, preventing tests from reaching your API's core logic
+
+  - GET /api/intervenciones/{id}/
+
+💡 Add a link from POST /api/intervenciones/{id}/cerrar/, or supply the identifiers it returns in your config file
+
+Schema validation mismatch: 16 operations mostly rejected generated data due to validation errors, indicating schema constraints don't match API validation
+
+  - PATCH /api/auth/users/{user_id}/
+  - POST /api/accesos/personas/
+  - POST /api/accesos/personas/{id}/enrolar/
+  - POST /api/accesos/puntos/
+  - POST /api/activos/
+  - POST /api/activos/estados/
+  - POST /api/activos/tipos/
+  - POST /api/auth/logout/
+  - POST /api/auth/password-change/
+  - POST /api/auth/password-reset/confirm/
+  - POST /api/auth/token/
+  - POST /api/auth/token/refresh/
+  - POST /api/auth/users/
+  - POST /api/mediciones/
+  - POST /api/sensores/
+  - POST /api/umbrales/
+
+💡 Check your schema constraints - API validation may be stricter than documented
+
+=================================== SUMMARY ====================================
+
+API Operations:
+  Selected: 89/89
+  Tested: 89
+
+Test Phases:
+  ⏭  Examples
+  ❌ Coverage
+  ❌ Fuzzing
+  ✅ Stateful
+
+Failures:
+  ❌ ST101 Server error: 5
+  ❌ ST108 Response violates schema: 1
+  ❌ ST105 Undocumented Content-Type: 41
+  ❌ ST103 Undocumented status code: 7
+
+For more information, run `st explain <code>` for ST101, ST103, ST105, ST108.
+
+Warnings:
+  ⚠️ Authentication failed: 9 operations returned only 401/403 responses
+  ⚠️ Missing test data: 1 operation repeatedly returned 404 responses
+  ⚠️ Schema validation mismatch: 16 operations mostly rejected generated data
+
+Test cases:
+  2169 generated, 49 found 54 unique failures
+
+Reports:
+  - JUnit: C:\Users\Alvaro\AppData\Local\Temp\claude\c2cb5bab30d394f4\6e4e4d44-64c0-450d-91a8-893ed5a24417\scratchpad\openapi\reporte\junit-20261122T151320Z.xml
+
+Seed: 254868961334220733824579389921979203777
+
+====================== 54 failures, 3 warnings in 40.04s =======================
+salida 1
